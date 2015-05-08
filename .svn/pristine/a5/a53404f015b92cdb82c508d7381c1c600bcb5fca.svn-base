@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">VANI SDK</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="MENU_SIGNIN">Sign In</string>
+    <string name="MENU_SETTINGS">Settings</string>
+    <string name="WELCOME_MESSAGE">VANI SDK</string>
+    <string name="TITLE_SETTINGS">Settings</string>
+    <string name="VANI_SDK_DESC">The Speech-to-text pattern demonstrates how to use the VANI SDK to translate audible speech input by a user into text within a mobile app.</string>
+    <string name="MENU_TTS">Text-to-Speech</string>
+</resources>

@@ -1,0 +1,46 @@
+package com.ibm.cio.audio;
+import com.ibm.cio.util.Logger;
+import java.net.URISyntaxException;
+import java.util.Map;
+import android.os.SystemClock;
+
+public class VaniWSOpusUploader extends VaniWSUploader{
+    protected VaniJNAOpusEnc encoder = null;
+    /**
+     * Create an uploader which supports streaming.
+     *
+     * @param encoder the encoder
+     * @param serverURL LMC server, delivery to back end server
+     * @param header Socket header
+     * @throws URISyntaxException
+     */
+    public VaniWSOpusUploader(VaniEncoder encoder, String serverURL, Map<String, String> header) throws URISyntaxException {
+        super(encoder, serverURL, header);
+        this.encoder = (VaniJNAOpusEnc) encoder; // for WebSocket only
+        TAG = this.getClass().getSimpleName();
+    }
+
+    /**
+     * 1. Initialize websocket connection to iTrans </br>
+     * 2. Init an encoder and writer
+     *
+     * @throws Exception
+     */
+    protected void initStreamAudioToServer() throws Exception {
+        Logger.i(TAG, "********** Connecting... **********");
+        beginRequestTime = SystemClock.elapsedRealtime();
+        Logger.i(TAG, "prepareUploader, initStreamAudioToServer begin at: " + beginRequestTime);
+        this.encoder.initEncoderWithWebSocketClient(this);//lifted up for initializing writer, using isRunning to control the flow
+
+        this.trustServer();
+
+        boolean rc;
+        rc = this.connectBlocking();
+        if(!rc){
+            Logger.e(TAG, "********** Connection failed! **********");
+            this.uploadPrepared = false;
+            throw new Exception("Connection failed.");
+        }
+        Logger.i(TAG, "********** Connected **********");
+    }
+}

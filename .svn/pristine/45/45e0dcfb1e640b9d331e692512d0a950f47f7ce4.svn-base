@@ -1,0 +1,152 @@
+/**
+ * vani sdk
+ * IMCHelper
+ * @author viney
+ * Copyright (c) 2013 IBM. All rights reserved.
+ *
+ */
+
+package com.ibm.cio.vanisdk;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.AbstractHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.HttpParams;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import com.ibm.cio.util.Logger;
+
+import android.os.StrictMode;
+import android.util.Log;
+
+public class IMCHelper {
+    String TAG = "IMCHelper";
+    private static String username;
+    private static String password;
+    private static String authURL;
+
+    private String appId;
+    private String appKey;
+    private boolean isUsingVaniAPI;
+
+    public IMCHelper(String url, String user, String pass) {
+        username = user;
+        password = pass;
+        authURL = url;
+        this.appId = "";
+        this.appKey = "";
+        this.isUsingVaniAPI = true;
+        Logger.e(TAG, "IMC Helper URL");
+        Logger.e(TAG, url);
+    }
+    public String doIMCAuthentication() throws Exception {
+        Log.i(TAG, "Doing IMCAuthentication");
+        if (username.equals("") || password.equals("")) {
+            throw new Exception("Username or Password is empty!");
+        }
+
+        if(this.isUsingVaniAPI){
+            authURL = authURL+"?appid="+this.appId+"&appkey="+this.appKey;
+        }
+        Log.i(TAG, "===authURL=== (isUsingVaniAPI:"+this.isUsingVaniAPI+")");
+        Log.i(TAG, authURL);
+        Log.i(TAG, "===/authURL===");
+
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+
+        // Authenticating
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpGet httpGet = new HttpGet(authURL);
+        httpGet.addHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(username, password), "UTF-8", false));
+
+        httpGet.setHeader("agent", "IMC Helper (Android)");
+
+        HttpResponse httpResponse = httpClient.execute(httpGet);
+        HttpEntity responseEntity = httpResponse.getEntity();
+
+        // Log.i(TAG, httpResponse.getStatusLine().toString());
+//		Log.i(TAG, responseEntity.toString());
+
+        String cookieData = "";
+        boolean isSuccessfull = false;
+        if (responseEntity != null) {
+            if(this.isUsingVaniAPI){
+                InputStream instream = responseEntity.getContent();
+                String encoding = null;
+                encoding = encoding == null ? "UTF-8" : encoding;
+                String body = IOUtils.toString(instream, encoding);
+                System.out.println(body);
+                JSONObject JSONResponse = (JSONObject) new JSONTokener(body).nextValue();
+                if(JSONResponse.getInt("code") == 200){
+                    isSuccessfull = true;
+                    JSONObject data = JSONResponse.getJSONObject("data");
+                    String token = data.getString("token");
+                    cookieData = "VBE_API_AUTHEN="+token;
+                }
+                // JSONObject obj = JSONBody.getJSONObject("data");
+                // String token = obj.getString("token");
+                try {
+                    instream.close();
+                } finally {
+
+                }
+            }
+            else{
+                responseEntity.consumeContent();
+            }
+        }
+        if(isSuccessfull || this.isUsingVaniAPI == false){
+            System.out.println("LMC cookies:");
+            List<Cookie> cookies = ((AbstractHttpClient) httpClient).getCookieStore().getCookies();
+            if (cookies.isEmpty()) {
+                Log.i(TAG, "LMC Authentication failed");
+            }
+            else {
+                for (int i = 0; i < cookies.size(); i++) {
+                    String cookieKey = cookies.get(i).getName();
+                    Log.i(TAG, cookieKey);
+                    if (cookieKey.equals("WgSessionKey") || cookieKey.equals("MC_CMID") || cookieKey.equals("JSESSIONID") || cookieKey.equals("VBE_API_AUTHEN")) {
+                        if (cookieData != "") {
+                            cookieData = cookieData + ";";
+                        }
+                        cookieData = cookieData + cookieKey + "="+ cookies.get(i).getValue();
+                    }
+                    //				Log.i(TAG, "- " + cookies.get(i).toString());
+                }
+                // cookieData=cookieData.getBytes("UTF-8").toString();//converting
+                // to UTF-8
+                //			Log.i(TAG, cookieData);
+            }
+            Log.i(TAG, "###### Cookie information start ######");
+            Log.i(TAG, cookieData);
+            Log.i(TAG, "###### Cookie information end ######");
+        }
+        return cookieData;
+    }
+
+    public void setAppKey(String key){
+        this.appKey = key;
+    }
+    public void setAppId(String id){
+        this.appId = id;
+    }
+    public void setIsUsingVaniAPI(boolean isUsingAPI){
+        this.isUsingVaniAPI = isUsingAPI;
+    }
+}

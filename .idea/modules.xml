@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/IBM Watson SDK.iml" filepath="$PROJECT_DIR$/IBM Watson SDK.iml" />
+      <module fileurl="file://$PROJECT_DIR$/IBMWatsonSDK/IBMWatsonSDK.iml" filepath="$PROJECT_DIR$/IBMWatsonSDK/IBMWatsonSDK.iml" />
+      <module fileurl="file://$PROJECT_DIR$/WatsonSDKSample/WatsonSDKSample.iml" filepath="$PROJECT_DIR$/WatsonSDKSample/WatsonSDKSample.iml" />
+    </modules>
+  </component>
+</project>
+

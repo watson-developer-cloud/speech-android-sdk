@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">IBM Watson Speech SDK</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="button1">Start</string>
+    <string name="button2">Stop</string>
+    <string name="textView1">Welcome to IBM Watson Speech Sample app</string>
+
+</resources>

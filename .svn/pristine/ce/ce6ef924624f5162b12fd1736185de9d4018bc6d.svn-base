@@ -1,0 +1,101 @@
+ECLIPSE ANDROID PROJECT IMPORT SUMMARY
+======================================
+
+Ignored Files:
+--------------
+The following files were *not* copied into the new Gradle project; you
+should evaluate whether these are still needed in your project and if
+so manually move them:
+
+* .DS_Store
+* jspeex/
+* jspeex/.DS_Store
+* jspeex/java/
+* jspeex/java/org/
+* jspeex/java/org/xiph/
+* jspeex/java/org/xiph/speex/
+* jspeex/java/org/xiph/speex/AudioFileWriter.java
+* jspeex/java/org/xiph/speex/Bits.java
+* jspeex/java/org/xiph/speex/CbSearch.java
+* jspeex/java/org/xiph/speex/Codebook.java
+* jspeex/java/org/xiph/speex/Decoder.java
+* jspeex/java/org/xiph/speex/Encoder.java
+* jspeex/java/org/xiph/speex/Filters.java
+* jspeex/java/org/xiph/speex/HighLspQuant.java
+* jspeex/java/org/xiph/speex/Inband.java
+* jspeex/java/org/xiph/speex/LbrLspQuant.java
+* jspeex/java/org/xiph/speex/Lpc.java
+* jspeex/java/org/xiph/speex/Lsp.java
+* jspeex/java/org/xiph/speex/LspQuant.java
+* jspeex/java/org/xiph/speex/Ltp.java
+* jspeex/java/org/xiph/speex/Ltp3Tap.java
+* jspeex/java/org/xiph/speex/LtpForcedPitch.java
+* jspeex/java/org/xiph/speex/Misc.java
+* jspeex/java/org/xiph/speex/NbCodec.java
+* jspeex/java/org/xiph/speex/NbDecoder.java
+* jspeex/java/org/xiph/speex/NbEncoder.java
+* jspeex/java/org/xiph/speex/NbLspQuant.java
+* jspeex/java/org/xiph/speex/NoiseSearch.java
+* jspeex/java/org/xiph/speex/OggCrc.java
+* jspeex/java/org/xiph/speex/OggSpeexWriter.java
+* jspeex/java/org/xiph/speex/PcmWaveWriter.java
+* jspeex/java/org/xiph/speex/RawWriter.java
+* jspeex/java/org/xiph/speex/SbCodec.java
+* jspeex/java/org/xiph/speex/SbDecoder.java
+* jspeex/java/org/xiph/speex/SbEncoder.java
+* jspeex/java/org/xiph/speex/SpeexDecoder.java
+* jspeex/java/org/xiph/speex/SpeexEncoder.java
+* jspeex/java/org/xiph/speex/SplitShapeSearch.java
+* jspeex/java/org/xiph/speex/Stereo.java
+* jspeex/java/org/xiph/speex/SubMode.java
+* jspeex/java/org/xiph/speex/VQ.java
+* jspeex/java/org/xiph/speex/Vbr.java
+* jspeex/java/org/xiph/speex/package.html
+* jspeex/test/
+* jspeex/test/TestJSpeexCodec.java
+* jspeex/test/org/
+* jspeex/test/org/xiph/
+* jspeex/test/org/xiph/speex/
+* jspeex/test/org/xiph/speex/TestJSpeex.java
+* jspeex/test/org/xiph/speex/WaveToolbox.java
+* opus/
+* opus/.DS_Store
+* opus/com/
+* opus/com/ibm/
+* opus/com/ibm/cio/
+* opus/com/ibm/cio/opus/
+* opus/com/ibm/cio/opus/OpusDecoder.java
+* opus/com/ibm/cio/opus/WsOpus.java
+* proguard-project.txt
+
+Moved Files:
+------------
+Android Gradle projects use a different directory structure than ADT
+Eclipse projects. Here's how the projects were restructured:
+
+* AndroidManifest.xml => VANISDK/src/main/AndroidManifest.xml
+* assets/ => VANISDK/src/main/assets/
+* jni/ => VANISDK/src/main/jni/
+* libs/armeabi/libjnidispatch.so => VANISDK/src/main/jniLibs/armeabi/libjnidispatch.so
+* libs/armeabi/libopus.so => VANISDK/src/main/jniLibs/armeabi/libopus.so
+* libs/armeabi/libspeex.so => VANISDK/src/main/jniLibs/armeabi/libspeex.so
+* libs/armeabi/libvad.so => VANISDK/src/main/jniLibs/armeabi/libvad.so
+* libs/java_websocket.jar => VANISDK/libs/java_websocket.jar
+* lint.xml => VANISDK/lint.xml
+* res/ => VANISDK/src/main/res/
+* src/ => VANISDK/src/main/java/
+
+Next Steps:
+-----------
+You can now build the project. The Gradle project needs network
+connectivity to download dependencies.
+
+Bugs:
+-----
+If for some reason your project does not build, and you determine that
+it is due to a bug or limitation of the Eclipse to Gradle importer,
+please file a bug at http://b.android.com with category
+Component-Tools.
+
+(This import summary is for your information only, and can be deleted
+after import once you are satisfied with the results.)

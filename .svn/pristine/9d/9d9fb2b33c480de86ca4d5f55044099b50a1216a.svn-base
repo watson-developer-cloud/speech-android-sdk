@@ -1,0 +1,7 @@
+package com.ibm.cio.vanisdk;
+
+import android.app.Application;
+
+public class VaniSDK extends Application {
+
+}

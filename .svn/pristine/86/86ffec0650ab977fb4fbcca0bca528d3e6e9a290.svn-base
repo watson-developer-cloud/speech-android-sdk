@@ -1,0 +1,5 @@
+package com.ibm.cio.vanisdk;
+
+public interface VaniRecorderDelegate {
+	public void onRecordingCompleted(byte[] rawAudioData);
+}

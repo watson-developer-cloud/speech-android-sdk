@@ -1,0 +1,48 @@
+/* ***************************************************************** */
+/*                                                                   */
+/* IBM Confidential                                                  */
+/*                                                                   */
+/* OCO Source Materials                                              */
+/*                                                                   */
+/* Copyright IBM Corp. 2013                                          */
+/*                                                                   */
+/* The source code for this program is not published or otherwise    */
+/* divested of its trade secrets, irrespective of what has been      */
+/* deposited with the U.S. Copyright Office.                         */
+/*                                                                   */
+/* ***************************************************************** */
+package com.ibm.cio.audio;
+
+import android.os.SystemClock;
+
+import com.ibm.cio.opus.WebSocketWriter;
+import com.ibm.cio.util.Logger;
+
+import java.io.IOException;
+import java.io.OutputStream;
+
+/**
+ * JNI Speex encoder.
+ */
+public class VaniJNARawEnc extends VaniJNAEnc {
+	public VaniJNARawEnc() {
+        super();
+        TAG = VaniJNARawEnc.class.getName();
+		Logger.i(TAG, "Construct VaniJNARawEnc");
+	}
+	/* (non-Javadoc)
+	 * @see com.ibm.cio.audio.VaniEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
+	 */
+	public void initEncodeAndWriteHeader(OutputStream out){}
+	/**
+	 * For WebsocketClient
+	 * @param client
+	 * @throws java.io.IOException
+	 */
+	public void initEncoderWithWebSocketClient(VaniWSUploader client) throws IOException{
+//		this.client = client;
+		writer = new WebSocketWriter(client);
+//		writer.writeHeader("");
+
+	}
+}
