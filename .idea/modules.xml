@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/IBM Watson SDK.iml" filepath="$PROJECT_DIR$/IBM Watson SDK.iml" />
-      <module fileurl="file://$PROJECT_DIR$/IBMWatsonSDK/IBMWatsonSDK.iml" filepath="$PROJECT_DIR$/IBMWatsonSDK/IBMWatsonSDK.iml" />
-      <module fileurl="file://$PROJECT_DIR$/WatsonSDKSample/WatsonSDKSample.iml" filepath="$PROJECT_DIR$/WatsonSDKSample/WatsonSDKSample.iml" />
+      <module fileurl="file://$PROJECT_DIR$/WatsonAndroidSpeechSDK.iml" filepath="$PROJECT_DIR$/WatsonAndroidSpeechSDK.iml" />
+      <module fileurl="file://$PROJECT_DIR$/examples/examples.iml" filepath="$PROJECT_DIR$/examples/examples.iml" />
+      <module fileurl="file://$PROJECT_DIR$/speech-android-wrapper/speech-android-wrapper.iml" filepath="$PROJECT_DIR$/speech-android-wrapper/speech-android-wrapper.iml" />
     </modules>
   </component>
 </project>

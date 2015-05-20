@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="jna">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/VANISDK/libs/jna.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

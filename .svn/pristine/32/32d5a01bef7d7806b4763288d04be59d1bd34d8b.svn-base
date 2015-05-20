@@ -1,8 +1,0 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools" tools:context=".MainActivity">
-
-    <item android:id="@+id/action_signin" android:title="@string/MENU_SIGNIN" android:orderInCategory="100" app:showAsAction="never" />
-    <item android:id="@+id/action_settings" android:title="@string/MENU_SETTINGS" android:orderInCategory="100" app:showAsAction="never" />
-    <item android:id="@+id/action_tts" android:title="@string/MENU_TTS" android:orderInCategory="100" app:showAsAction="never" />
-</menu>

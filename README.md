@@ -11,29 +11,28 @@ Table of Contents
 * [Watson Developer Cloud Speech APIs][wdc]
 
     * [Installation](#installation)
-    * [Getting Started](#getting started)
+    * [Getting Started](#Getting started)
 
 Installation
 ------------
 
 **Using the library**
 
-1. Download the [watsonsdk.aar.zip]() and unzip it somewhere convenient
+1. Download the [watsonsdk.aar.zip](https://git.hursley.ibm.com/w3bluemix/WatsonAndroidSpeechSDK/blob/master/IBMWatsonSDK/build/outputs/aar/IBMWatsonSDK-release.aar) and unzip it somewhere convenient
 2. Once unzipped drag the watsonsdk.aar file into your Android Studio project view under the libs folder.
 3. Go to build.gradle file of your app, then set the dependencies as below:
-```
-dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile project(name:'watsonsdk',ext:'aar')
-    compile 'com.android.support:appcompat-v7:22.0.0'
-}
-
-repositories{
-    flatDir{
-        dirs 'libs'
+````
+    dependencies {
+        compile fileTree(dir: 'libs', include: ['*.jar'])
+        compile project(name:'watsonsdk',ext:'aar')
+        compile 'com.android.support:appcompat-v7:22.0.0'
     }
-}
-```
+    repositories{
+        flatDir{
+            dirs 'libs'
+        }
+    }
+````
 4. Clean and run the Android Studio project
 
 Getting started

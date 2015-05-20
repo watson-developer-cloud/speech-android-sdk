@@ -1,2 +1,2 @@
-include ':IBMWatsonSDK'
-include ':WatsonSDKSample'
+include ':speech-android-wrapper'
+include ':examples'
