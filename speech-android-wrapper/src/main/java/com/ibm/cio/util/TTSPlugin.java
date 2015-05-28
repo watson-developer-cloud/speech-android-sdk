@@ -1,21 +1,5 @@
 package com.ibm.cio.util;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.xiph.speex.PcmWaveWriter;
-
 import android.app.Application;
 import android.content.Context;
 import android.media.AudioFormat;
@@ -28,27 +12,45 @@ import android.util.Log;
 import com.ibm.cio.audio.VaniSpeexDec;
 import com.ibm.cio.audio.player.PlayerUtil;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.xiph.speex.PcmWaveWriter;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 public class TTSPlugin extends Application{
 	private static final String TAG = TTSPlugin.class.getName();
 	
 	Context ct;
 	AudioManager am;
-	private String lmcCookie;
 	private String username;
 	private String password;
 	private String content;
 	private String language;
-	private int samplerate;
-	private String outputtype;
+	private int samplerate=48000;
 	private String server;
 	
 	private AudioTrack audioTrack;
 	private MediaPlayer	wavPlayer = null;
-	
-	public int streamId;
-	private String port;
-	
-	
+
 	//private static final int MIN_FRAME_COUNT = 600;
 
 //	public boolean execute(String action, JSONArray arguments) {
@@ -191,56 +193,54 @@ public class TTSPlugin extends Application{
 
 	private void parseParams(String[] arguments){
 		int i = 0;
-		this.lmcCookie = arguments[i++];
 		this.server = arguments[i++];
-		this.port = arguments[i++];
 		this.username = arguments[i++];
 		this.password = arguments[i++];
 		this.content = arguments[i++];
-		this.language = arguments[i++];
-		this.samplerate = Integer.parseInt(arguments[i++]);
-		this.outputtype = arguments[i++];
 	}
 	
 	/**
 	 * Post text data to iTrans server and get returned audio data
-	 * @param lmcCookie
 	 * @param server iTrans server
-	 * @param port
 	 * @param username
 	 * @param password
 	 * @param content
-	 * @param language
-	 * @param samplerate
-	 * @param outputtype
 	 * @return {@link HttpResponse}
 	 * @throws Exception
 	 */
-	public static HttpResponse createPost(String lmcCookie, String server,String port, String username, String password
-			, String content, String language, String samplerate, String outputtype) throws Exception {
-		HttpClient client = new DefaultHttpClient();
-		//client.getState().setCookiePolicy(CookiePolicy.COMPATIBILITY);
-		
-		HttpPost post=null;
-		String url = "https://"+server+ ":" + port +"/itrans/api/synTts";
-//		System.out.println("Will post to " + url);
-		post = new HttpPost(url);
-		post.setHeader("Cookie", lmcCookie);
-		
-		// Add your data
-	    List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-	    nameValuePairs.add(new BasicNameValuePair("username", username));
-	    nameValuePairs.add(new BasicNameValuePair("password", password));
-	    nameValuePairs.add(new BasicNameValuePair("content", content));
-	    nameValuePairs.add(new BasicNameValuePair("language", language));
-	    nameValuePairs.add(new BasicNameValuePair("samplerate", samplerate));
-	    nameValuePairs.add(new BasicNameValuePair("outputtype", outputtype));
-	    nameValuePairs.add(new BasicNameValuePair("timeout", "15000"));
-	    nameValuePairs.add(new BasicNameValuePair("temp", "true"));
-	    
-	    post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-		
-		HttpResponse executed = client.execute(post);
+	public static HttpResponse createPost(String server, String username, String password
+			, String content) throws Exception {
+
+        String url = server;
+
+        //HTTP Post Client
+//		HttpClient client = new DefaultHttpClient();
+//		HttpPost post = new HttpPost(url);
+//		post.setHeader(BasicScheme.authenticate(
+//				new UsernamePasswordCredentials(username, password), "UTF-8",
+//				false));
+//        post.setHeader("Content-Type", "application/x-www-form-urlencoded");
+//		// Add your data
+//	    List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
+//        nameValuePairs.add(new BasicNameValuePair("text", content));
+//        nameValuePairs.add(new BasicNameValuePair("voice", "VoiceEnUsMichael"));
+//		nameValuePairs.add(new BasicNameValuePair("accept", "audio/wav"));
+//	    post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+//
+//		HttpResponse executed = client.execute(post);
+
+        //HTTP GET Client
+        HttpClient httpClient = new DefaultHttpClient();
+        //Add params
+        List<BasicNameValuePair> params = new LinkedList<BasicNameValuePair>();
+        params.add(new BasicNameValuePair("text", content));;
+        params.add(new BasicNameValuePair("voice", "VoiceEnUsMichael"));
+        params.add(new BasicNameValuePair("accept", "audio/wav"));
+        HttpGet httpGet = new HttpGet(url+"?"+ URLEncodedUtils.format(params, "utf-8"));
+        httpGet.setHeader(BasicScheme.authenticate(
+                new UsernamePasswordCredentials(username, password), "UTF-8",
+                false));
+        HttpResponse executed = httpClient.execute(httpGet);
 		
 		return executed;
 	}
@@ -284,26 +284,32 @@ public class TTSPlugin extends Application{
 			
 			HttpResponse post;
 			try {
-				post = createPost(lmcCookie, server, port, username, password, content, language, samplerate+"", outputtype);
+				post = createPost(server,username, password, content);
 		        InputStream is=post.getEntity().getContent();
-		        byte[] pcm = new VaniSpeexDec().decode(is); // Decode SPX stream to PCM
+//                Log.d(TAG,"Data from HTTP Post : "+getStringFromInputStream(is));
+
+//                /*
+//                *For outputtype = SpeeX
+//                **/
+//		        byte[] pcm = new VaniSpeexDec().decode(is); // Decode SPX stream to PCM
 //		        System.out.println("Audio length PCM = " + pcm.length);
-		        audioTrack.write(pcm, 0, pcm.length);
+//		        audioTrack.write(pcm, 0, pcm.length);
 //		        saveWavFile(pcm);
 		        
 				/*
 				 * For outputtype = PCM
-				 * 
-				 * byte[] data = new byte[1024];
+				 * */
+
+//                is.skip(77); // header is 44 but data starts after 77 so skip 77
+                byte[] data = new byte[1024];
 				int length, totalLength = 0;
 				while((length=is.read(data))!=-1) {
 					//os.write(data,0,length);
 					audioTrack.write(data, 0, length);
 					totalLength += length;
-					
 				}
 				is.close();
-				*/
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
@@ -317,6 +323,39 @@ public class TTSPlugin extends Application{
 			}
 		}
 	}
+
+
+    // convert InputStream to String
+    private static String getStringFromInputStream(InputStream is) {
+
+        BufferedReader br = null;
+        StringBuilder sb = new StringBuilder();
+
+        String line;
+        try {
+
+            br = new BufferedReader(new InputStreamReader(is));
+
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return sb.toString();
+
+    }
+
 
 	
 }

@@ -19,6 +19,7 @@ import com.ibm.cio.util.Logger;
 import com.ibm.cio.watsonsdk.SpeechDelegate;
 import com.ibm.cio.watsonsdk.SpeechToText;
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
+import com.ibm.cio.watsonsdk.TextToSpeech;
 
 public class MainActivity extends Activity implements SpeechDelegate, SpeechRecorderDelegate{
 	private static final String TAG = "MainActivity";
@@ -30,7 +31,8 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 	private static String USERNAME = "ivaniapi";
 	private static String PASSWORD = "Zt1xSp33x";
     // WebSocket Service URL
-    private static String BASE_URL_WS = "wss://speech.tap.ibm.com/speech-to-text-beta/api/v1/models/WatsonModel/recognize";
+//    private static String BASE_URL_WS = "wss://speech.tap.ibm.com/speech-to-text-beta/api/v1/models/WatsonModel/recognize";
+	private static String BASE_URL_WS = "https://speech.tap.ibm.com/text-to-speech-beta/api/v1/synthesize";
 
 	// Main UI Thread Handler
 	private Handler handler = null;
@@ -60,11 +62,16 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 	 * Initializing instance of SpeechToText and configuring the rest of parameters
 	 */
 	private void initSpeechRecognition(){
-		SpeechToText.sharedInstance().initWithContext(this.getHost(), this.getApplicationContext());
-        SpeechToText.sharedInstance().setUsername(this.USERNAME);
-        SpeechToText.sharedInstance().setPassword(this.PASSWORD);
-        SpeechToText.sharedInstance().setDelegate(this);
+//		SpeechToText.sharedInstance().initWithContext(this.getHost(), this.getApplicationContext());
+//        SpeechToText.sharedInstance().setUsername(this.USERNAME);
+//        SpeechToText.sharedInstance().setPassword(this.PASSWORD);
+//        SpeechToText.sharedInstance().setDelegate(this);
 //		SpeechToText.sharedInstance().setTimeout(0); // Optional - set the duration for delaying connection closure in millisecond
+
+		TextToSpeech.sharedInstance().initWithContext(this.getHost(), this.getApplicationContext());
+		TextToSpeech.sharedInstance().setUsername(this.USERNAME);
+		TextToSpeech.sharedInstance().setPassword(this.PASSWORD);
+
 	}
 
 
@@ -121,7 +128,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 		imm.hideSoftInputFromWindow(textTTS.getWindowToken(),
                 InputMethodManager.HIDE_NOT_ALWAYS);
 
-//		SpeechToText.sharedInstance().playTtsForString(ttsText);
+		TextToSpeech.sharedInstance().synthesize(ttsText);
 	}
 	
 	public URI getHost(){
