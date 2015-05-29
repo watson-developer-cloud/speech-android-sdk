@@ -37,6 +37,7 @@
 
 package org.xiph.speex;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -199,14 +200,14 @@ public class PcmWaveWriter
   public void close()
     throws IOException 
   {
-    /* update the total file length field from RIFF chunk */
-    raf.seek(4);
-    int fileLength = (int) raf.length() - 8;
-    writeInt(raf, fileLength);
-    
-    /* update the data chunk length size */
-    raf.seek(40);
-    writeInt(raf, size);
+//    /* update the total file length field from RIFF chunk */
+//    raf.seek(4);
+//    int fileLength = (int) raf.length() - 8;
+//    writeInt(raf, fileLength);
+//
+//    /* update the data chunk length size */
+//    raf.seek(40);
+//    writeInt(raf, size);
     
     /* close the output file */
     raf.close(); 
@@ -285,7 +286,165 @@ public class PcmWaveWriter
     raf.write(chkid, 0, chkid.length);
     writeInt(raf, 0);
   }
-  
+
+    /**
+     * Saves PCM data to WAV file
+     * @param pcmdata
+     * : byte array containing the PCM data
+     * @param srate
+     * : Sample rate
+     * @param channel
+     * : no. of channels
+     * @param format
+     * : PCM format (16 bit)
+     * @throws IOException
+     */
+    public byte[] saveWav(byte[] pcmdata, int srate, int channel, int format) {
+
+        byte[] header = new byte[44];
+        byte[] data = pcmdata;
+
+        long totalDataLen = data.length + 36;
+        long bitrate = srate * channel * format;
+
+        header[0] = 'R';
+        header[1] = 'I';
+        header[2] = 'F';
+        header[3] = 'F';
+        header[4] = (byte) (totalDataLen & 0xff);
+        header[5] = (byte) ((totalDataLen >> 8) & 0xff);
+        header[6] = (byte) ((totalDataLen >> 16) & 0xff);
+        header[7] = (byte) ((totalDataLen >> 24) & 0xff);
+        header[8] = 'W';
+        header[9] = 'A';
+        header[10] = 'V';
+        header[11] = 'E';
+        header[12] = 'f';
+        header[13] = 'm';
+        header[14] = 't';
+        header[15] = ' ';
+        header[16] = (byte) format;
+        header[17] = 0;
+        header[18] = 0;
+        header[19] = 0;
+        header[20] = 1;
+        header[21] = 0;
+        header[22] = (byte) channel;
+        header[23] = 0;
+        header[24] = (byte) (srate & 0xff);
+        header[25] = (byte) ((srate >> 8) & 0xff);
+        header[26] = (byte) ((srate >> 16) & 0xff);
+        header[27] = (byte) ((srate >> 24) & 0xff);
+        header[28] = (byte) ((bitrate / 8) & 0xff);
+        header[29] = (byte) (((bitrate / 8) >> 8) & 0xff);
+        header[30] = (byte) (((bitrate / 8) >> 16) & 0xff);
+        header[31] = (byte) (((bitrate / 8) >> 24) & 0xff);
+        header[32] = (byte) ((channel * format) / 8);
+        header[33] = 0;
+        header[34] = 16;
+        header[35] = 0;
+        header[36] = 'd';
+        header[37] = 'a';
+        header[38] = 't';
+        header[39] = 'a';
+        header[40] = (byte) (data.length & 0xff);
+        header[41] = (byte) ((data.length >> 8) & 0xff);
+        header[42] = (byte) ((data.length >> 16) & 0xff);
+        header[43] = (byte) ((data.length >> 24) & 0xff);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
+        try {
+            outputStream.write(header);
+            outputStream.write(data);
+
+        } catch (IOException e) {
+            System.out.println("Error writing data to wav buffer");
+            e.printStackTrace();
+        }
+        return outputStream.toByteArray();
+    }
+
+    /**
+     * Saves PCM data to WAV file
+     * @param pcmdata
+     * : byte array containing the PCM data
+     * @param srate
+     * : Sample rate
+     * @param channel
+     * : no. of channels
+     * @param format
+     * : PCM format (16 bit)
+     * @throws IOException
+     */
+    public void saveWavFile(byte[] pcmdata, int srate, int channel, int format) {
+
+        byte[] header = new byte[44];
+        byte[] data = pcmdata;
+
+        long totalDataLen = data.length + 36;
+        long bitrate = srate * channel * format;
+
+        header[0] = 'R';
+        header[1] = 'I';
+        header[2] = 'F';
+        header[3] = 'F';
+        header[4] = (byte) (totalDataLen & 0xff);
+        header[5] = (byte) ((totalDataLen >> 8) & 0xff);
+        header[6] = (byte) ((totalDataLen >> 16) & 0xff);
+        header[7] = (byte) ((totalDataLen >> 24) & 0xff);
+        header[8] = 'W';
+        header[9] = 'A';
+        header[10] = 'V';
+        header[11] = 'E';
+        header[12] = 'f';
+        header[13] = 'm';
+        header[14] = 't';
+        header[15] = ' ';
+        header[16] = (byte) format;
+        header[17] = 0;
+        header[18] = 0;
+        header[19] = 0;
+        header[20] = 1;
+        header[21] = 0;
+        header[22] = (byte) channel;
+        header[23] = 0;
+        header[24] = (byte) (srate & 0xff);
+        header[25] = (byte) ((srate >> 8) & 0xff);
+        header[26] = (byte) ((srate >> 16) & 0xff);
+        header[27] = (byte) ((srate >> 24) & 0xff);
+        header[28] = (byte) ((bitrate / 8) & 0xff);
+        header[29] = (byte) (((bitrate / 8) >> 8) & 0xff);
+        header[30] = (byte) (((bitrate / 8) >> 16) & 0xff);
+        header[31] = (byte) (((bitrate / 8) >> 24) & 0xff);
+        header[32] = (byte) ((channel * format) / 8);
+        header[33] = 0;
+        header[34] = 16;
+        header[35] = 0;
+        header[36] = 'd';
+        header[37] = 'a';
+        header[38] = 't';
+        header[39] = 'a';
+        header[40] = (byte) (data.length & 0xff);
+        header[41] = (byte) ((data.length >> 8) & 0xff);
+        header[42] = (byte) ((data.length >> 16) & 0xff);
+        header[43] = (byte) ((data.length >> 24) & 0xff);
+
+        try {
+            raf.write(header, 0, 44);
+            raf.write(data);
+            raf.close();
+        } catch (IOException e) {
+            System.out.println("Error writing data to wav file");
+            e.printStackTrace();
+        }
+
+        System.out.println("wrote Wav File");
+
+
+    }
+
+
+
   /**
    * Writes a packet of audio. 
    * @param data audio data

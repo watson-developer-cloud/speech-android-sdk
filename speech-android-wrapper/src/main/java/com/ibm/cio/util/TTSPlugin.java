@@ -6,12 +6,14 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
 
 import com.ibm.cio.audio.VaniSpeexDec;
 import com.ibm.cio.audio.player.PlayerUtil;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -122,12 +124,7 @@ public class TTSPlugin extends Application{
 //		}
 	}
 	
-	private void playWav() {
-		//only welcome, need more implement
-		Log.i(TAG, "Play welcome_8000!");
-//		wavPlayer = MediaPlayer.create(ct, R.raw.welcome_8000);
-//		wavPlayer.start();
-	}
+
 
 	/*
 	private void playWav(JSONArray arguments) {
@@ -256,21 +253,7 @@ public class TTSPlugin extends Application{
 		return baseDir;
 	}
 	
-	void saveWavFile(byte[] d) {
-		PcmWaveWriter wR = new PcmWaveWriter(8000, 1);
-		String fileName = getBaseDir() + "a.wav";
-		try {			
-			wR.open(fileName);
-			wR.writeHeader("by jspeex");
-			wR.writePacket(d, 0, d.length);
-			wR.close();
-			Log.i(TAG, "save file OK");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			Log.d(TAG, "save file FAIL");
-			e.printStackTrace();
-		}
-	}
+
 		
 	/**
 	 * Thread to post text data to iTrans server and play returned audio data 
@@ -286,7 +269,6 @@ public class TTSPlugin extends Application{
 			try {
 				post = createPost(server,username, password, content);
 		        InputStream is=post.getEntity().getContent();
-//                Log.d(TAG,"Data from HTTP Post : "+getStringFromInputStream(is));
 
 //                /*
 //                *For outputtype = SpeeX
@@ -297,18 +279,19 @@ public class TTSPlugin extends Application{
 //		        saveWavFile(pcm);
 		        
 				/*
-				 * For outputtype = PCM
+				 * For outputtype = WAV
 				 * */
 
-//                is.skip(77); // header is 44 but data starts after 77 so skip 77
-                byte[] data = new byte[1024];
-				int length, totalLength = 0;
-				while((length=is.read(data))!=-1) {
-					//os.write(data,0,length);
-					audioTrack.write(data, 0, length);
-					totalLength += length;
-				}
-				is.close();
+                byte[] temp=stripHeaderAndSaveWav(is);
+                audioTrack.write(temp, 0, temp.length);
+
+//                int bytesRead = 0;
+//                int bufferSize = 4096;
+//                byte[] buffer = new byte[bufferSize];
+//                while ((bytesRead = is.read(buffer, 0, bufferSize)) != -1) {
+//                    audioTrack.write(buffer, 0, bytesRead);
+//                }
+//                is.close();
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -324,6 +307,50 @@ public class TTSPlugin extends Application{
 		}
 	}
 
+    private void playWav() {
+        //only welcome, need more implement
+        Log.i(TAG, "Playing Wav file");
+        String fileName = getBaseDir() + "a.wav";
+//		wavPlayer = new MediaPlayer();
+//        wavPlayer.setDataSource(ct,Uri.fromFile(fileName));
+//		wavPlayer.start();
+    }
+
+    public byte[] stripHeaderAndSaveWav(InputStream i){
+
+        byte[] d = new byte[0];
+        try {
+            int headSize=44;
+            int metaDataSize=48;
+            i.skip(headSize+metaDataSize);
+            d = IOUtils.toByteArray(i);
+        } catch (IOException e) {
+            Log.d(TAG,"Error while formatting header");
+        }
+        return saveWav(d);
+        //To save wav file
+//        saveWavFile(d);
+    }
+
+    public byte[] saveWav(byte[] d){
+        PcmWaveWriter wR = new PcmWaveWriter(48000, 1);
+        return wR.saveWav(d, 48000, 1, 16);
+    }
+
+    void saveWavFile(byte[] d) {
+        String fileName = getBaseDir() + "a.wav";
+        try {
+            PcmWaveWriter wR = new PcmWaveWriter(48000, 1);
+            wR.open(fileName);
+            wR.saveWavFile(d,48000,1,16);
+            wR.close();
+            Log.i(TAG, "save file OK");
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            Log.d(TAG, "save file FAIL");
+            e.printStackTrace();
+        }
+    }
 
     // convert InputStream to String
     private static String getStringFromInputStream(InputStream is) {
