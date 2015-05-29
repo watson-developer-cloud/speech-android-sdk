@@ -34,7 +34,7 @@ Installation
 1. Download the [watsonsdk.aar.zip](https://git.hursley.ibm.com/w3bluemix/WatsonAndroidSpeechSDK/blob/master/speech-android-wrapper/build/outputs/aar/watsonsdk.aar.zip) and unzip it somewhere convenient
 2. Once unzipped drag the watsonsdk.aar file into your Android Studio project view under the libs folder.
 3. Go to build.gradle file of your app, then set the dependencies as below:
-````
+```
     dependencies {
         compile fileTree(dir: 'libs', include: ['*.jar'])
         compile project(name:'watsonsdk',ext:'aar')
@@ -45,7 +45,7 @@ Installation
             dirs 'libs'
         }
     }
-````
+```
 4. Clean and run the Android Studio project
 
 #Speech To Text
@@ -97,7 +97,7 @@ Start Audio Transcription
    SpeechToText.sharedInstance().setRecorderDelegate(this);
 ```
 
-**Delegate function to receive messages from the sdk
+**Delegate function to receive messages from the sdk**
 
 ```
 	@Override
