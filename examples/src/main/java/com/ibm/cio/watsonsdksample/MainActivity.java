@@ -24,15 +24,15 @@ import com.ibm.cio.watsonsdk.TextToSpeech;
 public class MainActivity extends Activity implements SpeechDelegate, SpeechRecorderDelegate{
 	private static final String TAG = "MainActivity";
 
-	TextView textResult;
-	TextView textTTS;
-
 	// API credentials
 	private static String USERNAME = "ivaniapi";
 	private static String PASSWORD = "Zt1xSp33x";
-    // WebSocket Service URL
-//    private static String BASE_URL_WS = "wss://speech.tap.ibm.com/speech-to-text-beta/api/v1/models/WatsonModel/recognize";
-	private static String BASE_URL_WS = "https://speech.tap.ibm.com/text-to-speech-beta/api/v1/synthesize";
+    // SDK Service URL
+    private static String STT_URL = "wss://speech.tap.ibm.com/speech-to-text-beta/api";
+	private static String TTS_URL = "https://speech.tap.ibm.com/text-to-speech-beta/api";
+
+	TextView textResult;
+	TextView textTTS;
 
 	// Main UI Thread Handler
 	private Handler handler = null;
@@ -62,13 +62,14 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 	 * Initializing instance of SpeechToText and configuring the rest of parameters
 	 */
 	private void initSpeechRecognition(){
-//		SpeechToText.sharedInstance().initWithContext(this.getHost(), this.getApplicationContext());
-//        SpeechToText.sharedInstance().setUsername(this.USERNAME);
-//        SpeechToText.sharedInstance().setPassword(this.PASSWORD);
-//        SpeechToText.sharedInstance().setDelegate(this);
+		//STT
+		SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext());
+        SpeechToText.sharedInstance().setUsername(this.USERNAME);
+        SpeechToText.sharedInstance().setPassword(this.PASSWORD);
+        SpeechToText.sharedInstance().setDelegate(this);
 //		SpeechToText.sharedInstance().setTimeout(0); // Optional - set the duration for delaying connection closure in millisecond
-
-		TextToSpeech.sharedInstance().initWithContext(this.getHost(), this.getApplicationContext());
+		//TTS
+		TextToSpeech.sharedInstance().initWithContext(this.getHost(TTS_URL), this.getApplicationContext());
 		TextToSpeech.sharedInstance().setUsername(this.USERNAME);
 		TextToSpeech.sharedInstance().setPassword(this.PASSWORD);
 
@@ -121,19 +122,22 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 	 * @param view
 	 */
 	public void playTTS(View view){
+		//Get text from text box
 		textTTS = (TextView) findViewById(R.id.editText_TTS);
 		String ttsText=textTTS.getText().toString();
 		Logger.i(TAG, ttsText);
 		InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 		imm.hideSoftInputFromWindow(textTTS.getWindowToken(),
-                InputMethodManager.HIDE_NOT_ALWAYS);
+				InputMethodManager.HIDE_NOT_ALWAYS);
 
+		//Call the sdk function
+		TextToSpeech.sharedInstance().voices();
 		TextToSpeech.sharedInstance().synthesize(ttsText);
 	}
 	
-	public URI getHost(){
+	public URI getHost(String url){
 		try {
-			return new URI(BASE_URL_WS);
+			return new URI(url);
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}

@@ -675,7 +675,7 @@ public class SpeechToText {
                 header.put("Authorization", auth);
                 Logger.e(TAG, auth);
 
-                uploader = new ChuckWebSocketUploader(encoder, getHostURL().toString(), header);
+                uploader = new ChuckWebSocketUploader(encoder, getHostURL().toString()+"/v1/models/WatsonModel/recognize", header);
             } catch (URISyntaxException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();

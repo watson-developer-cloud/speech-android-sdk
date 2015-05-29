@@ -11,14 +11,27 @@ Table of Contents
 * [Watson Developer Cloud Speech APIs][wdc]
 
     * [Installation](#installation)
-    * [Getting Started](#Getting started)
+
+    * [Speech To Text](#speech-to-text)
+        * [Implement the delegates](#implement-the-speechdelegate-and-speechrecorderdelegate-in-the-mainactivity)
+    	* [Instantiate the SpeechToText instance](#instantiate-the-speechtotext-instance)
+    	* [List supported models](#get-a-list-of-models-supported-by-the-service)
+    	* [Get model details](#get-details-of-a-particular-model)
+    	* [Start Audio Transcription](#start-audio-transcription)
+    	* [End Audio Transcription](#end-audio-transcription)
+    	* [Speech power levels](#receive-speech-power-levels-during-the-recognize)
+
+	* [Text To Speech](#text-to-speech)
+    	* [Instantiate the TextToSpeech instance](#instantiate-the-texttospeech-instance)
+    	* [List supported voices](#get-a-list-of-voices-supported-by-the-service)
+    	* [Generate and play audio](#generate-and-play-audio)
 
 Installation
 ------------
 
 **Using the library**
 
-1. Download the [watsonsdk.aar.zip](https://git.hursley.ibm.com/w3bluemix/WatsonAndroidSpeechSDK/blob/master/IBMWatsonSDK/build/outputs/aar/IBMWatsonSDK-release.aar) and unzip it somewhere convenient
+1. Download the [watsonsdk.aar.zip](https://git.hursley.ibm.com/w3bluemix/WatsonAndroidSpeechSDK/blob/master/speech-android-wrapper/build/outputs/aar/watsonsdk.aar.zip) and unzip it somewhere convenient
 2. Once unzipped drag the watsonsdk.aar file into your Android Studio project view under the libs folder.
 3. Go to build.gradle file of your app, then set the dependencies as below:
 ````
@@ -35,46 +48,57 @@ Installation
 ````
 4. Clean and run the Android Studio project
 
-Getting started
---------------
+#Speech To Text
+===============
 
-**Implement the SpeechDelegate and SpeechRecorderDelgate in the MainActivity
+Implement the SpeechDelegate and SpeechRecorderDelgate in the MainActivity
+--------------------------------------------------------------------------
+
 These delgates implement the callbacks when a response from the server is recieved or when the recording is completed.
-```
-public class MainActivity extends Activity implements SpeechDelegate, SpeechRecorderDelegate{}
 
 ```
-**Instantiate the SpeechToText shared instance with the appplication context and the host URL**
+   public class MainActivity extends Activity implements SpeechDelegate, SpeechRecorderDelegate{}
 ```
-SpeechToText.sharedInstance().initWithContext(this.getHost(), this.getApplicationContext());
+
+Instantiate the SpeechToText instance
+-------------------------------------
+
+```
+   SpeechToText.sharedInstance().initWithContext(this.getHost(), this.getApplicationContext());
 ```
 
 **Set the Credentials and the delegate**
-```
-SpeechToText.sharedInstance().setUsername(this.USERNAME);
-SpeechToText.sharedInstance().setPassword(this.PASSWORD);
-SpeechToText.sharedInstance().setDelegate(this);
-```
-
-**Get a list of models supported by the service**
 
 ```
-ToDo
+   SpeechToText.sharedInstance().setUsername(this.USERNAME);
+   SpeechToText.sharedInstance().setPassword(this.PASSWORD);
+   SpeechToText.sharedInstance().setDelegate(this);
 ```
 
+Get a list of models supported by the service
+------------------------------
 
-**Get details of a particular model**
 ```
-ToDo
-```
-
-**Start Audio Transcription**
-```
-SpeechToText.sharedInstance().recognize();
-SpeechToText.sharedInstance().setRecorderDelegate(this);
+   ToDo
 ```
 
-**Delegate function to recieve messages from the sdk
+Get details of a particular model
+------------------------------
+
+```
+   ToDo
+```
+
+Start Audio Transcription
+------------------------------
+
+```
+   SpeechToText.sharedInstance().recognize();
+   SpeechToText.sharedInstance().setRecorderDelegate(this);
+```
+
+**Delegate function to receive messages from the sdk
+
 ```
 	@Override
 	public void receivedMessage(int code, QueryResult result) {
@@ -94,18 +118,52 @@ SpeechToText.sharedInstance().setRecorderDelegate(this);
 	
 ```
 
-**End Audio Transcription**
+End Audio Transcription
+------------------------------
 
-By default the SDK uses Voice Activated Detection (VAD) to detect when a user has stopped speaking, this can be disabled with [        SpeechToText.sharedInstance().setUseVAD(false);]
-```
-SpeechRecognition.sharedInstance().stopRecording();
-```
-
-
-**Receive speech power levels during the recognize**
+By default the SDK uses Voice Activated Detection (VAD) to detect when a user has stopped speaking, this can be disabled with [SpeechToText.sharedInstance().setUseVAD(false);]
 
 ```
-ToDo
+   SpeechRecognition.sharedInstance().stopRecording();
+```
+
+Receive speech power levels during the recognize
+------------------------------
+
+```
+   ToDo
+```
+
+
+Text To Speech
+==============
+
+Instantiate the TextToSpeech instance
+------------------------------
+
+```
+   TextToSpeech.sharedInstance().initWithContext(this.getHost(TTS_URL), this.getApplicationContext());
+```
+
+**Set the Credentials**
+
+```
+   TextToSpeech.sharedInstance().setUsername(this.USERNAME);
+   TextToSpeech.sharedInstance().setPassword(this.PASSWORD);
+```
+
+Get a list of voices supported by the service
+------------------------------
+
+```
+   TextToSpeech.sharedInstance().voices();
+```
+
+Generate and play audio
+------------------------------
+
+```
+  TextToSpeech.sharedInstance().synthesize(ttsText);
 ```
 
 Common issues
