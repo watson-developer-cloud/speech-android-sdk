@@ -16,6 +16,7 @@ import android.widget.TextView;
 
 import com.ibm.cio.dto.QueryResult;
 import com.ibm.cio.util.Logger;
+import com.ibm.cio.util.TTSPlugin;
 import com.ibm.cio.watsonsdk.SpeechDelegate;
 import com.ibm.cio.watsonsdk.SpeechToText;
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
@@ -54,6 +55,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         //Initialize the speech service
 		this.initSpeechRecognition();
 
+//		new TTSPlugin().test();
 		handler = new Handler();
 	}
 
