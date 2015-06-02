@@ -30,18 +30,17 @@ public class OpusDecoder {
 
     public OpusDecoder(){
 
-
     }
 
     public static ShortBuffer decode(List<ByteBuffer> packets) {
         IntBuffer error = IntBuffer.allocate(4);
-        PointerByReference opusDecoder = JNAOpus.INSTANCE.opus_decoder_create(48000, 1, error);
+        PointerByReference opusDecoder = JNAOpus.INSTANCE.opus_decoder_create(8000, 1, error);
 
         ShortBuffer shortBuffer = ShortBuffer.allocate(1024 * 1024);
         for (ByteBuffer dataBuffer : packets) {
             byte[] transferedBytes = new byte[dataBuffer.remaining()];
             dataBuffer.get(transferedBytes);
-            int decoded = JNAOpus.INSTANCE.opus_decode(opusDecoder, transferedBytes, transferedBytes.length, shortBuffer, 480, 0);
+            int decoded = JNAOpus.INSTANCE.opus_decode(opusDecoder, transferedBytes, transferedBytes.length, shortBuffer, 80, 0);
             shortBuffer.position(shortBuffer.position() + decoded);
         }
         shortBuffer.flip();
