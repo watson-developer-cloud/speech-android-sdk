@@ -28,6 +28,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 	// API credentials
 	private static String USERNAME = "ivaniapi";
 	private static String PASSWORD = "Zt1xSp33x";
+	
     // SDK Service URL
     private static String STT_URL = "wss://speech.tap.ibm.com/speech-to-text-beta/api";
 	private static String TTS_URL = "https://speech.tap.ibm.com/text-to-speech-beta/api";
