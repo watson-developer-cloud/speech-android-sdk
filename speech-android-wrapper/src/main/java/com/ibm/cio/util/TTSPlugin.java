@@ -8,10 +8,13 @@ import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
 import android.util.Log;
 
+import com.ibm.cio.audio.VaniOpusDec;
 import com.ibm.cio.audio.VaniSpeexDec;
 import com.ibm.cio.audio.player.PlayerUtil;
+import com.ibm.cio.opus.OpusDecoder;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
@@ -29,23 +32,36 @@ import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.xiph.speex.PcmWaveWriter;
 
+
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.util.ArrayList;
+
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
+
 import java.util.LinkedList;
 import java.util.List;
 
 public class TTSPlugin extends Application{
 	private static final String TAG = TTSPlugin.class.getName();
-	
+
+	public static final String CODEC_WAV = "audio/wav";
+	public static final String CODEC_OPUS = "audio/opus";
+
 	Context ct;
 	AudioManager am;
 	private String username;
 	private String password;
 	private String content;
+	private String codec;
+	private Handler decodeHandler;
 	private String language;
 	private int samplerate=48000;
 	private String server;
@@ -54,6 +70,65 @@ public class TTSPlugin extends Application{
 	private MediaPlayer	wavPlayer = null;
 
 	//private static final int MIN_FRAME_COUNT = 600;
+
+
+	public TTSPlugin(){
+		this.codec = CODEC_WAV;
+		this.decodeHandler = new Handler();
+	}
+
+	public void setCodec(String codec){
+		this.codec = codec;
+	}
+
+	public void test(){
+		new Thread(){
+			@Override
+			public void run() {
+				_test();
+			}
+		}.start();
+	}
+
+	private void _test(){
+		File file = new File(getBaseDir()+"Watson.opus");
+		try {
+			FileInputStream fis = new FileInputStream(file);
+			byte[] buffer = new byte[fis.available()];
+			fis.read(buffer);
+			Logger.e(TAG, "Original audio.length=" + buffer.length);
+			VaniOpusDec dec = new VaniOpusDec();
+
+			byte[] audio = dec.decodeOggBytes(buffer);
+
+			int bufferSize = AudioTrack.getMinBufferSize(samplerate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
+					samplerate,
+					AudioFormat.CHANNEL_OUT_MONO,
+					AudioFormat.ENCODING_PCM_16BIT,
+					bufferSize,
+					AudioTrack.MODE_STREAM);
+			audioTrack.play();
+
+			Logger.e(TAG, "Decoded audio.length="+audio.length);
+			audioTrack.write(audio, 0, audio.length);
+
+			fis.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	private byte[] ShortToByte_Twiddle_Method(final short[] input) {
+		final int len = input.length;
+		final byte[] buffer = new byte[len * 2];
+		for (int i = 0; i < len; i++) {
+			buffer[(i * 2) + 1] = (byte) (input[i]);
+			buffer[(i * 2)] = (byte) (input[i] >> 8);
+		}
+		return buffer;
+	}
 
 //	public boolean execute(String action, JSONArray arguments) {
 //
@@ -205,26 +280,8 @@ public class TTSPlugin extends Application{
 	 * @return {@link HttpResponse}
 	 * @throws Exception
 	 */
-	public static HttpResponse createPost(String server, String username, String password
-			, String content) throws Exception {
-
+	public static HttpResponse createPost(String server, String username, String password, String content, String codec) throws Exception {
         String url = server;
-
-        //HTTP Post Client
-//		HttpClient client = new DefaultHttpClient();
-//		HttpPost post = new HttpPost(url);
-//		post.setHeader(BasicScheme.authenticate(
-//				new UsernamePasswordCredentials(username, password), "UTF-8",
-//				false));
-//        post.setHeader("Content-Type", "application/x-www-form-urlencoded");
-//		// Add your data
-//	    List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
-//        nameValuePairs.add(new BasicNameValuePair("text", content));
-//        nameValuePairs.add(new BasicNameValuePair("voice", "VoiceEnUsMichael"));
-//		nameValuePairs.add(new BasicNameValuePair("accept", "audio/wav"));
-//	    post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-//
-//		HttpResponse executed = client.execute(post);
 
         //HTTP GET Client
         HttpClient httpClient = new DefaultHttpClient();
@@ -232,13 +289,11 @@ public class TTSPlugin extends Application{
         List<BasicNameValuePair> params = new LinkedList<BasicNameValuePair>();
         params.add(new BasicNameValuePair("text", content));;
         params.add(new BasicNameValuePair("voice", "VoiceEnUsMichael"));
-        params.add(new BasicNameValuePair("accept", "audio/wav"));
+        params.add(new BasicNameValuePair("accept", codec));
         HttpGet httpGet = new HttpGet(url+"?"+ URLEncodedUtils.format(params, "utf-8"));
-        httpGet.setHeader(BasicScheme.authenticate(
-                new UsernamePasswordCredentials(username, password), "UTF-8",
-                false));
+        httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(username, password), "UTF-8", false));
         HttpResponse executed = httpClient.execute(httpGet);
-		
+
 		return executed;
 	}
 	
@@ -267,8 +322,8 @@ public class TTSPlugin extends Application{
 			
 			HttpResponse post;
 			try {
-				post = createPost(server,username, password, content);
-		        InputStream is=post.getEntity().getContent();
+				post = createPost(server, username, password, content, codec);
+		        InputStream is = post.getEntity().getContent();
 
 //                /*
 //                *For outputtype = SpeeX
@@ -282,8 +337,18 @@ public class TTSPlugin extends Application{
 				 * For outputtype = WAV
 				 * */
 
-                byte[] temp=stripHeaderAndSaveWav(is);
-                audioTrack.write(temp, 0, temp.length);
+				if(codec == CODEC_WAV) {
+//					byte[] temp = stripHeaderAndSaveWav(is);
+					byte[] temp = stripHeader(is);
+					audioTrack.write(temp, 0, temp.length);
+				}
+				else if(codec == CODEC_OPUS){
+//					File file = new File(getBaseDir()+"Watson.opus");
+//					file.delete();
+//					RandomAccessFile raf = new RandomAccessFile(file, "rw");
+//					raf.write(IOUtils.toByteArray(is));
+					// TODO
+				}
 
 //                int bytesRead = 0;
 //                int bufferSize = 4096;
@@ -305,9 +370,11 @@ public class TTSPlugin extends Application{
 					
 			}
 		}
+
 	}
 
-    private void playWav() {
+
+	private void playWav() {
         //only welcome, need more implement
         Log.i(TAG, "Playing Wav file");
         String fileName = getBaseDir() + "a.wav";
@@ -315,6 +382,19 @@ public class TTSPlugin extends Application{
 //        wavPlayer.setDataSource(ct,Uri.fromFile(fileName));
 //		wavPlayer.start();
     }
+
+	public byte[] stripHeader(InputStream i){
+		byte[] d = new byte[0];
+		try {
+			int headSize=44;
+			int metaDataSize=48;
+			i.skip(headSize+metaDataSize);
+			d = IOUtils.toByteArray(i);
+		} catch (IOException e) {
+			Log.d(TAG,"Error while formatting header");
+		}
+		return d;
+	}
 
     public byte[] stripHeaderAndSaveWav(InputStream i){
 
