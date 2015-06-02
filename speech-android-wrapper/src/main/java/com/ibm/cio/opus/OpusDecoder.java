@@ -30,7 +30,6 @@ public class OpusDecoder {
 
     public OpusDecoder(){
 
-
     }
 
     public static ShortBuffer decode(List<ByteBuffer> packets) {
