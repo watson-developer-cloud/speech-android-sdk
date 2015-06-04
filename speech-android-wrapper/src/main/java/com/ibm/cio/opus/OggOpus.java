@@ -9,6 +9,6 @@ public class OggOpus {
 
     static {
         System.loadLibrary("oggopus");
-        Logger.e(TAG, "Opus decoder loaded...");
+        Logger.e(TAG, "OggOpus library is loaded...");
     }
 }
