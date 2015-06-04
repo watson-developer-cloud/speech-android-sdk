@@ -2,13 +2,13 @@ package com.ibm.cio.opus;
 
 import com.ibm.cio.util.Logger;
 
-public class OpusDecoder {
-    private static final String TAG = OpusDecoder.class.getSimpleName().toString();
+public class OggOpus {
+    private static final String TAG = OggOpus.class.getSimpleName().toString();
 
     public static native int decode( String s, String o, int srate );
 
     static {
-        System.loadLibrary("OpusDecode");
+        System.loadLibrary("oggopus");
         Logger.e(TAG, "Opus decoder loaded...");
     }
 }

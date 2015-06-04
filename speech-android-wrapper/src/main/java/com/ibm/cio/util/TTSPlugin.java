@@ -11,7 +11,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import com.ibm.cio.audio.player.PlayerUtil;
-import com.ibm.cio.opus.OpusDecoder;
+import com.ibm.cio.opus.OggOpus;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
@@ -294,7 +294,7 @@ public class TTSPlugin extends Application{
 					RandomAccessFile inRaf = new RandomAccessFile(inFile, "rw");
 
 					inRaf.write(IOUtils.toByteArray(is));
-					OpusDecoder.decode(inFilePath, outFilePath, samplerate);
+					OggOpus.decode(inFilePath, outFilePath, samplerate);
 					RandomAccessFile outRaf = new RandomAccessFile(outFile, "r");
 
 					temp = new byte[(int)outRaf.length()];
