@@ -285,7 +285,7 @@ public class TTSPlugin extends Application{
 				}
 				else if(codec == CODEC_OPUS){
 					String inFilePath = getBaseDir()+"Watson.opus";
-					String outFilePath = getBaseDir()+"Watson.wav";
+					String outFilePath = getBaseDir()+"Watson.pcm";
 					File inFile = new File(inFilePath);
 					File outFile = new File(outFilePath);
 					outFile.deleteOnExit();
@@ -295,7 +295,7 @@ public class TTSPlugin extends Application{
 
 					inRaf.write(IOUtils.toByteArray(is));
 					OpusDecoder.decode(inFilePath, outFilePath, samplerate);
-					RandomAccessFile outRaf = new RandomAccessFile(outFile, "rw");
+					RandomAccessFile outRaf = new RandomAccessFile(outFile, "r");
 
 					temp = new byte[(int)outRaf.length()];
 
@@ -312,7 +312,7 @@ public class TTSPlugin extends Application{
 //                while ((bytesRead = is.read(buffer, 0, bufferSize)) != -1) {
 //                    audioTrack.write(buffer, 0, bytesRead);
 //                }
-//                is.close();
+                is.close();
 
 			} catch (Exception e) {
 				e.printStackTrace();
