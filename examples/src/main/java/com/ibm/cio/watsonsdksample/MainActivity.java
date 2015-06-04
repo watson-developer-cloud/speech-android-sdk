@@ -56,7 +56,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         //Initialize the speech service
 		this.initSpeechRecognition();
 
-//		new TTSPlugin().test();
 		handler = new Handler();
 	}
 

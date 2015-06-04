@@ -56,7 +56,7 @@
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="10dp"
         android:ems="10"
-        android:text="Enter TTS text"
+        android:text="Hi, the Watson SDK is ready to use."
         android:textSize="11dp" />
 
     <Button

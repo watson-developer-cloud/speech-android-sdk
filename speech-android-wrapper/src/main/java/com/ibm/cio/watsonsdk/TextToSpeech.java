@@ -72,6 +72,7 @@ public class TextToSpeech {
 //		}
         try {
             ttsPlugin= new TTSPlugin();
+            ttsPlugin.setCodec(TTSPlugin.CODEC_OPUS);
             ttsPlugin.tts(Arguments);
         } catch (Exception e) {
             // TODO Auto-generated catch block

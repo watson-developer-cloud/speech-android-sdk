@@ -6,26 +6,19 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
 
-import com.ibm.cio.audio.VaniOpusDec;
-import com.ibm.cio.audio.VaniSpeexDec;
 import com.ibm.cio.audio.player.PlayerUtil;
 import com.ibm.cio.opus.OpusDecoder;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
@@ -43,8 +36,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -61,7 +52,6 @@ public class TTSPlugin extends Application{
 	private String password;
 	private String content;
 	private String codec;
-	private Handler decodeHandler;
 	private String language;
 	private int samplerate=48000;
 	private String server;
@@ -74,61 +64,12 @@ public class TTSPlugin extends Application{
 
 	public TTSPlugin(){
 		this.codec = CODEC_WAV;
-		this.decodeHandler = new Handler();
 	}
 
 	public void setCodec(String codec){
 		this.codec = codec;
 	}
 
-	public void test(){
-		new Thread(){
-			@Override
-			public void run() {
-				_test();
-			}
-		}.start();
-	}
-
-	private void _test(){
-		File file = new File(getBaseDir()+"Watson.opus");
-		try {
-			FileInputStream fis = new FileInputStream(file);
-			byte[] buffer = new byte[fis.available()];
-			fis.read(buffer);
-			Logger.e(TAG, "Original audio.length=" + buffer.length);
-			VaniOpusDec dec = new VaniOpusDec();
-
-			byte[] audio = dec.decodeOggBytes(buffer);
-
-			int bufferSize = AudioTrack.getMinBufferSize(samplerate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
-			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
-					samplerate,
-					AudioFormat.CHANNEL_OUT_MONO,
-					AudioFormat.ENCODING_PCM_16BIT,
-					bufferSize,
-					AudioTrack.MODE_STREAM);
-			audioTrack.play();
-
-			Logger.e(TAG, "Decoded audio.length="+audio.length);
-			audioTrack.write(audio, 0, audio.length);
-
-			fis.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	private byte[] ShortToByte_Twiddle_Method(final short[] input) {
-		final int len = input.length;
-		final byte[] buffer = new byte[len * 2];
-		for (int i = 0; i < len; i++) {
-			buffer[(i * 2) + 1] = (byte) (input[i]);
-			buffer[(i * 2)] = (byte) (input[i] >> 8);
-		}
-		return buffer;
-	}
 
 //	public boolean execute(String action, JSONArray arguments) {
 //
@@ -336,18 +277,33 @@ public class TTSPlugin extends Application{
 				/*
 				 * For outputtype = WAV
 				 * */
-
+				byte[] temp;
 				if(codec == CODEC_WAV) {
-//					byte[] temp = stripHeaderAndSaveWav(is);
-					byte[] temp = stripHeader(is);
+//					temp = stripHeaderAndSaveWav(is);
+					temp = stripHeader(is);
 					audioTrack.write(temp, 0, temp.length);
 				}
 				else if(codec == CODEC_OPUS){
-//					File file = new File(getBaseDir()+"Watson.opus");
-//					file.delete();
-//					RandomAccessFile raf = new RandomAccessFile(file, "rw");
-//					raf.write(IOUtils.toByteArray(is));
-					// TODO
+					String inFilePath = getBaseDir()+"Watson.opus";
+					String outFilePath = getBaseDir()+"Watson.wav";
+					File inFile = new File(inFilePath);
+					File outFile = new File(outFilePath);
+					outFile.deleteOnExit();
+					inFile.deleteOnExit();
+
+					RandomAccessFile inRaf = new RandomAccessFile(inFile, "rw");
+
+					inRaf.write(IOUtils.toByteArray(is));
+					OpusDecoder.decode(inFilePath, outFilePath, samplerate);
+					RandomAccessFile outRaf = new RandomAccessFile(outFile, "rw");
+
+					temp = new byte[(int)outRaf.length()];
+
+					int outLength = outRaf.read(temp);
+
+					audioTrack.write(temp, 0, temp.length);
+					inRaf.close();
+					outRaf.close();
 				}
 
 //                int bytesRead = 0;
