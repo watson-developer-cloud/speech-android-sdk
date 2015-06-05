@@ -62,7 +62,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
      * @throws URISyntaxException
      */
     public ChuckWebSocketUploader(VaniEncoder encoder, String serverURL, Map<String, String> header) throws URISyntaxException {
-        super( new URI(serverURL), new Draft_17(), header);
+        super(new URI(serverURL), new Draft_17(), header);
 //		super( new URI(serverURL), new Draft_17());
         Logger.i(TAG, "### New ChuckWebSocketUploader ###");
         Logger.d(TAG, serverURL);
@@ -86,7 +86,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
         }};
         SSLContext sslContext = null;
         sslContext = SSLContext.getInstance( "TLS" );
-        sslContext.init( null, certs, new java.security.SecureRandom() );
+        sslContext.init(null, certs, new java.security.SecureRandom());
         this.setWebSocketFactory(new DefaultSSLWebSocketClientFactory(sslContext));
     }
     /**
@@ -325,13 +325,14 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
     }
 
     public void stop(){
-        this.upload("STOP"); // Close streaming
+        Logger.w(TAG, "Sending 0 byte to stop the recognition...");
+        byte[] stopData = new byte[0];
+        this.upload(stopData); // Close streaming
     }
 
     @Override
     public void close() {
         this.stop();
-        super.close();
     }
 
     @Override
@@ -364,17 +365,17 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
      */
     @Override
     public void onMessage(String message) {
-        Log.d(TAG+":onMessage", message);
-        String parsedData="";
-        parsedData=this.transcript=parseMessage(message);
-        ;
-//		this.transcript=parseMessage(message);
-//		this.transcript = message;
+        Log.d(TAG + ":onMessage", message);
+        String parsedData = parseMessage(message);
         // Send instant message to the delegate
         if (parsedData.equals("JSONerror")) {
             Log.d(TAG, "Has JSON error so not sending the result");
-        }else{
-            this.transcript=parsedData;
+        }
+        else if(parsedData.equals("")){
+            Log.d(TAG, "Empty transcription, ignoring...");
+        }
+        else{
+            this.transcript = parsedData;
             this.sendMessage(SpeechDelegate.MESSAGE);
         }
     }
@@ -408,9 +409,9 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
 
             if(jObj.has("state")){
                 //if has status
-                Log.d(TAG, "Found JSON status ");
+                Log.d(TAG, "Found JSON status: "+ jObj.getString("state"));
 //				result="state: "+jObj.getString("state");
-                result="";
+//                result="";
 
             }else if(jObj.has("results")){
                 //if has result
@@ -428,7 +429,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
                             result=obj1.getString("transcript");
                         }
                         //close connection
-                        stop();
+                        super.close();
                     }else{
                         //get transcript
                         JSONArray jArr1 = obj.getJSONArray("alternatives");
