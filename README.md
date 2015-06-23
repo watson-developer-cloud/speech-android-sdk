@@ -37,7 +37,7 @@ Installation
 ```
     dependencies {
         compile fileTree(dir: 'libs', include: ['*.jar'])
-        compile project(name:'watsonsdk',ext:'aar')
+        compile (name:'watsonsdk',ext:'aar')
         compile 'com.android.support:appcompat-v7:22.0.0'
     }
     repositories{
