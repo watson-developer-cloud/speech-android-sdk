@@ -40,7 +40,7 @@ import java.io.RandomAccessFile;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TTSPlugin extends Application{
+public class TTSPlugin extends Application {
 	private static final String TAG = TTSPlugin.class.getName();
 
 	public static final String CODEC_WAV = "audio/wav";
@@ -50,6 +50,8 @@ public class TTSPlugin extends Application{
 	AudioManager am;
 	private String username;
 	private String password;
+    private String token;
+    private String voice;
 	private String content;
 	private String codec;
 	private String language;
@@ -61,7 +63,6 @@ public class TTSPlugin extends Application{
 
 	//private static final int MIN_FRAME_COUNT = 600;
 
-
 	public TTSPlugin(){
 		this.codec = CODEC_WAV;
 	}
@@ -70,51 +71,6 @@ public class TTSPlugin extends Application{
 		this.codec = codec;
 	}
 
-
-//	public boolean execute(String action, JSONArray arguments) {
-//
-//		ct = getApplicationContext();
-//		am = (AudioManager) ct.getSystemService(Context.AUDIO_SERVICE);
-//		System.out.println("Call TTSPlugin, ringtone mode: " + am.getRingerMode() + "|ring volume: " + am.getStreamVolume(AudioManager.STREAM_RING));
-//		
-//		if (am.getRingerMode() == AudioManager.RINGER_MODE_NORMAL) {
-//			if (action.equals("tts")) {
-////				if (am.getStreamVolume(AudioManager.STREAM_RING) != 0) {  // Check if phone in vibrate/silent mode
-//					try {
-//						tts(arguments);
-//					} catch (Exception e) {
-//						e.printStackTrace(); 
-//						//result = new PluginResult(PluginResult.Status.ERROR, e.getMessage());
-//					}
-////				}
-//				return true;
-//			}  
-//			if (action.equals("playWav")) {
-////				if (am.getStreamVolume(AudioManager.STREAM_RING) != 0) { // Check if phone in vibrate/silent mode
-//
-//				Thread playWavthread = new Thread()
-//			    {
-//						public void run() {
-//							// TODO Auto-generated method stub
-//							playWav();
-//			
-//						}
-//			    };
-//			    playWavthread.start();
-//
-////				}
-//				return true;
-//			}
-//		}
-//		
-//		if (action.equals("stopAudioPlayer")) {
-//			stopAudioPlayer(arguments);
-//			return true;
-//		}
-//		
-//		return false;
-//	}
-	
 	private void stopAudioPlayer(JSONArray arguments) {
 		Log.i(TAG, "stop all AudioPlayer");
 		//stop welcome
@@ -184,7 +140,7 @@ public class TTSPlugin extends Application{
 		int bufferSize = AudioTrack.getMinBufferSize(samplerate, AudioFormat.CHANNEL_OUT_MONO,
 				AudioFormat.ENCODING_PCM_16BIT);
 		
-		System.out.println("call tts, construct AudioTrack, sampleRate = " + samplerate + ", bufferSize="+bufferSize);
+        Log.i(TAG, "call tts, construct AudioTrack, sampleRate = " + samplerate + ", bufferSize=" + bufferSize);
 		
 		synchronized (this) {
 			audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
@@ -193,7 +149,7 @@ public class TTSPlugin extends Application{
 					AudioFormat.ENCODING_PCM_16BIT,
 					bufferSize,
 					AudioTrack.MODE_STREAM);
-			System.out.println("tts after new AudioTrack: " + audioTrack);
+            Log.i(TAG, "tts after new AudioTrack: " + audioTrack);
 			// Start playback
 			if (audioTrack != null)
 				audioTrack.play();
@@ -209,10 +165,12 @@ public class TTSPlugin extends Application{
 		this.server = arguments[i++];
 		this.username = arguments[i++];
 		this.password = arguments[i++];
+        this.voice = arguments[i++];
 		this.content = arguments[i++];
+        this.token = arguments[i++];
 	}
-	
-	/**
+
+    /**
 	 * Post text data to iTrans server and get returned audio data
 	 * @param server iTrans server
 	 * @param username
@@ -221,18 +179,26 @@ public class TTSPlugin extends Application{
 	 * @return {@link HttpResponse}
 	 * @throws Exception
 	 */
-	public static HttpResponse createPost(String server, String username, String password, String content, String codec) throws Exception {
+	public static HttpResponse createPost(String server, String username, String password, String token, String content, String voice, String codec) throws Exception {
         String url = server;
 
         //HTTP GET Client
         HttpClient httpClient = new DefaultHttpClient();
         //Add params
         List<BasicNameValuePair> params = new LinkedList<BasicNameValuePair>();
-        params.add(new BasicNameValuePair("text", content));;
-        params.add(new BasicNameValuePair("voice", "VoiceEnUsMichael"));
+        params.add(new BasicNameValuePair("text", content));
+        params.add(new BasicNameValuePair("voice", voice));
         params.add(new BasicNameValuePair("accept", codec));
         HttpGet httpGet = new HttpGet(url+"?"+ URLEncodedUtils.format(params, "utf-8"));
-        httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(username, password), "UTF-8", false));
+        // use token based authentication if possible, otherwise Basic Authentication will be used
+        if (token != null) {
+            Log.d(TAG, "using token based authentication");
+            httpGet.setHeader("X-Watson-Authorization-Token",token);
+        } else {
+            Log.d(TAG, "using basic authentication");
+            httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(username, password), "UTF-8",false));
+        }
+        //httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(username, password), "UTF-8", false));
         HttpResponse executed = httpClient.execute(httpGet);
 
 		return executed;
@@ -263,7 +229,7 @@ public class TTSPlugin extends Application{
 			
 			HttpResponse post;
 			try {
-				post = createPost(server, username, password, content, codec);
+				post = createPost(server, username, password, token, content, voice, codec);
 		        InputStream is = post.getEntity().getContent();
 
 //                /*
@@ -302,6 +268,8 @@ public class TTSPlugin extends Application{
 					int outLength = outRaf.read(temp);
 
 					audioTrack.write(temp, 0, temp.length);
+                    Log.i(TAG, "bytes written: " + temp.length);
+
 					inRaf.close();
 					outRaf.close();
 				}
@@ -317,18 +285,15 @@ public class TTSPlugin extends Application{
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
-				System.out.println("call stop audioTrack");
+                Log.i(TAG, "call stop audioTrack");
 				if (audioTrack.getState() != AudioTrack.STATE_UNINITIALIZED) {
 //					audioTrack.stop();
 					audioTrack.release();
 //					System.out.println("tts after release: " + audioTrack + ", state: " + audioTrack.getState());
 				}
-					
 			}
 		}
-
 	}
-
 
 	private void playWav() {
         //only welcome, need more implement
@@ -352,7 +317,7 @@ public class TTSPlugin extends Application{
 		return d;
 	}
 
-    public byte[] stripHeaderAndSaveWav(InputStream i){
+    public byte[] stripHeaderAndSaveWav(InputStream i) {
 
         byte[] d = new byte[0];
         try {
@@ -387,38 +352,4 @@ public class TTSPlugin extends Application{
             e.printStackTrace();
         }
     }
-
-    // convert InputStream to String
-    private static String getStringFromInputStream(InputStream is) {
-
-        BufferedReader br = null;
-        StringBuilder sb = new StringBuilder();
-
-        String line;
-        try {
-
-            br = new BufferedReader(new InputStreamReader(is));
-
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        return sb.toString();
-
-    }
-
-
-	
 }

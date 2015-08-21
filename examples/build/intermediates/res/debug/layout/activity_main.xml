@@ -6,7 +6,19 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".MainActivity" >
+    tools:context=".MainActivity"
+    >
+
+    <TextView
+        android:id="@+id/sttTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:text="IBM Watson Speech To Text service"
+        android:textSize="16dp"
+        android:textStyle="bold"/>
 
     <TextView
         android:id="@+id/textResult"
@@ -14,68 +26,54 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
-        android:layout_below="@+id/button1"
+        android:layout_below="@+id/sttTitle"
         android:layout_marginTop="10dp"
+        android:background="@drawable/back"
         android:editable="true"
-        android:text="Result will be displayed here :" />
-
-    <TextView
-        android:id="@+id/textView1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="10dp"
-        android:text="@string/textView1" />
+        android:height="150dp"
+        android:text=""/>
 
     <Button
-        android:id="@+id/button_SubmitTTS"
+        android:id="@+id/buttonRecord"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/editText_TTS"
-        android:layout_alignBottom="@+id/editText_TTS"
-        android:layout_alignRight="@+id/textResult"
-        android:onClick="playTTS"
-        android:text="Submit"
-        android:textSize="11dp" />
+        android:layout_below="@+id/textResult"
+        android:layout_centerHorizontal="true"
+        android:onClick="startRecord"
+        android:text="@string/buttonRecord"
+        android:textSize="14dp"/>
 
     <TextView
-        android:id="@+id/TextView01"
+        android:id="@+id/textTitleTTS"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/button_SubmitTTS"
+        android:layout_below="@+id/buttonRecord"
+        android:layout_marginTop="30dp"
         android:layout_centerHorizontal="true"
-        android:text="2.  Enter Text and press submit to demo TTS"
-        android:textAppearance="?android:attr/textAppearanceSmall" />
+        android:text="IBM Watson Text To Speech service"
+        android:textSize="16dp"
+        android:textStyle="bold"/>
 
     <EditText
         android:id="@+id/editText_TTS"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/textView1"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="10dp"
-        android:ems="10"
-        android:text="Enter TTS text"
-        android:textSize="11dp" />
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/textTitleTTS"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/back"
+        android:height="150dp"
+        android:text="Hi, this is TTS Service"
+        android:textSize="14dp" />
 
     <Button
-        android:id="@+id/button1"
+        android:id="@+id/button_SubmitTTS"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/textView1"
-        android:layout_below="@+id/textView2"
-        android:onClick="startRecord"
-        android:text="@string/button1" />
-
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/TextView01"
-        android:layout_below="@+id/textView1"
-        android:layout_marginTop="10dp"
-        android:text="1. Press START and then SPEAK"
-        android:textAppearance="?android:attr/textAppearanceSmall" />
-
-</RelativeLayout><!-- From: file:/Users/Viney/Documents/workspace/AndroidStudioProjects/IBM/Speech%20SDK/WatsonAndroidSpeechSDK/examples/src/main/res/layout/activity_main.xml -->
+        android:layout_below="@+id/editText_TTS"
+        android:layout_centerHorizontal="true"
+        android:onClick="playTTS"
+        android:text="Submit"
+        android:textSize="14dp" />
+</RelativeLayout><!-- From: file:/home/daniel/tasks/mobileSDKs/android/WatsonAndroidSpeechSDK/examples/src/main/res/layout/activity_main.xml -->

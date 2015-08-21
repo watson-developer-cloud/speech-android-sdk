@@ -4,8 +4,7 @@
     <string name="app_name">IBM Watson Speech SDK</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
-    <string name="button1">Start</string>
-    <string name="button2">Stop</string>
-    <string name="textView1">Welcome to IBM Watson Speech Sample app</string>
+    <string name="buttonRecord">Record Audio</string>
+
 
 </resources>

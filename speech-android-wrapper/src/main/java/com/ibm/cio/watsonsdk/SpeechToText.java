@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.http.Header;
 import org.java_websocket.util.Base64;
 
 import android.content.ComponentName;
@@ -39,6 +40,22 @@ import com.ibm.cio.dto.QueryResult;
 import com.ibm.cio.util.Logger;
 import com.ibm.crl.speech.vad.RawAudioRecorder;
 
+// HTTP library
+import org.apache.http.HttpResponse;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 /**Speech Recognition Class for SDK functions
  * @author Viney Ugave (vaugave@us.ibm.com)
  *
@@ -47,32 +64,12 @@ public class SpeechToText {
 
     protected static final String TAG = "SpeechToText";
 
-    // English based speech models
-    /**
-     * General English US accent model from broadcast news
-     */
-    public static final String SPEECH_MODEL_en_US_GEN_16000 = "en_US_GEN_16000";
-    /**
-     * general English US accent model from broadcast news, from EU parliamentary speeches mostly uk english
-     */
-    public static final String SPEECH_MODEL_en_UK_GEN_16000 = "en_UK_GEN_16000";
-    /**
-     * CIO VANI model for names,commands & Gen english
-     */
-    public static final String SPEECH_MODEL_en_US_GO6_16000 = "en_US_GO6_16000";
-    /**
-     * Watson general English Language Model
-     */
-    public static final String SPEECH_MODEL_WatsonModel = "WatsonModel";
-
     private Context appCtx;
 
     private boolean useStreaming;
     private boolean useCompression;
     private boolean useTTS;
     private boolean useVAD;
-    private boolean useWebSocket;
-    private boolean useVaniBackend;
     private boolean isCertificateValidationDisabled;
 
     boolean shouldStopRecording;
@@ -89,22 +86,12 @@ public class SpeechToText {
 
     private String sessionCookie;
     private String speechModel;
-    private String vaniService;
-    private String itransUsername;
-    private String itransPassword;
     private String username;
     private String password;
-    private URI vaniHost;
+    private String model;
+    private TokenProvider tokenProvider = null;
     private URI hostURL;
-    private String ttsServer;
-    private String ttsPort;
-    public String facesResult;
     public String transcript;
-
-    // application types
-    public static final String VANI_SERVICE_FACES = "faces";
-    public static final String VANI_SERVICE_ANSWERS = "answers";
-    public static final String VANI_SERVICE_BPM = "BPM";
 
     /** Audio encoder. */
     private VaniEncoder encoder;
@@ -152,6 +139,8 @@ public class SpeechToText {
     /** UPLOADING TIIMEOUT  */
     private int UPLOADING_TIMEOUT = 5000; // default duration of closing connection
 
+    /**Constructor to be used
+
     /**Constructor
      *
      */
@@ -160,15 +149,8 @@ public class SpeechToText {
         this.setUseCompression(false);
         this.setUseStreaming(true);
         this.setCertificateValidationDisabled(false);
-        this.setUseVaniBackend(false);
-        this.setUseWebSocket(true);
         this.setTimeout(0);
         this.setUseVAD(true);
-
-//		this.setSpeechModel(SPEECH_MODEL_en_US_CI3_16000);
-//		this.setVaniService(VANI_SERVICE_FACES);
-//		this.setItransUsername("test");
-//		this.setItransPassword("test");
     }
 
     /**Speech Recognition Shared Instance
@@ -209,7 +191,6 @@ public class SpeechToText {
         this.setHostURL(uri);
         this.appCtx = ctx;
         this.initVadService();
-
     }
 
     /**
@@ -250,7 +231,6 @@ public class SpeechToText {
             Logger.e(TAG, "FAIL doBindService");
             e.printStackTrace();
         }
-
     }
     /**
      * Disconnect from recording service {@link RecognizerIntentService}.
@@ -358,10 +338,6 @@ public class SpeechToText {
         mHandlerStop.removeCallbacks(mRunnableStop);
         mService.stop(); // state = State.PROCESSING
         handleRecording();
-        // save raw file
-//		VaniUtils.saveRawFile(mService.getCompleteRecording(), VaniUtils.getBaseDir(mActivity));
-        // Return OK to javascript for action "startVadRecording", trigger of "stopVadRecording" action
-//		curStartCallbackCtx.success("{'code':0, 'text':'OK'}");
     }
 
     /**
@@ -512,43 +488,12 @@ public class SpeechToText {
         Logger.i(TAG, "getVADTranscript time = " + (System.currentTimeMillis() - t0));
         Logger.d(TAG, result.getTranscript());
         if (!isCancelled) {
-//			showRawResult(result, callbackCtx);
             if (result != null) {
                 //Set transcript received from iTrans
                 String transcript = result.getTranscript();
                 setTranscript(transcript);
-                if(this.isUsingWebSocket()){
-                    Logger.i(TAG, "this.isUsingWebSocket(): getVADTranscript(long timeout)");
-                    this.sendMessage(SpeechDelegate.MESSAGE, result);
-                }
-                else if (result.getStatusCode() != 401 && result.getStatusCode() != 101 && result.getStatusCode() != 102) { // SUCCESS result
-                    if (result.getListFaces().indexOf('{')!=-1 && result.getListFaces().indexOf('{') == result.getListFaces().lastIndexOf('{')) {
-                        //only one
-                    } else {
-                        if (isUseTTS() && mAm.getRingerMode() == 2) { // ringtone mode = AudioManager.RINGER_MODE_NORMAL
-                            if ("".equals(result.getTranscript())) // I don't understand
-                                PlayerUtil.ins8k.playIdontUnderstand(getAppCtx());
-                            else if (result.getTtsIFound().length > 0) {
-                                PlayerUtil.ins8k.playSPX(result.getTtsIFound());
-                            }
-                        }
-                    }
-                    facesResult = result.toSuccessJson().toString();
-
-                    if(getVaniService().equals(VANI_SERVICE_FACES)){
-//						this.returnTranscription.transcriptionFinishedCallback(facesResult);
-                        this.sendMessage(SpeechDelegate.MESSAGE, result);
-                        //
-                    }else{
-                        //For non FACES Service
-//						this.returnTranscription.transcriptionFinishedCallback(getTranscript());
-                        this.sendMessage(SpeechDelegate.MESSAGE, result);
-                    }
-                } else { // FAILURE result, statusCode = 101 (Time out)/102 (Cancel all)/401 (IOException)
-                    Logger.w(TAG, "Failed to get transcription");
-//					this.returnTranscription.transcriptionErrorCallback(result.toFailureJson());
-                    this.sendMessage(SpeechDelegate.ERROR, result);
-                }
+                Logger.i(TAG, "this.isUsingWebSocket(): getVADTranscript(long timeout)");
+                this.sendMessage(SpeechDelegate.MESSAGE, result);
             }
             else {
                 Logger.w(TAG, "Query result: ERROR code 401");
@@ -644,6 +589,7 @@ public class SpeechToText {
      * </p>
      */
     public void recognize() {
+
         Log.i(TAG, "startRecording");
         shouldStopRecording = false;
         // stillDoesNotCallStartRecord = true;
@@ -651,42 +597,22 @@ public class SpeechToText {
         doneUploadData = false;
         // Initiate Uploader, Encoder
 
-        if (this.isUsingWebSocket()){
-//			encoder = new ChuckJNAOpusEnc();
-//			encoder = new ChuckJNISpeexEnc();
-            encoder = new ChuckRawEnc();
-
-
-        }
-        else if (this.useCompression && !this.isUsingWebSocket()) {
-            encoder = new VaniJNISpeexEnc();
-        }
-        else {
-            encoder = new VaniRawEnc();
-        }
-
-        if (this.isUsingWebSocket()){
-            try {
-                HashMap<String, String> header = new HashMap<String, String>();
-                // header.put("Cookie", this.sessionCookie);
-                String auth = "Basic "
-                        + Base64.encodeBytes((getUsername() + ":" + getPassword())
-                        .getBytes(Charset.forName("UTF-8")));
+        encoder = new ChuckRawEnc();
+        try {
+            HashMap<String, String> header = new HashMap<String, String>();
+            if (this.tokenProvider != null) {
+                header.put("X-Watson-Authorization-Token",this.tokenProvider.getToken());
+                Logger.e(TAG, "ws connecting with token based authentication");
+            } else {
+                String auth = "Basic " + Base64.encodeBytes((this.username + ":" + this.password).getBytes(Charset.forName("UTF-8")));
                 header.put("Authorization", auth);
-                Logger.e(TAG, auth);
-
-                uploader = new ChuckWebSocketUploader(encoder, getHostURL().toString()+"/v1/models/WatsonModel/recognize", header);
-            } catch (URISyntaxException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                Logger.e(TAG, "ws connecting with Basic Authentication");
             }
+            String wsURL = getHostURL().toString()+"/v1/recognize" + (this.model != null ? ("?" + this.model) : "");
+            uploader = new ChuckWebSocketUploader(encoder, wsURL, header);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
-//		else if (this.useStreaming) {
-//			uploader = new VaniStreamUploader(encoder, getHostURL(), this.sessionCookie);
-//		}
-//		else {
-//			uploader = new VaniNoneStreamUploader(encoder, getHostURL(), this.sessionCookie, getBaseDir());
-//		}
         uploader.setTimeout(UPLOADING_TIMEOUT); // default timeout
         uploader.setDelegate(this.delegate);
         if (this.useVAD) { // Record audio in service
@@ -743,11 +669,81 @@ public class SpeechToText {
         }
     }
 
+    private void buildAuthenticationHeader(HttpGet httpGet) {
+
+        // use token based authentication if possible, otherwise Basic Authentication will be used
+        if (this.tokenProvider != null) {
+            Log.d(TAG, "using token based authentication");
+            httpGet.setHeader("X-Watson-Authorization-Token",this.tokenProvider.getToken());
+        } else {
+            Log.d(TAG, "using basic authentication");
+            httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(this.username, this.password), "UTF-8",false));
+        }
+    }
+
+    // get the list of models for the speech to text service
+    public JSONObject getModels() {
+
+        JSONObject object = null;
+
+        try {
+            HttpClient httpClient = new DefaultHttpClient();
+            String strHTTPURL = this.hostURL.toString().replace("wss","https");
+            HttpGet httpGet = new HttpGet(strHTTPURL+"/v1/models");
+            this.buildAuthenticationHeader(httpGet);
+            httpGet.setHeader("accept","application/json");
+            HttpResponse executed = httpClient.execute(httpGet);
+            InputStream is=executed.getEntity().getContent();
+
+            // get the JSON object containing the models from the InputStream
+            BufferedReader streamReader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            StringBuilder responseStrBuilder = new StringBuilder();
+            String inputStr;
+            while ((inputStr = streamReader.readLine()) != null)
+                responseStrBuilder.append(inputStr);
+            object = new JSONObject(responseStrBuilder.toString());
+            Log.d(TAG, object.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return object;
+    }
+
+    // get information about the model
+    public JSONObject getModel(String strModel) {
+
+        JSONObject object = null;
+
+        try {
+            HttpClient httpClient = new DefaultHttpClient();
+            String strHTTPURL = this.hostURL.toString().replace("wss","https");
+            HttpGet httpGet = new HttpGet(strHTTPURL+"/v1/models/en-US_NarrowbandModel");
+            this.buildAuthenticationHeader(httpGet);
+            httpGet.setHeader("accept","application/json");
+            HttpResponse executed = httpClient.execute(httpGet);
+            InputStream is=executed.getEntity().getContent();
+
+            // get the JSON object containing the models from the InputStream
+            BufferedReader streamReader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            StringBuilder responseStrBuilder = new StringBuilder();
+            String inputStr;
+            while ((inputStr = streamReader.readLine()) != null)
+                responseStrBuilder.append(inputStr);
+            object = new JSONObject(responseStrBuilder.toString());
+            Log.d(TAG, object.toString());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return object;
+    }
+
     public boolean isUseTTS() {
         return useTTS;
-    }
-    public boolean isUsingWebSocket(){
-        return this.useWebSocket;
     }
     public boolean isUseVAD() {
         return useVAD;
@@ -797,30 +793,6 @@ public class SpeechToText {
         this.useCompression = useCompression;
     }
     /**
-     * @return the useWebSocket
-     */
-    public boolean isUseWebSocket() {
-        return useWebSocket;
-    }
-    /**
-     * @param useWebSocket the useWebSocket to set
-     */
-    public void setUseWebSocket(boolean useWebSocket) {
-        this.useWebSocket = useWebSocket;
-    }
-    /**
-     * @return the useVaniBackend
-     */
-    public boolean isUseVaniBackend() {
-        return useVaniBackend;
-    }
-    /**
-     * @param useVaniBackend the useVaniBackend to set
-     */
-    public void setUseVaniBackend(boolean useVaniBackend) {
-        this.useVaniBackend = useVaniBackend;
-    }
-    /**
      * @return the isCertificateValidationDisabled
      */
     public boolean isCertificateValidationDisabled() {
@@ -844,78 +816,6 @@ public class SpeechToText {
      */
     public void setSessionCookie(String sessionCookie) {
         this.sessionCookie = sessionCookie;
-    }
-    /**
-     * @return the vaniService
-     */
-    public String getVaniService() {
-        return vaniService;
-    }
-    /**
-     * @param vaniService the vaniService to set
-     */
-    public void setVaniService(String vaniService) {
-        this.vaniService = vaniService;
-    }
-    /**
-     * @return the itransUsername
-     */
-    public String getItransUsername() {
-        return itransUsername;
-    }
-    /**
-     * @param itransUsername the itransUsername to set
-     */
-    public void setItransUsername(String itransUsername) {
-        this.itransUsername = itransUsername;
-    }
-    /**
-     * @return the itransPassword
-     */
-    public String getItransPassword() {
-        return itransPassword;
-    }
-    /**
-     * @param itransPassword the itransPassword to set
-     */
-    public void setItransPassword(String itransPassword) {
-        this.itransPassword = itransPassword;
-    }
-    /**
-     * @return the vaniHost
-     */
-    public URI getVaniHost() {
-        return vaniHost;
-    }
-    /**
-     * @param vaniHost the vaniHost to set
-     */
-    public void setVaniHost(URI vaniHost) {
-        this.vaniHost = vaniHost;
-    }
-    /**
-     * @return the ttsServer
-     */
-    public String getTtsServer() {
-        return ttsServer;
-    }
-    /**
-     * @param ttsServer the ttsServer to set
-     */
-    public void setTtsServer(String ttsServer) {
-        this.ttsServer = ttsServer;
-    }
-    /**
-     * @return the ttsPort
-     */
-    public String getTtsPort() {
-        return ttsPort;
-    }
-    /**
-     * @param ttsPort the ttsPort to set
-     */
-    public void setTtsPort(String ttsPort) {
-        this.ttsPort = ttsPort;
     }
     /**
      * @return the transcript
@@ -985,35 +885,24 @@ public class SpeechToText {
     }
 
     /**
-     * Get API username
-     * @return
-     */
-    public String getUsername() {
-        return username;
-    }
-
-    /**
-     * Set API username
+     * Set API credentials
      * @param username
      */
-    public void setUsername(String username) {
+    public void setCredentials(String username, String password) {
         this.username = username;
-    }
-
-    /**
-     * Get API Password
-     * @return
-     */
-    public String getPassword() {
-        return password;
-    }
-
-    /**
-     * Set API Password
-     * @param password
-     */
-    public void setPassword(String password) {
         this.password = password;
+    }
+
+    /**
+     * Set token provider (for token based authentication)
+     */
+    public void setTokenProvider(TokenProvider tokenProvider) { this.tokenProvider = tokenProvider; }
+
+    /**
+     * Set STT model
+     */
+    public void setModel(String model) {
+        this.model = model;
     }
 }
 

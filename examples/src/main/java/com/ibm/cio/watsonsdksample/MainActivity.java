@@ -1,10 +1,18 @@
 package com.ibm.cio.watsonsdksample;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.LinkedList;
+import java.util.List;
 
 import android.app.Activity;
 import android.content.Context;
+import android.media.session.MediaSession;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.StrictMode;
@@ -21,24 +29,43 @@ import com.ibm.cio.watsonsdk.SpeechDelegate;
 import com.ibm.cio.watsonsdk.SpeechToText;
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 import com.ibm.cio.watsonsdk.TextToSpeech;
+import com.ibm.cio.watsonsdk.TokenProvider;
 
-public class MainActivity extends Activity implements SpeechDelegate, SpeechRecorderDelegate{
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+
+public class MainActivity extends Activity implements SpeechDelegate, SpeechRecorderDelegate {
 	private static final String TAG = "MainActivity";
 
 	// API credentials
-	private static String USERNAME = "ivaniapi";
-	private static String PASSWORD = "Zt1xSp33x";
-	
-    // SDK Service URL
-    private static String STT_URL = "wss://speech.tap.ibm.com/speech-to-text-beta/api";
-	private static String TTS_URL = "https://speech.tap.ibm.com/text-to-speech-beta/api";
+    //private static String USERNAME_STT = "ivaniapi";
+    //private static String PASSWORD_STT = "Zt1xSp33x";
+    //private static String USERNAME_TTS = "ivaniapi";
+    //private static String PASSWORD_TTS = "Zt1xSp33x";
+    private static String USERNAME_STT = "c9122908-2741-4610-93b9-f33a731ba920";
+    private static String PASSWORD_STT = "74jxojn8LV9i";
+    private static String USERNAME_TTS = "bdb86865-60a4-4e42-bfa8-4c91dfd583d2";
+    private static String PASSWORD_TTS = "L3MIsuh4AGpz";
+
+    private static String strSTTTokenFactoryURL = "http://speech-to-text-demo.mybluemix.net/token";
+    private static String strTTSTokenFactoryURL = "http://text-to-speech-nodejs-tokenfactory.mybluemix.net/token";
+
+    //private static String STT_URL = "wss://speech.tap.ibm.com/speech-to-text-beta/api";
+    //private static String TTS_URL = "https://speech.tap.ibm.com/text-to-speech-beta/api";
+    private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
+    private static String TTS_URL = "https://stream-s.watsonplatform.net/text-to-speech/api";
 
 	TextView textResult;
 	TextView textTTS;
 
 	// Main UI Thread Handler
 	private Handler handler = null;
-
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -59,24 +86,52 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 		handler = new Handler();
 	}
 
+    class MyTokenProvider implements TokenProvider {
+
+        String m_strTokenFactoryURL = null;
+
+        public MyTokenProvider(String strTokenFactoryURL) {
+            m_strTokenFactoryURL = strTokenFactoryURL;
+        }
+
+        public String getToken() {
+
+            Log.d(TAG, "trying to get token from: " + m_strTokenFactoryURL);
+            try {
+                HttpClient httpClient = new DefaultHttpClient();
+                HttpGet httpGet = new HttpGet(m_strTokenFactoryURL);
+                HttpResponse executed = httpClient.execute(httpGet);
+                InputStream is = executed.getEntity().getContent();
+                StringWriter writer = new StringWriter();
+                IOUtils.copy(is, writer, "UTF-8");
+                String strToken = writer.toString();
+                Log.d(TAG, strToken);
+                return strToken;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+    }
 	
 	/**
 	 * Initializing instance of SpeechToText and configuring the rest of parameters
 	 */
-	private void initSpeechRecognition(){
+	private void initSpeechRecognition() {
 		//STT
 		SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext());
-        SpeechToText.sharedInstance().setUsername(this.USERNAME);
-        SpeechToText.sharedInstance().setPassword(this.PASSWORD);
+        SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT,this.PASSWORD_STT);
+        SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
+        SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
         SpeechToText.sharedInstance().setDelegate(this);
 //		SpeechToText.sharedInstance().setTimeout(0); // Optional - set the duration for delaying connection closure in millisecond
 		//TTS
 		TextToSpeech.sharedInstance().initWithContext(this.getHost(TTS_URL), this.getApplicationContext());
-		TextToSpeech.sharedInstance().setUsername(this.USERNAME);
-		TextToSpeech.sharedInstance().setPassword(this.PASSWORD);
-
+		TextToSpeech.sharedInstance().setCredentials(this.USERNAME_TTS,this.PASSWORD_TTS);
+        TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(this.strTTSTokenFactoryURL));
+        //TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
+        TextToSpeech.sharedInstance().setVoice("en-US_MichaelVoice");
 	}
-
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -95,7 +150,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 		SpeechToText.sharedInstance().recognize();
 		SpeechToText.sharedInstance().setRecorderDelegate(this);
 	}
-
 
 	/**
 	 * Display the faces results
@@ -133,7 +187,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 				InputMethodManager.HIDE_NOT_ALWAYS);
 
 		//Call the sdk function
-		TextToSpeech.sharedInstance().voices();
+		TextToSpeech.sharedInstance().getVoices();
 		TextToSpeech.sharedInstance().synthesize(ttsText);
 	}
 	

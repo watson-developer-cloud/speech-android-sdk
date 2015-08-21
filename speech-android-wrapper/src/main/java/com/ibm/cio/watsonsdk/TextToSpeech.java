@@ -13,14 +13,14 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.util.LinkedList;
-import java.util.List;
 
 /**Speech Recognition Class for SDK functions
  * @author Viney Ugave (vaugave@us.ibm.com)
@@ -37,6 +37,8 @@ public class TextToSpeech {
     private String username;
     private String password;
     private URI hostURL;
+    private TokenProvider tokenProvider = null;
+    private String voice;
 
     /**Speech Recognition Shared Instance
      *
@@ -64,80 +66,64 @@ public class TextToSpeech {
     }
 
     public void synthesize(String ttsString) {
-        Log.i(TAG, "synthesize called");
+        Log.i(TAG, "synthesize called: " + this.hostURL.toString()+"/v1/synthesize");
         String[] Arguments = { this.hostURL.toString()+"/v1/synthesize", this.username, this.password,
-                ttsString};
-//		for(int i=0;i<Arguments.length;i++){
-//			System.out.println(Arguments[i]);
-//		}
+                this.voice, ttsString, this.tokenProvider.getToken()};
         try {
             ttsPlugin= new TTSPlugin();
             ttsPlugin.setCodec(TTSPlugin.CODEC_OPUS);
+            //ttsPlugin.setCodec(TTSPlugin.CODEC_WAV);
             ttsPlugin.tts(Arguments);
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             Log.e(TAG, "Error calling TTSplugin");
             e.printStackTrace();
         }
     }
 
-    public void voices(){
+    private void buildAuthenticationHeader(HttpGet httpGet) {
+
+        // use token based authentication if possible, otherwise Basic Authentication will be used
+        if (this.tokenProvider != null) {
+            Log.d(TAG, "using token based authentication");
+            httpGet.setHeader("X-Watson-Authorization-Token",this.tokenProvider.getToken());
+        } else {
+            Log.d(TAG, "using basic authentication");
+            httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(this.username, this.password), "UTF-8",false));
+        }
+    }
+
+    public JSONObject getVoices() {
+
+        JSONObject object = null;
 
         try {
-            //HTTP GET Client
             HttpClient httpClient = new DefaultHttpClient();
-            //Add params
-            List<BasicNameValuePair> params = new LinkedList<BasicNameValuePair>();
-            params.add(new BasicNameValuePair("accept", "application/json"));
-            HttpGet httpGet = new HttpGet(this.hostURL+"/v1/voices"+"?"+ URLEncodedUtils.format(params, "utf-8"));
-            httpGet.setHeader(BasicScheme.authenticate(
-                    new UsernamePasswordCredentials(this.username, this.password), "UTF-8",
-                    false));
+            HttpGet httpGet = new HttpGet(this.hostURL+"/v1/voices");
+            Log.d(TAG,"url: " + this.hostURL+"/v1/voices");
+            this.buildAuthenticationHeader(httpGet);
+            httpGet.setHeader("accept", "application/json");
             HttpResponse executed = httpClient.execute(httpGet);
-            InputStream is=executed.getEntity().getContent();
-            Log.d(TAG,getStringFromInputStream(is));
+            InputStream is = executed.getEntity().getContent();
 
+            // get the JSON object containing the models from the InputStream
+            BufferedReader streamReader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            StringBuilder responseStrBuilder = new StringBuilder();
+            String inputStr;
+            while ((inputStr = streamReader.readLine()) != null)
+                responseStrBuilder.append(inputStr);
+            object = new JSONObject(responseStrBuilder.toString());
+            Log.d(TAG, object.toString());
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
+        return object;
     }
 
-    // convert InputStream to String
-    private static String getStringFromInputStream(InputStream is) {
-
-        BufferedReader br = null;
-        StringBuilder sb = new StringBuilder();
-
-        String line;
-        try {
-
-            br = new BufferedReader(new InputStreamReader(is));
-
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        return sb.toString();
-
-    }
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
+    public void setCredentials(String username, String password) {
+        this.username = username;
         this.password = password;
     }
 
@@ -149,14 +135,6 @@ public class TextToSpeech {
         this.hostURL = hostURL;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public Context getAppCtx() {
         return appCtx;
     }
@@ -165,4 +143,15 @@ public class TextToSpeech {
         this.appCtx = appCtx;
     }
 
+    /**
+     * Set token provider (for token based authentication)
+     */
+    public void setTokenProvider(TokenProvider tokenProvider) { this.tokenProvider = tokenProvider; }
+
+    /**
+     * Set TTS voice
+     */
+    public void setVoice(String voice) {
+        this.voice = voice;
+    }
 }

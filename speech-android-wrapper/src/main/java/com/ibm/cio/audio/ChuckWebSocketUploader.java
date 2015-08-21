@@ -54,6 +54,8 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
     private SpeechDelegate delegate = null;
     private Future<QueryResult> future = null;
 
+
+
     /**
      * Create an uploader which supports streaming.
      *

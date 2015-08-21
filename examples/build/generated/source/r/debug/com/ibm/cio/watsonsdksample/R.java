@@ -1310,10 +1310,10 @@ containing a value of this type.
         public static final int abc_textfield_search_activated_mtrl_alpha=0x7f020034;
         public static final int abc_textfield_search_default_mtrl_alpha=0x7f020035;
         public static final int abc_textfield_search_material=0x7f020036;
-        public static final int ic_launcher=0x7f020037;
+        public static final int back=0x7f020037;
+        public static final int ic_launcher=0x7f020038;
     }
     public static final class id {
-        public static final int TextView01=0x7f080044;
         public static final int action_bar=0x7f080031;
         public static final int action_bar_activity_content=0x7f080000;
         public static final int action_bar_container=0x7f080030;
@@ -1327,12 +1327,12 @@ containing a value of this type.
         public static final int action_mode_bar=0x7f08002e;
         public static final int action_mode_bar_stub=0x7f08002d;
         public static final int action_mode_close_button=0x7f080020;
-        public static final int action_settings=0x7f080046;
+        public static final int action_settings=0x7f080045;
         public static final int activity_chooser_view_content=0x7f080021;
         public static final int always=0x7f080016;
         public static final int beginning=0x7f080013;
-        public static final int button1=0x7f080040;
-        public static final int button_SubmitTTS=0x7f080042;
+        public static final int buttonRecord=0x7f080041;
+        public static final int button_SubmitTTS=0x7f080044;
         public static final int checkbox=0x7f080029;
         public static final int collapseActionView=0x7f080017;
         public static final int decor_content_parent=0x7f08002f;
@@ -1374,11 +1374,11 @@ containing a value of this type.
         public static final int showHome=0x7f080010;
         public static final int showTitle=0x7f080011;
         public static final int split_action_bar=0x7f080007;
+        public static final int sttTitle=0x7f08003f;
         public static final int submit_area=0x7f08003c;
         public static final int tabMode=0x7f08000b;
-        public static final int textResult=0x7f08003f;
-        public static final int textView1=0x7f080041;
-        public static final int textView2=0x7f080045;
+        public static final int textResult=0x7f080040;
+        public static final int textTitleTTS=0x7f080042;
         public static final int title=0x7f080027;
         public static final int up=0x7f080008;
         public static final int useLogo=0x7f080012;
@@ -1438,10 +1438,8 @@ containing a value of this type.
         public static final int abc_toolbar_collapse_description=0x7f0a000f;
         public static final int action_settings=0x7f0a0010;
         public static final int app_name=0x7f0a0011;
-        public static final int button1=0x7f0a0012;
-        public static final int button2=0x7f0a0013;
-        public static final int hello_world=0x7f0a0014;
-        public static final int textView1=0x7f0a0015;
+        public static final int buttonRecord=0x7f0a0012;
+        public static final int hello_world=0x7f0a0013;
     }
     public static final class style {
         public static final int Animation_AppCompat_DropDownUp=0x7f0b0000;
