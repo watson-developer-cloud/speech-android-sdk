@@ -78,6 +78,7 @@ Instantiate the SpeechToText instance
 
 ```
    SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
+   SpeechToText.sharedInstance().setDelegate(this);
 ```
 
 Get a list of models supported by the service
