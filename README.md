@@ -70,23 +70,35 @@ Instantiate the SpeechToText instance
 **Set the Credentials and the delegate**
 
 ```
-   SpeechToText.sharedInstance().setUsername(this.USERNAME);
-   SpeechToText.sharedInstance().setPassword(this.PASSWORD);
+   SpeechToText.sharedInstance().setCredentials(this.USERNAME,this.PASSWORD);
    SpeechToText.sharedInstance().setDelegate(this);
+```
+
+**Alternatively pass a token factory object to be used by the SDK to retrieve authentication tokens to authenticate against the STT service**
+
+```
+   SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
 ```
 
 Get a list of models supported by the service
 ------------------------------
 
-```
-   ToDo
+```   
+   JSONObject models = getModels();
 ```
 
 Get details of a particular model
 ------------------------------
 
 ```
-   ToDo
+   JSONObject model = getModelInfo("en-US_BroadbandModel");
+```
+
+Pick the model to be used
+------------------------
+
+```
+   SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
 ```
 
 Start Audio Transcription
@@ -148,8 +160,13 @@ Instantiate the TextToSpeech instance
 **Set the Credentials**
 
 ```
-   TextToSpeech.sharedInstance().setUsername(this.USERNAME);
-   TextToSpeech.sharedInstance().setPassword(this.PASSWORD);
+   TextToSpeech.sharedInstance().setCredentials(this.USERNAME,this.PASSWORD);
+```
+
+**Alternatively pass a token factory object to be used by the SDK to retrieve authentication tokens to authenticate against the TTS service**
+
+```
+   TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(this.strTTSTokenFactoryURL));
 ```
 
 Get a list of voices supported by the service
@@ -157,6 +174,13 @@ Get a list of voices supported by the service
 
 ```
    TextToSpeech.sharedInstance().voices();
+```
+
+Pick the voice to be used 
+---------------------------------------------------
+
+```
+   TextToSpeech.sharedInstance().setVoice("en-US_MichaelVoice");
 ```
 
 Generate and play audio
