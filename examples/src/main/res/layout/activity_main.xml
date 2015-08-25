@@ -6,19 +6,24 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".MainActivity"
-    >
-
+    tools:context=".MainActivity">
     <TextView
         android:id="@+id/sttTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="0dp"
         android:text="IBM Watson Speech To Text service"
-        android:textSize="16dp"
+        android:textSize="18dp"
         android:textStyle="bold"/>
+
+    <Spinner
+        android:id="@+id/spinnerModels"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/sttTitle"/>
 
     <TextView
         android:id="@+id/textResult"
@@ -26,33 +31,53 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
-        android:layout_below="@+id/sttTitle"
-        android:layout_marginTop="10dp"
+        android:layout_below="@+id/spinnerModels"
+        android:layout_marginTop="0dp"
         android:background="@drawable/back"
         android:editable="true"
         android:height="150dp"
         android:text=""/>
 
+    <TextView
+        android:id="@+id/sttStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/textResult"
+        android:layout_marginTop="5dp"
+        android:editable="true"
+        android:height="20dp"
+        android:textSize="12dp"
+        android:text="please, press the button to start speaking"/>
+
     <Button
         android:id="@+id/buttonRecord"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textResult"
+        android:layout_below="@+id/sttStatus"
         android:layout_centerHorizontal="true"
         android:onClick="startRecord"
         android:text="@string/buttonRecord"
-        android:textSize="14dp"/>
+        android:textSize="14dp"
+        />
 
     <TextView
-        android:id="@+id/textTitleTTS"
+        android:id="@+id/ttsTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/buttonRecord"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="10dp"
         android:layout_centerHorizontal="true"
         android:text="IBM Watson Text To Speech service"
-        android:textSize="16dp"
+        android:textSize="18dp"
         android:textStyle="bold"/>
+
+    <Spinner
+        android:id="@+id/spinnerVoices"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/ttsTitle"/>
 
     <EditText
         android:id="@+id/editText_TTS"
@@ -60,11 +85,11 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
-        android:layout_below="@+id/textTitleTTS"
-        android:layout_marginTop="10dp"
+        android:layout_below="@+id/spinnerVoices"
+        android:layout_marginTop="0dp"
         android:background="@drawable/back"
-        android:height="150dp"
-        android:text="Hi, this is TTS Service"
+        android:height="120dp"
+        android:text="Conscious of its spiritual and moral heritage, the Union is founded on the indivisible, universal values of human dignity, freedom, equality and solidarity; it is based on the principles of democracy and the rule of law. "
         android:textSize="14dp" />
 
     <Button

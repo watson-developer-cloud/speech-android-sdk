@@ -24,6 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.os.Environment;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -35,8 +36,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
     private static final String TAG = ChuckWebSocketUploader.class.getName();
 
     private VaniEncoder encoder = null;
-    //	private String serverURL = "";
-//	private String lmcCookie = "";
     private String transcript = "";
     private Thread initStreamToServerThread;
 
@@ -53,8 +52,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
 
     private SpeechDelegate delegate = null;
     private Future<QueryResult> future = null;
-
-
 
     /**
      * Create an uploader which supports streaming.
@@ -135,10 +132,13 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
         if (this.isUploadPrepared()) {
             try {
                 if (needEncode) {
+                    Logger.e(TAG, "needEncode == true");
                     uploadedAudioSize = encoder.encodeAndWrite(buffer);
                 }
                 else{
-                    encoder.writeChunk(buffer);
+                    //Logger.e(TAG, "needEncode == false");
+                    //encoder.writeChunk(buffer);
+                    this.send(buffer);
                 }
             } catch (IOException e) {
                 Logger.e(TAG, "Error occured in writeBufferToOutputStream, recording is aborted");
@@ -318,6 +318,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
     public void upload(byte[] data){
         try{
             this.send(data);
+            //Logger.w(TAG, "uploader sending data through the socket.");
         }
         catch(NotYetConnectedException ex){
             this.transcript = ex.getLocalizedMessage();
@@ -334,7 +335,9 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
 
     @Override
     public void close() {
-        this.stop();
+        Logger.i(TAG, "calling close!!");
+        //this.stop();
+        super.close();
     }
 
     @Override
@@ -348,7 +351,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
         dataTransmissionTime = beginGetResponse - beginSendRequest;
         requestTime = beginGetResponse - beginRequestTime;
         this.uploadPrepared = false;
-        Logger.d(TAG, "### Response Time: " + responseTime);
+        Logger.d(TAG, "### Response Time: " + responseTime + " code: " + code + " reason: " + reason + " remote: " + remote);
     }
 
     @Override
@@ -390,11 +393,18 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
         requestEstablishingTime = (beginSendRequest - beginRequestTime);
         Logger.i(TAG, "requestEstablishingTime: " + requestEstablishingTime);
 
-//      this.transcript = this.fetchTranscript(this.timeout).getTranscript();
-//		String json = "{\"grammar\":null,\"name\":\"listen\",\"dictionary\":null,\"wantResults\":[\"topHypothesis\",\"splitTopHypothesis\"],\"content-type\":\"audio/l16; rate=16000\",\"wantInterimResults\":true,\"EOUMode\":\"PTT\"}";
-        String json = "{\"action\":\"start\",\"content-type\":\"audio/l16; rate=16000\",\"interim_results\":true,\"continuous\": true}";
-        upload(json);
-
+        JSONObject obj = new JSONObject();
+        try {
+            obj.put("action", "start");
+            obj.put("content-type", "audio/l16; rate=16000");
+            obj.put("interim_results", true);
+            obj.put("continuous", true);
+            obj.put("inactivity_timeout", 600);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        upload(obj.toString());
+        Logger.i(TAG, "sending init message: " + obj.toString());
         this.sendMessage(SpeechDelegate.OPEN);
     }
 
@@ -431,7 +441,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
                             result=obj1.getString("transcript");
                         }
                         //close connection
-                        super.close();
+                        //super.close();
                     }else{
                         //get transcript
                         JSONArray jArr1 = obj.getJSONArray("alternatives");

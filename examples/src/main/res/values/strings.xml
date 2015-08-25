@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">IBM Watson Speech SDK</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
-    <string name="buttonRecord">Record Audio</string>
-
-
+    <string name="buttonRecord">start recording</string>
 </resources>

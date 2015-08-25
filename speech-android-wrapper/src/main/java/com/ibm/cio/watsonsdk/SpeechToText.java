@@ -25,6 +25,8 @@ import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.ibm.cio.audio.AudioConsumer;
+import com.ibm.cio.audio.AudioCaptureThread;
 import com.ibm.cio.audio.ChuckRawEnc;
 import com.ibm.cio.audio.RecognizerIntentService;
 import com.ibm.cio.audio.VaniEncoder;
@@ -72,12 +74,14 @@ public class SpeechToText {
     private boolean useVAD;
     private boolean isCertificateValidationDisabled;
 
+    private AudioCaptureThread audioCaptureThread = null;
+
     boolean shouldStopRecording;
     boolean doneUploadData;
     boolean stillDoesNotCallStartRecord = false;
 
     private VaniRecorder mRecorder;
-    private VaniUploader uploader;
+    private VaniUploader uploader = null;
 
     private Thread onHasDataThread;
     private SpeechDelegate delegate = null;
@@ -150,7 +154,7 @@ public class SpeechToText {
         this.setUseStreaming(true);
         this.setCertificateValidationDisabled(false);
         this.setTimeout(0);
-        this.setUseVAD(true);
+        this.setUseVAD(false);
     }
 
     /**Speech Recognition Shared Instance
@@ -222,7 +226,6 @@ public class SpeechToText {
         try {
             // This can be called also on an already running service
             this.appCtx.startService(new Intent(this.appCtx, RecognizerIntentService.class));
-
             this.appCtx.bindService(new Intent(this.appCtx, RecognizerIntentService.class), mConnection, Context.BIND_AUTO_CREATE);
             mIsBound = true;
             Logger.i(TAG, "Service is bound");
@@ -352,7 +355,7 @@ public class SpeechToText {
                 prepareRecording();
                 break;
             case PROCESSING:
-                finishRecord();
+                //finishRecord();
                 break;
             case ERROR:
                 Log.e(TAG, "Error while recording audio from handlerRecording()");
@@ -380,7 +383,7 @@ public class SpeechToText {
      * Waiting for audio data has been uploaded, then get query result and return to Javascript.
      */
     private void finishRecord() {
-//        Logger.i(TAG, "finishRecord");
+        Logger.i(TAG, "finishRecord");
         beginThinking = SystemClock.elapsedRealtime();
         // Listen to onHasDataThread for getting result of recognizing
         if (!doneUploadData) // DON'T wait when data has been uploaded (when recording time quite long)
@@ -507,6 +510,34 @@ public class SpeechToText {
 
     }
 
+    private class STTAudioConsumer implements AudioConsumer {
+
+        private VaniUploader mUploader = null;
+
+        public STTAudioConsumer(VaniUploader uploader) {
+
+            mUploader = uploader;
+        }
+
+        public void consume(byte [] data) {
+
+            //Logger.i(TAG, "consume called with " + data.length + " bytes");
+            mUploader.onHasData(data, false);
+        }
+    }
+
+    /**
+     * Start recording process with VAD:
+     */
+    private void startRecordingWithoutVAD() {
+
+        uploader.prepare();
+        STTAudioConsumer audioConsumer = new STTAudioConsumer(uploader);
+
+        audioCaptureThread = new AudioCaptureThread(16000, audioConsumer);
+        audioCaptureThread.start();
+    }
+
     /**
      * Start recording process with VAD:
      * <br>1. Prepare uploader. Start thread to listen if have audio data, then upload it.
@@ -549,7 +580,7 @@ public class SpeechToText {
 //											dataBufferTime += (tHasData - tUploadChunkDone);
 //											Logger.d(TAG, "bufferDataTime trace: " + (tHasData - tUploadChunkDone));
 //										}
-//                                        Log.d(TAG, "Uploading Chunk No."+numberData);
+                                        Log.d(TAG, "Uploading Chunk No."+numberData);
                                         uploader.onHasData(dataToUpload, true); // synchronize
 //										tUploadChunkDone = SystemClock.elapsedRealtime();
 //										audioUploadedLength += dataToUpload.length;
@@ -601,14 +632,14 @@ public class SpeechToText {
         try {
             HashMap<String, String> header = new HashMap<String, String>();
             if (this.tokenProvider != null) {
-                header.put("X-Watson-Authorization-Token",this.tokenProvider.getToken());
+                header.put("X-Watson-Authorization-Token", this.tokenProvider.getToken());
                 Logger.e(TAG, "ws connecting with token based authentication");
             } else {
                 String auth = "Basic " + Base64.encodeBytes((this.username + ":" + this.password).getBytes(Charset.forName("UTF-8")));
                 header.put("Authorization", auth);
                 Logger.e(TAG, "ws connecting with Basic Authentication");
             }
-            String wsURL = getHostURL().toString()+"/v1/recognize" + (this.model != null ? ("?" + this.model) : "");
+            String wsURL = getHostURL().toString() + "/v1/recognize" + (this.model != null ? ("?model=" + this.model) : "");
             uploader = new ChuckWebSocketUploader(encoder, wsURL, header);
         } catch (URISyntaxException e) {
             e.printStackTrace();
@@ -616,10 +647,17 @@ public class SpeechToText {
         uploader.setTimeout(UPLOADING_TIMEOUT); // default timeout
         uploader.setDelegate(this.delegate);
         if (this.useVAD) { // Record audio in service
-            startRecordingWithVAD();
+            //startRecordingWithVAD();
+            startRecordingWithoutVAD();
         } else {
-//			startRecordingWithoutVAD();
+			startRecordingWithoutVAD();
         }
+    }
+
+    public void stopRecognition() {
+
+        audioCaptureThread.end();
+        uploader.close();
     }
 
     /**
@@ -712,7 +750,7 @@ public class SpeechToText {
     }
 
     // get information about the model
-    public JSONObject getModel(String strModel) {
+    public JSONObject getModelInfo(String strModel) {
 
         JSONObject object = null;
 
@@ -744,9 +782,6 @@ public class SpeechToText {
 
     public boolean isUseTTS() {
         return useTTS;
-    }
-    public boolean isUseVAD() {
-        return useVAD;
     }
     /**
      * Change default timeout
