@@ -177,6 +177,8 @@ public class SpeechToText {
     public void initWithContext(URI uri, Context ctx, boolean isUsingVad){
         this.setHostURL(uri);
         this.appCtx = ctx;
+        this.setUseVAD(isUsingVad);
+
         if(isUsingVad)
             this.initVadService();
         else
@@ -293,7 +295,7 @@ public class SpeechToText {
                         stopServiceRecording();
                     } else if (mService.isPausing()) {
                         Logger.i(TAG, "Speaker finished speaking");
-                    //add null at end
+
 //                        try {
 //                            byte[] end = new byte[0];
 //                            recordedData.put(end);
@@ -302,6 +304,7 @@ public class SpeechToText {
 //                            Log.e(TAG,"Error writing null to end of audio");
 //                            e.printStackTrace();
 //                        }
+
                         stopServiceRecording();
                     } else if (stopByUser) {
                         Logger.i(TAG, "Stop by USER/ hit the mic button while recording");
@@ -341,6 +344,7 @@ public class SpeechToText {
                 break;
             case PROCESSING:
                 //finishRecord();
+                this.stopRecognition();
                 break;
             case ERROR:
                 Log.e(TAG, "Error while recording audio from handlerRecording()");
@@ -508,16 +512,22 @@ public class SpeechToText {
             //Logger.i(TAG, "consume called with " + data.length + " bytes");
             mUploader.onHasData(data, isUseCompression());
         }
+
+        @Override
+        public void onAmplitude(double amplitude, double volume) {
+            Logger.d(TAG, "####### volume=" + volume + ", amplitude="+amplitude);
+        }
     }
 
     /**
      * Start recording process with VAD:
      */
     private void startRecordingWithoutVAD() {
+        Logger.i(TAG, "-> startRecordingWithoutVAD");
         uploader.prepare();
         STTAudioConsumer audioConsumer = new STTAudioConsumer(uploader);
 
-        audioCaptureThread = new AudioCaptureThread(16000, audioConsumer);
+        audioCaptureThread = new AudioCaptureThread(SpeechConfiguration.SAMPLE_RATE, audioConsumer);
         audioCaptureThread.start();
     }
 
@@ -528,7 +538,7 @@ public class SpeechToText {
      * 2. Start service to record audio.
      */
     private void startRecordingWithVAD() {
-        Logger.i(TAG, "startRecordingWithVAD");
+        Logger.i(TAG, "-> startRecordingWithVAD");
 
         isCancelled = false;
         numberData = 0;
@@ -586,7 +596,8 @@ public class SpeechToText {
 //					audioUploadedLength = 0;
 //					spxAudioUploadedLength = 0;
 
-                    mService.start(SpeechConfiguration.SAMPLE_RATE); // recording was started, State = State.RECORDING
+                    STTAudioConsumer audioConsumer = new STTAudioConsumer(uploader);
+                    mService.start(SpeechConfiguration.SAMPLE_RATE, audioConsumer); // recording was started, State = State.RECORDING
                     handleRecording();
                 }
             }
@@ -644,7 +655,6 @@ public class SpeechToText {
         uploader.setTimeout(UPLOADING_TIMEOUT); // default timeout
         uploader.setDelegate(this.delegate);
         if (this.useVAD) { // Record audio in service
-            //startRecordingWithVAD();
             startRecordingWithVAD();
         } else {
 			startRecordingWithoutVAD();
@@ -652,9 +662,15 @@ public class SpeechToText {
     }
 
     public void stopRecognition() {
+        if(audioCaptureThread != null)
+            audioCaptureThread.end();
 
-        audioCaptureThread.end();
-        uploader.close();
+        if(this.useVAD){
+            finishRecord();
+        }
+
+        if(uploader != null)
+            uploader.close();
     }
 
     /**

@@ -74,6 +74,7 @@ public class RecognizerIntentService extends Service {
 	 */
 	private State mState = null;
 
+
 	public class RecognizerBinder extends Binder {
 		public RecognizerIntentService getService() {
 			return RecognizerIntentService.this;
@@ -191,13 +192,13 @@ public class RecognizerIntentService extends Service {
 	 *
 	 * @param sampleRate sample rate in Hz, e.g. 16000
 	 */
-	public boolean start(int sampleRate) {
+	public boolean start(int sampleRate, AudioConsumer audioConsumer) {
 		if (mState != State.INITIALIZED) {
 			processError(RawAudioRecorder.RESULT_VAD_ERROR, null);
 			return false;
 		}
 		try {
-			startRecording(sampleRate);
+			startRecording(sampleRate, audioConsumer);
 			mStartTime = SystemClock.elapsedRealtime();
 //			startChunkProcessing(false);
 			setState(State.RECORDING);
@@ -256,9 +257,9 @@ public class RecognizerIntentService extends Service {
 	 *
 	 * @throws IOException if recorder could not be created
 	 */
-	private void startRecording(int recordingRate) throws IOException {
+	private void startRecording(int recordingRate, AudioConsumer audioConsumer) throws IOException {
 //		VaniRecorder.releaseRecorder();
-		mRecorder = new RawAudioRecorder(recordingRate);
+		mRecorder = new RawAudioRecorder(recordingRate, audioConsumer);
 		mRecorder.start();
 	}
 	/**

@@ -33,22 +33,32 @@ public class AudioCaptureThread extends Thread {
     // once the thread is started it runs nonstop until it is stopped from the outside
     @Override
     public void run() {
-
         Log.i(TAG, "thread started");
         AudioRecord recorder = null;
-        short[] buffer = new short[2400]; // ASR latency depends on the length of this buffer, a short buffer is good for latency
-        // because the ASR will process the speech sooner, however it will introduce some network overhead because each packet comes
-        // with a fixed amount of protocol-data), also I have noticed that some servers cannot handle too many small packages
 
         try {
-
             // initialize the recorder
             int iN = AudioRecord.getMinBufferSize(mSamplingRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
-            recorder = new AudioRecord(AudioSource.MIC, mSamplingRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, iN*10);
+            short[] buffer = new short[iN]; // ASR latency depends on the length of this buffer, a short buffer is good for latency
+            // because the ASR will process the speech sooner, however it will introduce some network overhead because each packet comes
+            // with a fixed amount of protocol-data), also I have noticed that some servers cannot handle too many small packages
+
+            recorder = new AudioRecord(AudioSource.MIC, mSamplingRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, iN);
             recorder.startRecording();
 
             while(!mStop) {
-                iN = recorder.read(buffer,0,buffer.length);
+                int r = recorder.read(buffer,0,buffer.length);
+
+                long v = 0;
+                for (int i = 0; i < buffer.length; i++) {
+                    v += buffer[i] * buffer[i];
+                }
+                double amplitude = v / (double) r;
+                double volume = 0;
+                if(amplitude > 0)
+                    volume = 10 * Math.log10(amplitude);
+                mAudioConsumer.onAmplitude(amplitude, volume);
+
                 // convert to an array of bytes and send it to the server
                 ByteBuffer bufferBytes = ByteBuffer.allocate(buffer.length*2);
                 bufferBytes.order(ByteOrder.LITTLE_ENDIAN);

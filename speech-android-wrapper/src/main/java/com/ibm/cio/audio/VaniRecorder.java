@@ -15,7 +15,6 @@ import com.ibm.cio.watsonsdk.VaniManager;
 
 public class VaniRecorder {
     private final static String TAG = VaniRecorder.class.getName();
-    public final static int[] sampleRates = { 16000, 22050, 11025, 8000 };
     private VaniUploader uploader;
     private VaniManager vani;
     private int audioRecordedLength;

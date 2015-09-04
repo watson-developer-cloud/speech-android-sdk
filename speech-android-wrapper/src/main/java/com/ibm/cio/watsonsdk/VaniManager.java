@@ -19,6 +19,7 @@ import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.ibm.cio.audio.AudioConsumer;
 import com.ibm.cio.audio.ChuckWebSocketUploader;
 import com.ibm.cio.audio.RecognizerIntentService;
 import com.ibm.cio.audio.RecognizerIntentService.RecognizerBinder;
@@ -783,6 +784,26 @@ public class VaniManager {
                 break;
         }
     }
+    private class STTAudioConsumer implements AudioConsumer {
+
+        private VaniUploader mUploader = null;
+
+        public STTAudioConsumer(VaniUploader uploader) {
+
+            mUploader = uploader;
+        }
+
+        public void consume(byte [] data) {
+            //Logger.i(TAG, "consume called with " + data.length + " bytes");
+            mUploader.onHasData(data, isUseCompression());
+        }
+
+        @Override
+        public void onAmplitude(double amplitude, double volume) {
+            Logger.d(TAG, "####### volume=" + volume);
+        }
+    }
+
     /**
      * Start recording process:
      * 1. Prepare uploader. Start thread to listen if have audio data, then upload it.
@@ -850,8 +871,8 @@ public class VaniManager {
                     Logger.i(TAG, "startServiceRecording");
 //					audioUploadedLength = 0;
 //					spxAudioUploadedLength = 0;
-
-                    mService.start(SpeechConfiguration.SAMPLE_RATE); // recording was started, State = State.RECORDING
+                    STTAudioConsumer audioConsumer = new STTAudioConsumer(uploader);
+                    mService.start(SpeechConfiguration.SAMPLE_RATE, audioConsumer); // recording was started, State = State.RECORDING
                     handleRecording();
                 }
             }
