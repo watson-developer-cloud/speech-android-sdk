@@ -68,7 +68,7 @@ public class OpusWriter extends AudioFileWriter {
     public void close() throws IOException {
         Logger.d(TAG, "Opus Writer Closing...");
         flush(true);
-        this.closeFile();
+//        this.closeFile();
         this.client.stop();
     }
 
@@ -80,7 +80,7 @@ public class OpusWriter extends AudioFileWriter {
 
     @Override
     public void writeHeader(String comment) {
-        this.createFile();
+//        this.createFile();
 
         Logger.d(TAG, "Opus Writer Headering...");
 
@@ -148,20 +148,20 @@ public class OpusWriter extends AudioFileWriter {
     }
 
     public void write(byte[] data){
-        Logger.d(TAG, "Opus Writer Writing...[" + data.length + "]");
+//        Logger.d(TAG, "Opus Writer Writing...[" + data.length + "]");
 
-        this.writeFile(data);
+//        this.writeFile(data);
 
         this.client.upload(data);
     }
 
     public void write(byte[] data, int offset, int count){
-        Logger.d(TAG, "Opus Writer Writing...["+data.length+", "+offset+", "+count+"]");
+//        Logger.d(TAG, "Opus Writer Writing...["+data.length+", "+offset+", "+count+"]");
 
         byte[] tmp = new byte[count];
         System.arraycopy(data, offset, tmp, 0, count);
 
-        this.writeFile(tmp);
+//        this.writeFile(tmp);
 
         this.client.upload(tmp);
     }
