@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.http.Header;
 import org.java_websocket.util.Base64;
 
 import android.content.ComponentName;
@@ -27,12 +26,13 @@ import android.util.Log;
 
 import com.ibm.cio.audio.AudioConsumer;
 import com.ibm.cio.audio.AudioCaptureThread;
+import com.ibm.cio.audio.ChuckJNAOpusEnc;
+import com.ibm.cio.audio.ChuckOggOpusEnc;
 import com.ibm.cio.audio.ChuckRawEnc;
 import com.ibm.cio.audio.RecognizerIntentService;
-import com.ibm.cio.audio.VaniEncoder;
-import com.ibm.cio.audio.VaniJNISpeexEnc;
+import com.ibm.cio.audio.SpeechConfiguration;
+import com.ibm.cio.audio.SpeechEncoder;
 import com.ibm.cio.audio.ChuckWebSocketUploader;
-import com.ibm.cio.audio.VaniRawEnc;
 import com.ibm.cio.audio.VaniRecorder;
 import com.ibm.cio.audio.VaniUploader;
 import com.ibm.cio.audio.RecognizerIntentService.RecognizerBinder;
@@ -63,7 +63,6 @@ import java.io.InputStreamReader;
  *
  */
 public class SpeechToText {
-
     protected static final String TAG = "SpeechToText";
 
     private Context appCtx;
@@ -98,7 +97,7 @@ public class SpeechToText {
     public String transcript;
 
     /** Audio encoder. */
-    private VaniEncoder encoder;
+    private SpeechEncoder encoder;
     /** Service to record audio. */
     private RecognizerIntentService mService;
     private boolean mStartRecording = false;
@@ -143,14 +142,12 @@ public class SpeechToText {
     /** UPLOADING TIIMEOUT  */
     private int UPLOADING_TIMEOUT = 5000; // default duration of closing connection
 
-    /**Constructor to be used
-
     /**Constructor
      *
      */
     public SpeechToText() {
         this.setUseTTS(false);
-        this.setUseCompression(false);
+        this.setUseCompression(true);
         this.setUseStreaming(true);
         this.setCertificateValidationDisabled(false);
         this.setTimeout(0);
@@ -184,17 +181,6 @@ public class SpeechToText {
             this.initVadService();
         else
             this.doUnbindService();
-    }
-
-    /**
-     * Init the shared instance with the context when VAD is being used
-     * @param uri
-     * @param ctx
-     */
-    public void initWithContext(URI uri, Context ctx){
-        this.setHostURL(uri);
-        this.appCtx = ctx;
-        this.initVadService();
     }
 
     /**
@@ -254,8 +240,7 @@ public class SpeechToText {
      */
     public void initVadService() {
         Logger.i(TAG, "initVadService");
-        RawAudioRecorder.CreateInstance(VaniRecorder.sampleRates[0]);
-//		initBeepPlayer(); //to beep player
+        RawAudioRecorder.CreateInstance(SpeechConfiguration.SAMPLE_RATE);
 
         // Save the current recording data to a temp array and send it to Vad processing
         mRunnableBytes = new Runnable() {
@@ -520,9 +505,8 @@ public class SpeechToText {
         }
 
         public void consume(byte [] data) {
-
             //Logger.i(TAG, "consume called with " + data.length + " bytes");
-            mUploader.onHasData(data, false);
+            mUploader.onHasData(data, isUseCompression());
         }
     }
 
@@ -530,7 +514,6 @@ public class SpeechToText {
      * Start recording process with VAD:
      */
     private void startRecordingWithoutVAD() {
-
         uploader.prepare();
         STTAudioConsumer audioConsumer = new STTAudioConsumer(uploader);
 
@@ -580,8 +563,8 @@ public class SpeechToText {
 //											dataBufferTime += (tHasData - tUploadChunkDone);
 //											Logger.d(TAG, "bufferDataTime trace: " + (tHasData - tUploadChunkDone));
 //										}
-                                        Log.d(TAG, "Uploading Chunk No."+numberData);
-                                        uploader.onHasData(dataToUpload, true); // synchronize
+//                                        Log.d(TAG, "Uploading Chunk No."+numberData);
+                                        uploader.onHasData(dataToUpload, !useVAD); // synchronize
 //										tUploadChunkDone = SystemClock.elapsedRealtime();
 //										audioUploadedLength += dataToUpload.length;
 //										spxAudioUploadedLength += dataToUpload.length;
@@ -603,7 +586,7 @@ public class SpeechToText {
 //					audioUploadedLength = 0;
 //					spxAudioUploadedLength = 0;
 
-                    mService.start(VaniRecorder.sampleRates[0]); // recording was started, State = State.RECORDING
+                    mService.start(SpeechConfiguration.SAMPLE_RATE); // recording was started, State = State.RECORDING
                     handleRecording();
                 }
             }
@@ -620,7 +603,6 @@ public class SpeechToText {
      * </p>
      */
     public void recognize() {
-
         Log.i(TAG, "startRecording");
         shouldStopRecording = false;
         // stillDoesNotCallStartRecord = true;
@@ -628,19 +610,34 @@ public class SpeechToText {
         doneUploadData = false;
         // Initiate Uploader, Encoder
 
-        encoder = new ChuckRawEnc();
+        SpeechConfiguration sConfig = new SpeechConfiguration();
+        sConfig.enableOpusTesting();
+
         try {
             HashMap<String, String> header = new HashMap<String, String>();
-            if (this.tokenProvider != null) {
-                header.put("X-Watson-Authorization-Token", this.tokenProvider.getToken());
-                Logger.e(TAG, "ws connecting with token based authentication");
-            } else {
-                String auth = "Basic " + Base64.encodeBytes((this.username + ":" + this.password).getBytes(Charset.forName("UTF-8")));
-                header.put("Authorization", auth);
-                Logger.e(TAG, "ws connecting with Basic Authentication");
+            if(sConfig.audioFormat.equals(SpeechConfiguration.AUDIO_FORMAT_DEFAULT)) {
+                encoder = new ChuckRawEnc();
             }
+            else if(sConfig.audioFormat.equals(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS)){
+                encoder = new ChuckOggOpusEnc();
+            }
+
+            header.put("Content-Type", sConfig.audioFormat);
+
+            if(sConfig.isAuthNeeded) {
+                if (this.tokenProvider != null) {
+                    header.put("X-Watson-Authorization-Token", this.tokenProvider.getToken());
+                    Logger.e(TAG, "ws connecting with token based authentication");
+                } else {
+                    String auth = "Basic " + Base64.encodeBytes((this.username + ":" + this.password).getBytes(Charset.forName("UTF-8")));
+                    header.put("Authorization", auth);
+                    Logger.e(TAG, "ws connecting with Basic Authentication");
+                }
+            }
+
             String wsURL = getHostURL().toString() + "/v1/recognize" + (this.model != null ? ("?model=" + this.model) : "");
-            uploader = new ChuckWebSocketUploader(encoder, wsURL, header);
+
+            uploader = new ChuckWebSocketUploader(encoder, wsURL, header, sConfig);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -648,7 +645,7 @@ public class SpeechToText {
         uploader.setDelegate(this.delegate);
         if (this.useVAD) { // Record audio in service
             //startRecordingWithVAD();
-            startRecordingWithoutVAD();
+            startRecordingWithVAD();
         } else {
 			startRecordingWithoutVAD();
         }
@@ -726,7 +723,7 @@ public class SpeechToText {
 
         try {
             HttpClient httpClient = new DefaultHttpClient();
-            String strHTTPURL = this.hostURL.toString().replace("wss","https");
+            String strHTTPURL = this.hostURL.toString().replace("wss","https").replace("ws", "http");
             HttpGet httpGet = new HttpGet(strHTTPURL+"/v1/models");
             this.buildAuthenticationHeader(httpGet);
             httpGet.setHeader("accept","application/json");
@@ -756,7 +753,7 @@ public class SpeechToText {
 
         try {
             HttpClient httpClient = new DefaultHttpClient();
-            String strHTTPURL = this.hostURL.toString().replace("wss","https");
+            String strHTTPURL = this.hostURL.toString().replace("wss", "https").replace("ws", "http");
             HttpGet httpGet = new HttpGet(strHTTPURL+"/v1/models/en-US_NarrowbandModel");
             this.buildAuthenticationHeader(httpGet);
             httpGet.setHeader("accept","application/json");

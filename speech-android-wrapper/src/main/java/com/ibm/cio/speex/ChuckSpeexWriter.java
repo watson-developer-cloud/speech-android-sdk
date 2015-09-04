@@ -7,7 +7,6 @@ import java.util.Random;
 import org.xiph.speex.AudioFileWriter;
 
 import com.ibm.cio.audio.ChuckWebSocketUploader;
-import com.ibm.cio.audio.VaniOpusUploader;
 import com.ibm.cio.util.Logger;
 
 public class ChuckSpeexWriter extends AudioFileWriter {

@@ -85,7 +85,7 @@ public class VaniStreamUploader implements VaniUploader{
     private SpeechDelegate delegate;
 
     /** Encoder. */
-    private VaniEncoder encoder;
+    private SpeechEncoder encoder;
 
     /** {@link Future} to get transcript from HttpURLConnection. */
     private Future<QueryResult> future = null;
@@ -121,7 +121,7 @@ public class VaniStreamUploader implements VaniUploader{
      * @param serverURL LMC server, delivery to back end server
      * @param lmcCookie the cookie of LMC session
      */
-    public VaniStreamUploader(VaniEncoder encoder, String serverURL, String lmcCookie) {
+    public VaniStreamUploader(SpeechEncoder encoder, String serverURL, String lmcCookie) {
         Logger.i(TAG, "Construct VaniStreamUploader");
 
         this.encoder = encoder;

@@ -22,7 +22,7 @@ import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 /**
  * Non-encode.
  */
-public class ChuckRawEnc implements VaniEncoder{
+public class ChuckRawEnc implements SpeechEncoder {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use
     // COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
@@ -40,7 +40,7 @@ public class ChuckRawEnc implements VaniEncoder{
     }
 
     /* (non-Javadoc)
-     * @see com.ibm.cio.audio.VaniEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
+     * @see com.ibm.cio.audio.SpeechEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
      */
     public void initEncodeAndWriteHeader(OutputStream out){}
     /**
@@ -55,8 +55,11 @@ public class ChuckRawEnc implements VaniEncoder{
 
     }
 
+    @Override
+    public void onStart() {}
+
     /* (non-Javadoc)
-     * @see com.ibm.cio.audio.VaniEncoder#encodeAndWrite(byte[])
+     * @see com.ibm.cio.audio.SpeechEncoder#encodeAndWrite(byte[])
      */
     @Override
     public int encodeAndWrite(byte[] b) throws IOException {
@@ -67,7 +70,7 @@ public class ChuckRawEnc implements VaniEncoder{
         return b.length;
     }
     /* (non-Javadoc)
-     * @see com.ibm.cio.audio.VaniEncoder#close()
+     * @see com.ibm.cio.audio.SpeechEncoder#close()
      */
     public void close() {
         if(this.writer != null){

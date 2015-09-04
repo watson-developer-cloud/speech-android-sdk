@@ -118,7 +118,7 @@ public abstract class AudioFileWriter
     writeInt(buf, offset+22, 0);                  // 22 - 25: page checksum
     buf[offset+26] = (byte) packetCount;          //      26: page_segments
     System.arraycopy(packetSizes, 0,              // 27 -  x: segment_table
-                     buf, offset+27, packetCount);
+            buf, offset + 27, packetCount);
     return packetCount+27;
   }
 
@@ -139,7 +139,7 @@ public abstract class AudioFileWriter
   {
     byte[] data = new byte[packetCount+27];
     writeOggPageHeader(data, 0, headerType, granulepos, streamSerialNumber,
-                       pageCount, packetCount, packetSizes);
+            pageCount, packetCount, packetSizes);
     return data;
   }
 
@@ -206,7 +206,7 @@ public abstract class AudioFileWriter
     int length = comment.length();
     writeInt(buf, offset, length);       // vendor comment size
     writeString(buf, offset+4, comment); // vendor comment
-    writeInt(buf, offset+length+4, 0);   // user comment list length
+    writeInt(buf, offset + length + 4, 0);   // user comment list length
     return length+8;
   }
 
@@ -221,6 +221,74 @@ public abstract class AudioFileWriter
     writeSpeexComment(data, 0, comment);
     return data;
   }
+
+    /**
+     * Builds a Opus Header.
+     *
+     * @param sampleRate
+     * @return Opus Header data
+     */
+    public static byte[] buildOpusHeader(int sampleRate) {
+        byte[] data = new byte[19];
+        writeOpusHeader(data, 0, sampleRate);
+        return data;
+    }
+
+    /**
+     * Write Opus header
+     *
+     * @param buf
+     * @param offset
+     * @param sampleRate
+     *
+     * @link https://tools.ietf.org/html/draft-ietf-codec-oggopus-08#section-5.1
+     */
+    public static void writeOpusHeader(byte[] buf, int offset, int sampleRate) {
+        // Magic Signature
+        writeString(buf, offset, "OpusHead");
+        buf[offset + 8] = 1;                        // Version, MUST The version number MUST always be '1' for this version of the encapsulation specification.
+        buf[offset + 9] = 1;                        // Output Channel Count
+        writeShort(buf, offset + 10, 0);            // Pre-skip
+        writeInt(buf, offset + 12, sampleRate);     // Input Sample Rate (Hz)
+        writeShort(buf, offset + 16, 0);            // Output Gain (Q7.8 in dB), +/- 128 dB
+        buf[offset + 18] = 0; // Mapping Family (For channel mapping family 0, this value defaults to C-1 (i.e., 0 for mono and 1 for stereo), and is not coded.)
+//    writeInt(buf, offset + 152, 0); // Optional Channel Mapping Table...
+    }
+
+    /**
+     * Writes a Opus Comment to the given byte array.
+     *
+     * @param buf
+     *            the buffer to write to.
+     * @param offset
+     *            the from which to start writing.
+     * @param comment
+     *            the comment.
+     * @return the amount of data written to the buffer.
+     */
+    public static void writeOpusComment(byte[] buf, int offset, String comment) {
+        // Magic Signature
+        writeString(buf, offset, "OpusTags");
+        String vendorString = "IBM";
+        writeInt(buf, offset + 8, vendorString.length());  // Vendor String Length
+        writeString(buf, offset + 12, vendorString);       // Vendor String
+        writeInt(buf, offset + 20, 1);                     // User Comment List Length
+        writeInt(buf, offset + 24, comment.length());      // User Comment #0 String Length
+        writeString(buf, offset + 28, comment);            // User Comment #0 String
+    }
+
+    /**
+     * Builds and returns a Speex Comment.
+     *
+     * @param comment
+     *            the comment.
+     * @return a Speex Comment.
+     */
+    public static byte[] buildOpusComment(String comment) {
+        byte[] data = new byte[28+comment.length()];
+        writeOpusComment(data, 0, comment);
+        return data;
+    }
   
   /**
    * Writes a Little-endian short.

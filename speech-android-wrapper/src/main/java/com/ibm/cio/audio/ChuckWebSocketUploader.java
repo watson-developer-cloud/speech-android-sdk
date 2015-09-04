@@ -24,7 +24,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.os.Environment;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -35,7 +34,7 @@ import com.ibm.cio.watsonsdk.SpeechDelegate;
 public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploader{
     private static final String TAG = ChuckWebSocketUploader.class.getName();
 
-    private VaniEncoder encoder = null;
+    private SpeechEncoder encoder = null;
     private String transcript = "";
     private Thread initStreamToServerThread;
 
@@ -52,6 +51,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
 
     private SpeechDelegate delegate = null;
     private Future<QueryResult> future = null;
+    private SpeechConfiguration sConfig = null;
 
     /**
      * Create an uploader which supports streaming.
@@ -60,12 +60,13 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
      * @param serverURL LMC server, delivery to back end server
      * @throws URISyntaxException
      */
-    public ChuckWebSocketUploader(VaniEncoder encoder, String serverURL, Map<String, String> header) throws URISyntaxException {
+    public ChuckWebSocketUploader(SpeechEncoder encoder, String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
         super(new URI(serverURL), new Draft_17(), header);
 //		super( new URI(serverURL), new Draft_17());
         Logger.i(TAG, "### New ChuckWebSocketUploader ###");
         Logger.d(TAG, serverURL);
         this.encoder = encoder; // for WebSocket only
+        this.sConfig = config;
     }
     /**
      * Trust server
@@ -102,7 +103,8 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
         Logger.i(TAG, "prepareUploader, initStreamAudioToServer begin at: " + beginRequestTime);
         this.encoder.initEncoderWithWebSocketClient(this);//lifted up for initializing writer, using isRunning to control the flow
 
-        this.trustServer();
+        if(this.sConfig.isSSL)
+            this.trustServer();
 
         boolean rc = false;
         rc = this.connectBlocking();
@@ -113,12 +115,12 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
             throw new Exception("Connection failed.");
         }
         Logger.i(TAG, "********** Connected **********");
+        this.sendSpeechHeader();
     }
     /**
      * Send message to the delegate
      *
      * @param code
-     * @param message
      */
     private void sendMessage(int code){
         if(delegate != null){
@@ -132,12 +134,11 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
         if (this.isUploadPrepared()) {
             try {
                 if (needEncode) {
-                    Logger.e(TAG, "needEncode == true");
+//                    Logger.e(TAG, "needEncode == true");
                     uploadedAudioSize = encoder.encodeAndWrite(buffer);
                 }
                 else{
-                    //Logger.e(TAG, "needEncode == false");
-                    //encoder.writeChunk(buffer);
+//                    Logger.e(TAG, "needEncode == false");
                     this.send(buffer);
                 }
             } catch (IOException e) {
@@ -147,7 +148,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
         }
         else {
             try {
-                System.out.print("=");
+                System.out.println("### WAITING FOR ESTABLISHING CONNECTION ###");
                 initStreamToServerThread.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -328,9 +329,16 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
     }
 
     public void stop(){
-        Logger.w(TAG, "Sending 0 byte to stop the recognition...");
-        byte[] stopData = new byte[0];
-        this.upload(stopData); // Close streaming
+        JSONObject stopHeader = new JSONObject();
+        try {
+            stopHeader.put("action", "stop");
+            this.upload(stopHeader.toString());
+            Logger.w(TAG, "Sending stop action to stop the recognition...");
+            byte[] stopData = new byte[0];
+            this.upload(stopData); // Close streaming
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -393,24 +401,31 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
         requestEstablishingTime = (beginSendRequest - beginRequestTime);
         Logger.i(TAG, "requestEstablishingTime: " + requestEstablishingTime);
 
+        this.sendMessage(SpeechDelegate.OPEN);
+    }
+
+    private void sendSpeechHeader() {
         JSONObject obj = new JSONObject();
         try {
             obj.put("action", "start");
-            obj.put("content-type", "audio/l16; rate=16000");
+            obj.put("content-type", this.sConfig.audioFormat);
             obj.put("interim_results", true);
             obj.put("continuous", true);
-            obj.put("inactivity_timeout", 600);
+            obj.put("inactivity_timeout", this.sConfig.inactivityTimeout);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        upload(obj.toString());
-        Logger.i(TAG, "sending init message: " + obj.toString());
-        this.sendMessage(SpeechDelegate.OPEN);
+        String startHeader = obj.toString();
+        this.upload(startHeader);
+
+        this.encoder.onStart();
+
+        Logger.w(TAG, "Sending init message: " + startHeader);
     }
 
     /**
      * Parse the JSON from the WS connection
-     * @param text
+     * @param data
      * @return
      */
     String parseMessage(String data){
@@ -470,7 +485,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
     /**
      * Set timeout
      *
-     * @param int
+     * @param timeout
      */
     @Override
     public void setTimeout(int timeout) {

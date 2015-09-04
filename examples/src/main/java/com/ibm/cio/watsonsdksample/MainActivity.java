@@ -66,7 +66,10 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
     //private static String STT_URL = "wss://speech.tap.ibm.com/speech-to-text-beta/api";
     //private static String TTS_URL = "https://speech.tap.ibm.com/text-to-speech-beta/api";
     //private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
-    private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
+
+//    private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
+
+    private static String STT_URL = "ws://t430tb.watson.ibm.com:1080/speech-to-text/api";
     private static String TTS_URL = "https://stream-s.watsonplatform.net/text-to-speech/api";
 
 	TextView textResult;
@@ -335,8 +338,8 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 				InputMethodManager.HIDE_NOT_ALWAYS);
 
 		//Call the sdk function
-		TextToSpeech.sharedInstance().getVoices();
-		TextToSpeech.sharedInstance().synthesize(ttsText);
+        TextToSpeech.sharedInstance().getVoices();
+        TextToSpeech.sharedInstance().synthesize(ttsText);
         spinner.setEnabled(true);
 	}
 	
@@ -366,7 +369,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
                 setButtonLabel(R.id.buttonRecord, "start recording");
 				break;
 			case SpeechDelegate.ERROR:
-				Logger.e(TAG, result.getTranscript());
+                Logger.e(TAG, result.getTranscript());
                 displayResult(result.getTranscript());
 				break;
 			case SpeechDelegate.MESSAGE:
