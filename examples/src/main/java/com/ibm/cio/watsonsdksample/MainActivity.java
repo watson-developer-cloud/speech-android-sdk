@@ -213,7 +213,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 	 */
 	private void initSpeechRecognition() {
 		//STT
-		SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext());
+		SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), true);
         SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT,this.PASSWORD_STT);
         SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
         SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
