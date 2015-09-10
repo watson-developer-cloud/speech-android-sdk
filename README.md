@@ -51,10 +51,10 @@ Installation
 #Speech To Text
 ===============
 
-Implement the SpeechDelegate and SpeechRecorderDelgate in the MainActivity
+Implement the SpeechDelegate and SpeechRecorderDelegate in the MainActivity
 --------------------------------------------------------------------------
 
-These delgates implement the callbacks when a response from the server is recieved or when the recording is completed.
+These delegates implement the callbacks when a response from the server is recieved or when the recording is completed.
 
 ```
    public class MainActivity extends Activity implements SpeechDelegate, SpeechRecorderDelegate{}

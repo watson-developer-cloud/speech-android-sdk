@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#ffffff">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:background="#e0e0e0"/>
+
+    <TextView
+        android:id="@+id/instructions"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="24dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:background="#e0e0e0"
+        android:layout_below="@+id/title"/>
+
+    <Spinner
+        android:id="@+id/spinnerVoices"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:popupBackground="#ffffff"
+        style="@style/spinner_style"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="16dp"
+        android:layout_below="@+id/instructions"/>
+
+    <EditText
+        android:id="@+id/prompt"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_below="@+id/spinnerVoices"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/back"
+        android:height="150dp"
+        android:text=""
+        android:textSize="14dp" />
+
+    <Button
+        android:id="@+id/button_SubmitTTS"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_below="@+id/prompt"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="32dp"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/button_speak"
+        android:onClick="playTTS"
+        android:text="Speak"
+        android:textColor="#FFFFFF"
+        android:textSize="14dp" />
+
+
+</RelativeLayout>

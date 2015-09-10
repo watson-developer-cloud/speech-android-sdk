@@ -9,7 +9,7 @@
     <!-- view border color and width -->
     <stroke
         android:width="2dp"
-        android:color="#1c1b20" >
+        android:color="#c7c7c7" >
     </stroke>
     <!-- If you want to add some padding -->
     <padding
@@ -20,6 +20,6 @@
     </padding>
     <!-- Here is the corner radius -->
     <corners
-        android:radius="10dp"   >
+        android:radius="0dp"   >
     </corners>
 </shape>

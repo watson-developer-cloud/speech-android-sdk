@@ -7,6 +7,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity">
+
     <TextView
         android:id="@+id/sttTitle"
         android:layout_width="wrap_content"
@@ -20,10 +21,24 @@
 
     <Spinner
         android:id="@+id/spinnerModels"
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
+        android:popupBackground="#cccccc"
+        style="@style/spinner_style"
         android:layout_below="@+id/sttTitle"/>
+
+    <Button
+        android:id="@+id/buttonRecord"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/spinnerModels"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/button_record"
+        android:onClick="startRecord"
+        android:text="Record"
+        android:textColor="#FFFFFF"
+        android:textSize="14dp"/>
 
     <TextView
         android:id="@+id/textResult"
@@ -31,8 +46,8 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
-        android:layout_below="@+id/spinnerModels"
-        android:layout_marginTop="0dp"
+        android:layout_below="@+id/buttonRecord"
+        android:layout_marginTop="10dp"
         android:background="@drawable/back"
         android:editable="true"
         android:height="150dp"
@@ -50,22 +65,13 @@
         android:textSize="12dp"
         android:text="please, press the button to start speaking"/>
 
-    <Button
-        android:id="@+id/buttonRecord"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/sttStatus"
-        android:layout_centerHorizontal="true"
-        android:onClick="startRecord"
-        android:text="@string/buttonRecord"
-        android:textSize="14dp"
-        />
+
 
     <TextView
         android:id="@+id/ttsTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/buttonRecord"
+        android:layout_below="@+id/sttStatus"
         android:layout_marginTop="10dp"
         android:layout_centerHorizontal="true"
         android:text="IBM Watson Text To Speech service"
@@ -94,11 +100,14 @@
 
     <Button
         android:id="@+id/button_SubmitTTS"
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:layout_below="@+id/editText_TTS"
         android:layout_centerHorizontal="true"
+        android:background="@drawable/button_speak"
         android:onClick="playTTS"
-        android:text="Submit"
+        android:text="Speak"
+        android:textColor="#FFFFFF"
         android:textSize="14dp" />
 </RelativeLayout>

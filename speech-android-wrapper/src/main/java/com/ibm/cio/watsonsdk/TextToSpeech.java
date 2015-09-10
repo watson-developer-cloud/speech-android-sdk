@@ -1,6 +1,7 @@
 package com.ibm.cio.watsonsdk;
 
 import android.content.Context;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.ibm.cio.util.TTSPlugin;
@@ -62,13 +63,12 @@ public class TextToSpeech {
     public void initWithContext(URI uri, Context ctx){
         this.setHostURL(uri);
         this.appCtx = ctx;
-
     }
 
     public void synthesize(String ttsString) {
         Log.i(TAG, "synthesize called: " + this.hostURL.toString()+"/v1/synthesize");
         String[] Arguments = { this.hostURL.toString()+"/v1/synthesize", this.username, this.password,
-                this.voice, ttsString, this.tokenProvider.getToken()};
+                this.voice, ttsString, this.tokenProvider == null ? null : this.tokenProvider.getToken()};
         try {
             ttsPlugin= new TTSPlugin();
             ttsPlugin.setCodec(TTSPlugin.CODEC_OPUS);

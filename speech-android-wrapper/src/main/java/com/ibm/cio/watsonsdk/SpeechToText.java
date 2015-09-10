@@ -725,6 +725,7 @@ public class SpeechToText {
         JSONObject object = null;
 
         try {
+            Log.d(TAG, "starting getModels");
             HttpClient httpClient = new DefaultHttpClient();
             String strHTTPURL = this.hostURL.toString().replace("wss","https");
             HttpGet httpGet = new HttpGet(strHTTPURL+"/v1/models");
@@ -741,6 +742,7 @@ public class SpeechToText {
                 responseStrBuilder.append(inputStr);
             object = new JSONObject(responseStrBuilder.toString());
             Log.d(TAG, object.toString());
+            Log.d(TAG, "ending getModels");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (JSONException e) {

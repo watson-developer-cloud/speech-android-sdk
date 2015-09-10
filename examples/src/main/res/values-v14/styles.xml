@@ -7,6 +7,21 @@
     -->
     <style name="AppBaseTheme" parent="android:Theme.Holo.Light.DarkActionBar">
         <!-- API 14 theme customizations can go here. -->
+        <!-- <item name="android:actionBarTabStyle">@style/MyTheme.ActionBar.TabView</item> -->
+        <!-- <item name="android:actionBarTabTextStyle">@style/MyTheme.ActionBar.TabText</item> -->
+    </style>
+
+    <style name="MyTheme" parent="android:Theme.Holo.Light">
+        <item name="android:actionBarTabStyle">@style/MyTheme.ActionBar.TabView</item>
+    </style>
+
+    <style name="MyTheme.ActionBar.TabView" parent="android:style/Widget.Holo.ActionBar.TabView">
+        <item name="android:background">@drawable/tab_bar_background</item>
+    </style>
+
+    <style name="MyTheme.ActionBar.TabText" parent="android:style/Widget.Holo.ActionBar.TabText">
+        <!-- This is a PURPLE text color when selected and a WHITE color otherwise -->
+        <item name="android:textColor">@drawable/tab_text</item>
     </style>
 
 </resources>
