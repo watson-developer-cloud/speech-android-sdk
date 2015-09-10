@@ -48,7 +48,7 @@ public class VaniNoneStreamUploader implements VaniUploader{
     /** Server url. */
     private String serverURL;
     /** Encoder. */
-    private VaniEncoder encoder;
+    private SpeechEncoder encoder;
     /** Directory for save data. */
     private String baseDir;
     /** Flag <code>true/<code>false</code>. <code>True</code> if uploader has been prepared. */
@@ -68,7 +68,7 @@ public class VaniNoneStreamUploader implements VaniUploader{
      * @param lmcCookie the lmc cookie
      * @param baseDir file path to save audio recording data
      */
-    public VaniNoneStreamUploader(VaniEncoder encoder, String serverURL, String lmcCookie, String baseDir) {
+    public VaniNoneStreamUploader(SpeechEncoder encoder, String serverURL, String lmcCookie, String baseDir) {
         this.encoder = encoder;
         this.serverURL = serverURL;
         this.lmcCookie = lmcCookie;

@@ -15,7 +15,6 @@ import com.ibm.cio.watsonsdk.VaniManager;
 
 public class VaniRecorder {
     private final static String TAG = VaniRecorder.class.getName();
-    public final static int[] sampleRates = { 16000, 22050, 11025, 8000 };
     private VaniUploader uploader;
     private VaniManager vani;
     private int audioRecordedLength;
@@ -395,7 +394,7 @@ public class VaniRecorder {
      * Send message to the delegate
      *
      * @param code
-     * @param message
+     * @param result
      */
     private void sendMessage(int code, QueryResult result){
         if(vani.getDelegate() != null){
@@ -500,7 +499,7 @@ public class VaniRecorder {
         // audioRecorder.read(buffer, 0, buffer.length); // Fill buffer
 
         try {
-            uploader.onHasData(recordedData.take(), !vani.isUseVAD());
+            uploader.onHasData(recordedData.take(), vani.isUseCompression());
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -527,7 +526,7 @@ public class VaniRecorder {
         if (single == null) {
             single = new VaniRecorder(
                     MediaRecorder.AudioSource.VOICE_RECOGNITION,
-                    VaniRecorder.sampleRates[0], AudioFormat.CHANNEL_IN_MONO,
+                    SpeechConfiguration.SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT
             );
         }

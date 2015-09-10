@@ -19,15 +19,17 @@ import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.ibm.cio.audio.AudioConsumer;
 import com.ibm.cio.audio.ChuckWebSocketUploader;
 import com.ibm.cio.audio.RecognizerIntentService;
 import com.ibm.cio.audio.RecognizerIntentService.RecognizerBinder;
 import com.ibm.cio.audio.RecognizerIntentService.State;
-import com.ibm.cio.audio.VaniEncoder;
-import com.ibm.cio.audio.VaniJNAOpusEnc;
-import com.ibm.cio.audio.VaniJNISpeexEnc;
+import com.ibm.cio.audio.SpeechConfiguration;
+import com.ibm.cio.audio.SpeechEncoder;
+import com.ibm.cio.audio.SpeechJNAOpusEnc;
+import com.ibm.cio.audio.SpeechJNISpeexEnc;
 import com.ibm.cio.audio.VaniNoneStreamUploader;
-import com.ibm.cio.audio.VaniRawEnc;
+import com.ibm.cio.audio.SpeechRawEnc;
 import com.ibm.cio.audio.VaniRecorder;
 import com.ibm.cio.audio.VaniStreamUploader;
 import com.ibm.cio.audio.VaniUploader;
@@ -104,7 +106,7 @@ public class VaniManager {
     private VaniRecorder mRecorder;
     private VaniUploader uploader;
     /** Audio encoder. */
-    private VaniEncoder encoder;
+    private SpeechEncoder encoder;
     private TTSPlugin ttsPlugin;
 
     private Context appCtx;
@@ -356,7 +358,8 @@ public class VaniManager {
      */
     public void initVadService() {
         Logger.i(TAG, "initVadService");
-        RawAudioRecorder.CreateInstance(VaniRecorder.sampleRates[0]);
+        RawAudioRecorder.CreateInstance(SpeechConfiguration.SAMPLE_RATE);
+
 //		initBeepPlayer();
         // Save the current recording data each second to array
         mRunnableBytes = new Runnable() {
@@ -781,6 +784,26 @@ public class VaniManager {
                 break;
         }
     }
+    private class STTAudioConsumer implements AudioConsumer {
+
+        private VaniUploader mUploader = null;
+
+        public STTAudioConsumer(VaniUploader uploader) {
+
+            mUploader = uploader;
+        }
+
+        public void consume(byte [] data) {
+            //Logger.i(TAG, "consume called with " + data.length + " bytes");
+            mUploader.onHasData(data, isUseCompression());
+        }
+
+        @Override
+        public void onAmplitude(double amplitude, double volume) {
+            Logger.d(TAG, "####### volume=" + volume);
+        }
+    }
+
     /**
      * Start recording process:
      * 1. Prepare uploader. Start thread to listen if have audio data, then upload it.
@@ -848,8 +871,8 @@ public class VaniManager {
                     Logger.i(TAG, "startServiceRecording");
 //					audioUploadedLength = 0;
 //					spxAudioUploadedLength = 0;
-
-                    mService.start(VaniRecorder.sampleRates[0]); // recording was started, State = State.RECORDING
+                    STTAudioConsumer audioConsumer = new STTAudioConsumer(uploader);
+                    mService.start(SpeechConfiguration.SAMPLE_RATE, audioConsumer); // recording was started, State = State.RECORDING
                     handleRecording();
                 }
             }
@@ -918,21 +941,20 @@ public class VaniManager {
         Log.i(TAG, "### USING COMPRESSION="+(this.isUseCompression()?"Yes":"No")+"");
         Log.i(TAG, "### USING VAD="+(this.isUseVAD()?"Yes":"No")+"");
         if (this.isUsingWebSocket()){
-            encoder = new VaniJNAOpusEnc();
+            encoder = new SpeechJNAOpusEnc();
 
         }
         else if (this.useCompression) {
-            encoder = new VaniJNISpeexEnc();
+            encoder = new SpeechJNISpeexEnc();
         }
         else {
-            encoder = new VaniRawEnc();
+            encoder = new SpeechRawEnc();
         }
         if (this.isUsingWebSocket()){
             try {
                 HashMap<String, String> header = new HashMap<String, String>();
                 header.put("Cookie", this.sessionCookie);
-//				uploader = new VaniOpusUploader(encoder, getITransUrl(), header);
-                uploader = new ChuckWebSocketUploader(encoder, getITransUrl(), header);
+                uploader = new ChuckWebSocketUploader(encoder, getITransUrl(), header, new SpeechConfiguration());
 
             } catch (URISyntaxException e) {
                 // TODO Auto-generated catch block

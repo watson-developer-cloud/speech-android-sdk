@@ -15,16 +15,15 @@ package com.ibm.cio.audio;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
-
 import android.os.SystemClock;
-
-import com.ibm.cio.opus.ChuckOpusWriter;
 import com.ibm.cio.opus.JNAOpus;
+import com.ibm.cio.opus.OpusWriter;
 import com.ibm.cio.util.Logger;
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 import com.sun.jna.ptr.PointerByReference;
@@ -33,22 +32,20 @@ import com.sun.jna.ptr.PointerByReference;
 /**
  * JNI Speex encoder.
  */
-public class ChuckJNAOpusEnc implements SpeechEncoder {
+public class SpeechJNAOpusEnc implements SpeechEncoder {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use
     // COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2014";
     /** The Constant TAG. */
-    private static final String TAG = ChuckJNAOpusEnc.class.getName();
+    private static final String TAG = SpeechJNAOpusEnc.class.getName();
 
-    private ChuckOpusWriter writer = null;
+    private OpusWriter writer = null;
     private PointerByReference opusEncoder;
-    private int frameSize = 160;
     private int sampleRate = 16000;
-
     private long compressDataTime = 0;
     private SpeechRecorderDelegate delegate = null;
     //
-    public ChuckJNAOpusEnc() {
+    public SpeechJNAOpusEnc() {
         Logger.i(TAG, "Construct SpeechJNAOpusEnc");
         this.compressDataTime = 0;
     }
@@ -63,7 +60,7 @@ public class ChuckJNAOpusEnc implements SpeechEncoder {
      */
     public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client) throws IOException{
 //		this.client = client;
-        writer = new ChuckOpusWriter(client);
+        writer = new OpusWriter(client);
 //		writer.writeHeader("");
 
         IntBuffer error = IntBuffer.allocate(4);
@@ -86,7 +83,7 @@ public class ChuckJNAOpusEnc implements SpeechEncoder {
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
-        byte[] data = new byte[this.frameSize*2];
+        byte[] data = new byte[SpeechConfiguration.FRAME_SIZE*2];
         //
         int bufferSize;
         try {
@@ -105,22 +102,24 @@ public class ChuckJNAOpusEnc implements SpeechEncoder {
                 ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
                 long t1 = SystemClock.elapsedRealtime();
 
-                int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, this.frameSize, opusBuffer, bufferSize);
+                int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, SpeechConfiguration.FRAME_SIZE, opusBuffer, bufferSize);
 
                 compressDataTime += SystemClock.elapsedRealtime() - t1;
                 opusBuffer.position(opus_encoded);
                 opusBuffer.flip();
-
-                byte[] opusData = new byte[opusBuffer.remaining()];
-                opusBuffer.get(opusData, 0, opusData.length);
+                byte[] opusdata = new byte[opusBuffer.remaining()+1];
+                opusdata[0] = (byte) opus_encoded;
+                opusBuffer.get(opusdata, 1, opusdata.length-1);
 
                 try {
-                    bos.write(opusData);
+                    bos.write(opusdata);
                 } catch (IOException e) {
+                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
         } catch (IOException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -131,6 +130,7 @@ public class ChuckJNAOpusEnc implements SpeechEncoder {
             ios.close();
             ios = null;
         } catch (IOException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return byteData;
@@ -145,7 +145,7 @@ public class ChuckJNAOpusEnc implements SpeechEncoder {
         int uploadedAudioSize = 0;
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);
 //		Logger.e(TAG, "@@@rawAudio="+rawAudio.length);
-        byte[] data = new byte[this.frameSize*2];
+        byte[] data = new byte[SpeechConfiguration.FRAME_SIZE*2];
         int bufferSize;
 
         while((read = ios.read(data)) > 0){
@@ -163,23 +163,26 @@ public class ChuckJNAOpusEnc implements SpeechEncoder {
             ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
             long t1 = SystemClock.elapsedRealtime();
 
-            int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, this.frameSize, opusBuffer, bufferSize);
+            int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, SpeechConfiguration.FRAME_SIZE, opusBuffer, bufferSize);
 
             compressDataTime += SystemClock.elapsedRealtime() - t1;
             opusBuffer.position(opus_encoded);
             opusBuffer.flip();
-
-            byte[] opusData = new byte[opusBuffer.remaining()];
-            opusBuffer.get(opusData, 0, opusData.length);
+            byte[] opusdata = new byte[opusBuffer.remaining()+1];
+            opusdata[0] = (byte) opus_encoded;
+            opusBuffer.get(opusdata, 1, opusdata.length-1);
 
             if (opus_encoded > 0) {
-                uploadedAudioSize += opusData.length;
-                writer.writePacket(opusData, 0, opusData.length);
+                uploadedAudioSize += opusdata.length;
+                writer.writePacket(opusdata, 0, opusdata.length);
             }
+//			long t2 = SystemClock.elapsedRealtime();
+//			totalEnc += t2 - t1;
         }
 
         ios.close();
         ios = null;
+//		Logger.i(TAG, "encodeAndWrite time: " + totalEnc + ", uploadedAudioSize: " + uploadedAudioSize);
         this._onRecordingCompleted(rawAudio);
         return uploadedAudioSize;
     }
@@ -200,11 +203,11 @@ public class ChuckJNAOpusEnc implements SpeechEncoder {
     }
     @Override
     public long getCompressionTime() {
+        // TODO Auto-generated method stub
         return this.compressDataTime;
     }
 
     public void setDelegate(SpeechRecorderDelegate obj){
         this.delegate = obj;
     }
-
 }

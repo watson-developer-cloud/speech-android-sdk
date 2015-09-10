@@ -33,7 +33,7 @@ import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 /**
  * JNI Speex encoder.
  */
-public class ChuckJNISpeexEnc implements VaniEncoder {
+public class ChuckJNISpeexEnc implements SpeechEncoder {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use
     // COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
@@ -107,8 +107,11 @@ public class ChuckJNISpeexEnc implements VaniEncoder {
 
     }
 
+    @Override
+    public void onStart() {}
+
     /* (non-Javadoc)
-     * @see com.ibm.cio.audio.VaniEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
+     * @see com.ibm.cio.audio.SpeechEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
      */
     public void initEncodeAndWriteHeader(OutputStream out) throws IOException {
         Logger.e(TAG, "initEncodeAndWriteHeader");
@@ -177,7 +180,7 @@ public class ChuckJNISpeexEnc implements VaniEncoder {
         Logger.d(TAG, "writeChunk time: " + (SystemClock.elapsedRealtime() - t0));
     }
     /* (non-Javadoc)
-     * @see com.ibm.cio.audio.VaniEncoder#encodeAndWrite(byte[])
+     * @see com.ibm.cio.audio.SpeechEncoder#encodeAndWrite(byte[])
      */
     public int encodeAndWrite(byte[] audioData) throws IOException {
         Logger.i(TAG, "encodeAndWrite data length: " + audioData.length + ", pam.nframes=" + pam.nframes);
@@ -267,7 +270,7 @@ public class ChuckJNISpeexEnc implements VaniEncoder {
     }
 
     /* (non-Javadoc)
-     * @see com.ibm.cio.audio.VaniEncoder#close()
+     * @see com.ibm.cio.audio.SpeechEncoder#close()
      */
     public void close() {
         //speexEncoder

@@ -7,4 +7,5 @@ public interface AudioConsumer {
 
     // function that consumes the audio data
     public void consume(byte [] data);
+    public void onAmplitude(double amplitude, double volume);
 }

@@ -77,7 +77,10 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
     //private static String STT_URL = "wss://speech.tap.ibm.com/speech-to-text-beta/api";
     //private static String TTS_URL = "https://speech.tap.ibm.com/text-to-speech-beta/api";
     //private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
-    private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
+
+//    private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
+
+    private static String STT_URL = "ws://t430tb.watson.ibm.com:1080/speech-to-text/api";
     private static String TTS_URL = "https://stream-s.watsonplatform.net/text-to-speech/api";
 
 	TextView textResult;
@@ -476,7 +479,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 	 */
 	private void initSpeechRecognition() {
 		//STT
-		SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext());
+		SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), false);
         SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT,this.PASSWORD_STT);
         //SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
         SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
@@ -629,7 +632,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 				break;
 			case SpeechDelegate.ERROR:
 				Logger.e(TAG, result.getTranscript());
-                fragmentTabSTT.displayResult(result.getTranscript());
+				fragmentTabSTT.displayResult(result.getTranscript());
 				break;
 			case SpeechDelegate.MESSAGE:
 				//displayResult(result.getTranscript()); // Instant results
@@ -637,6 +640,9 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 				break;
 		}
 	}
+
+
+
 	@Override
 	public void onRecordingCompleted(byte[] rawAudioData) {
 		// TODO Auto-generated method stub
