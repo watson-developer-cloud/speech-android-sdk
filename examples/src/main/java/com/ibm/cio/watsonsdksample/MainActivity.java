@@ -67,10 +67,8 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
     //private static String TTS_URL = "https://speech.tap.ibm.com/text-to-speech-beta/api";
     //private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
 
-//    private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
-
-    private static String STT_URL = "ws://t430tb.watson.ibm.com:1080/speech-to-text/api";
-    private static String TTS_URL = "https://stream-s.watsonplatform.net/text-to-speech/api";
+    private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
+    private static String TTS_URL = "https://stream.watsonplatform.net/text-to-speech/api";
 
 	TextView textResult;
 	TextView textTTS;
@@ -162,6 +160,9 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         Spinner spinner = (Spinner) findViewById(R.id.spinnerVoices);
 
         JSONObject obj = TextToSpeech.sharedInstance().getVoices();
+
+        if(obj == null)
+            return;
         ItemVoice [] items = null;
         try {
             JSONArray voices = obj.getJSONArray("voices");

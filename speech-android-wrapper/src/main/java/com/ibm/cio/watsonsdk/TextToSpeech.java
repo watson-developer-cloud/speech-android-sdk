@@ -71,8 +71,7 @@ public class TextToSpeech {
                 this.voice, ttsString, this.tokenProvider.getToken()};
         try {
             ttsPlugin= new TTSPlugin();
-            ttsPlugin.setCodec(TTSPlugin.CODEC_OPUS);
-            //ttsPlugin.setCodec(TTSPlugin.CODEC_WAV);
+            ttsPlugin.setCodec(TTSPlugin.CODEC_WAV);
             ttsPlugin.tts(Arguments);
         } catch (Exception e) {
             Log.e(TAG, "Error calling TTSplugin");
