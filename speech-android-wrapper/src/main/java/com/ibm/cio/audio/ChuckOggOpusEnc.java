@@ -15,15 +15,11 @@ package com.ibm.cio.audio;
 
 import android.os.SystemClock;
 
-import com.ibm.cio.opus.ChuckOpusWriter;
 import com.ibm.cio.opus.JNAOpus;
 import com.ibm.cio.opus.OpusWriter;
 import com.ibm.cio.util.Logger;
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 import com.sun.jna.ptr.PointerByReference;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,7 +32,7 @@ import java.nio.ShortBuffer;
 /**
  * Ogg Opus Encoder
  */
-public class ChuckOggOpusEnc extends OpusWriter implements SpeechEncoder {
+public class ChuckOggOpusEnc extends OpusWriter implements ISpeechEncoder {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /** The Constant TAG. */
@@ -49,7 +45,6 @@ public class ChuckOggOpusEnc extends OpusWriter implements SpeechEncoder {
     private SpeechRecorderDelegate delegate = null;
 
     public ChuckOggOpusEnc() {
-        Logger.i(TAG, "Construct ChuckOggOpusEnc");
         this.compressDataTime = 0;
     }
     /* (non-Javadoc)
@@ -81,7 +76,6 @@ public class ChuckOggOpusEnc extends OpusWriter implements SpeechEncoder {
     }
     @Override
     public byte[] encode(byte[] rawAudio) {
-//		Logger.d(TAG, "[Opus Encode] Audio Length Passed="+rawAudio.length);
         int read = 0;
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -145,7 +139,6 @@ public class ChuckOggOpusEnc extends OpusWriter implements SpeechEncoder {
      * @throws IOException
      */
     public int encodeAndWrite(byte[] rawAudio) throws IOException {
-//		Logger.d(TAG, "[Opus Encode and Write] Audio Length Passed="+rawAudio.length);
         int read = 0;
 
         int uploadedAudioSize = 0;

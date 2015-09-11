@@ -7,10 +7,8 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.os.Environment;
-import android.os.Handler;
 import android.util.Log;
 
-import com.ibm.cio.audio.player.PlayerUtil;
 import com.ibm.cio.opus.OggOpus;
 
 import org.apache.commons.io.IOUtils;
@@ -22,22 +20,18 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.json.JSONArray;
+
 import org.xiph.speex.PcmWaveWriter;
 
-
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
+
 import java.io.FileNotFoundException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 
 import java.io.RandomAccessFile;
 
-import java.lang.reflect.Array;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -82,53 +76,17 @@ public class TTSPlugin extends Application {
 		this.codec = codec;
 	}
 
-	private void stopAudioPlayer(JSONArray arguments) {
-		Log.i(TAG, "stop all AudioPlayer");
-		//stop welcome
-		if (wavPlayer!=null && wavPlayer.isPlaying()) {
-			wavPlayer.stop();
-			//wavPlayer.release();
-		}
-		//stop tts
-		PlayerUtil.ins8k.stop();
-		stopTtsPlayer();
-	}
-
+    /**
+     * Stop player
+     */
 	private void stopTtsPlayer() {
-//		synchronized (this) {
-			if (audioTrack!=null && audioTrack.getState() != AudioTrack.STATE_UNINITIALIZED ) {
-				Log.i(TAG, "stopTtsPlayer");
-				// IMPORTANT: NOT use stop()
-				// For an immediate stop, use pause(), followed by flush() to discard audio data that hasn't been played back yet.
-				audioTrack.pause();
-				audioTrack.flush();
-				//audioTrack.release();
-		 	}			
-//		}
+        if (audioTrack != null && audioTrack.getState() != AudioTrack.STATE_UNINITIALIZED ) {
+            // IMPORTANT: NOT use stop()
+            // For an immediate stop, use pause(), followed by flush() to discard audio data that hasn't been played back yet.
+            audioTrack.pause();
+            audioTrack.flush();
+        }
 	}
-	
-
-
-	/*
-	private void playWav(JSONArray arguments) {
-		System.out.println("playWav welcome");
-		soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC, 0);
-		AudioManager am = (AudioManager) this.ctx.getSystemService(this.ctx.getApplicationContext().AUDIO_SERVICE);
-		float actualVolume = (float) am.getStreamVolume(AudioManager.STREAM_MUSIC);
-		float maxVolume = (float) am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-		final float volume = actualVolume / maxVolume;
-		soundPool.setOnLoadCompleteListener(new OnLoadCompleteListener() {
-			
-			@Override
-			public void onLoadComplete(SoundPool sPool, int sampleId, int status) {
-				// TODO Auto-generated method stub
-				System.out.println("playWav soundPool onLoadComplete");
-				streamId = soundPool.play(soundId, volume, volume, 1, 0, 1f);
-			}
-		});
-		soundId = soundPool.load(this.ctx.getApplicationContext(), R.raw.welcome_8000, 1);
-	}
-	*/
 
 	/**
 	 * Text to speech

@@ -33,10 +33,9 @@ import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 /**
  * JNI Speex encoder.
  */
-public class ChuckJNISpeexEnc implements SpeechEncoder {
-    // Use PROPRIETARY notice if class contains a main() method, otherwise use
-    // COPYRIGHT notice.
-    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
+public class ChuckJNISpeexEnc implements ISpeechEncoder {
+    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /** The Constant TAG. */
     private static final String TAG = ChuckJNISpeexEnc.class.getName();
 
@@ -51,9 +50,6 @@ public class ChuckJNISpeexEnc implements SpeechEncoder {
 
     /** The Constant VERSION. */
     public static final String VERSION = "Java Speex Command Line Encoder v0.9.7 ($Revision: 1.5 $)";
-
-    /** The temp. */
-//	byte[] temp = new byte[640];//harded code 640
 
     /** Speex paramters */
     SpeexParam pam;
@@ -70,18 +66,7 @@ public class ChuckJNISpeexEnc implements SpeechEncoder {
     /**
      * Create a speex encoder with channel = 1, sample rate = 16000Hz.
      */
-    public ChuckJNISpeexEnc() {
-        Logger.i(TAG, "Construct ChuckSpeexEnc");
-
-//		pam = new  SpeexParam();
-//		pam.channels = 1;
-//		pam.sampleRate = 16000;
-//		pam.mode = getEncMode(pam.sampleRate);
-//		this.compressDataTime = 0;
-//		// Construct a new encoder
-//		speexEncoder = new JNISpeexEncoder(FrequencyBand.WIDE_BAND, pam.quality);
-
-    }
+    public ChuckJNISpeexEnc() {}
 
     /**
      * For WebsocketClient
@@ -89,8 +74,6 @@ public class ChuckJNISpeexEnc implements SpeechEncoder {
      * @throws IOException
      */
     public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client) throws IOException{
-        Logger.i(TAG, "initEncoderWithWebSocketClient");
-
         pam = new  SpeexParam();
         pam.channels = 1;
         pam.sampleRate = 16000;
@@ -102,9 +85,6 @@ public class ChuckJNISpeexEnc implements SpeechEncoder {
 
         // Assign the encoder instance
         this.speexEncoder = new JNISpeexEncoder(FrequencyBand.WIDE_BAND, pam.QUALITY);
-
-//		speexEncoder = new JNISpeexEncoder(FrequencyBand.WIDE_BAND, pam.quality);
-
     }
 
     @Override
@@ -117,27 +97,16 @@ public class ChuckJNISpeexEnc implements SpeechEncoder {
         Logger.e(TAG, "initEncodeAndWriteHeader");
         long t1 = System.currentTimeMillis();
         Logger.i(TAG, "initEncodeAndWriteHeader at: " + t1);
-        //byte[] temp = new byte[2560]; // stereo UWB requires one to read 2560b
-        // DataInputStream dis = new DataInputStream(new FileInputStream(srcPCMFile));
 
-        // Construct a new encoder
-//		speexEncoder = new JNISpeexEncoder(FrequencyBand.WIDE_BAND, pam.quality);
+        writer = new ChunkOggSpeexWriter(pam, out);
 
-        writer = new VaniOggSpeexWriter(pam, out);
-        //writer.open(destSpxFile);
         writer.writeHeader("Encoded with: " + VERSION);
         Logger.i(TAG, "initEncodeAndWriteHeader end after: " + (System.currentTimeMillis() - t1));
     }
     @Override
     public byte[] encode(byte[] rawAudio) {
-        // TODO Auto-generated method stub
-        Logger.i(TAG, "encodeAndWrite data length: " + rawAudio.length
-                + ", pam.nframes=" + pam.nframes);
-//		long t1 = SystemClock.elapsedRealtime();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         int pcmPacketSize = 2 * pam.channels * speexEncoder.getFrameSize(); // 640
-//		Logger.d(TAG, "[encode] pcmPacketSize: " + pcmPacketSize);
-        // read until we get to EOF
         int offset = 0;
         int l = pcmPacketSize;
         while (offset < rawAudio.length) {
@@ -149,28 +118,20 @@ public class ChuckJNISpeexEnc implements SpeechEncoder {
             try {
                 if (spxFrameSize == 0)
                     spxFrameSize = encoded.length;
-//				Logger.d(TAG, "encode frame size 0: " + spxFrameSize);
                 bos.write(encoded);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-//			Logger.d(TAG, "encode time: " + (SystemClock.elapsedRealtime() - t1));
             offset += l;
         }
-//		compressDataTime += SystemClock.elapsedRealtime() - t1;
-//		Logger.d(TAG, "encode time: " + (SystemClock.elapsedRealtime() - t1));
         return bos.toByteArray();
     }
     @Override
     public void writeChunk(byte[] data) throws IOException {
-        // TODO Auto-generated method stub
-        Logger.d(TAG, "writeChunk frame size: " + spxFrameSize);
         long t0 = SystemClock.elapsedRealtime();
         int offSet = 0;
         if (spxFrameSize == 0)
             spxFrameSize = 70;
-        Logger.d(TAG, "writeChunk frame size 2: " + spxFrameSize);
         while (offSet < data.length) {
             if (offSet + spxFrameSize > data.length)
                 spxFrameSize = data.length - offSet;
@@ -184,13 +145,10 @@ public class ChuckJNISpeexEnc implements SpeechEncoder {
      */
     public int encodeAndWrite(byte[] audioData) throws IOException {
         Logger.i(TAG, "encodeAndWrite data length: " + audioData.length + ", pam.nframes=" + pam.nframes);
-        //byte[] temp = new byte[3840];;    // stereo UWB requires one to read 3840=framePeriod*bSamples/8*nChannels
         int pcmPacketSize = 2 * pam.channels * speexEncoder.getFrameSize(); // 640
         Logger.d(TAG, "[encodeAndWrite] pcmPacketSize: " + pcmPacketSize);
-        // read until we get to EOF
         int offset = 0;
-//		  long totalEnc = 0;
-        long t1, t2;
+        long t1;
         int l = pcmPacketSize;
         int uploadedAudioSize = 0;
 
@@ -198,14 +156,8 @@ public class ChuckJNISpeexEnc implements SpeechEncoder {
             if (l + offset > audioData.length)
                 l =  audioData.length - offset;
 
-//	    	  	temp = new byte[pcmPacketSize];
-
-//	    	  	System.arraycopy(audioData, offset, temp, 0, l);
-
             t1 = SystemClock.elapsedRealtime();
             byte[] encoded = speexEncoder.encode(VaniUtils.toShorts(audioData, offset, l));
-//	        	Logger.i(TAG, "encodeAndWrite size: " + encoded.length);
-//	        	Logger.d(TAG, "encode time: " + (SystemClock.elapsedRealtime() - t1));
             compressDataTime += SystemClock.elapsedRealtime() - t1;
 
             if (encoded.length > 0) {
@@ -213,13 +165,9 @@ public class ChuckJNISpeexEnc implements SpeechEncoder {
                 Log.d(TAG, "Writing and uploading speex data");
                 writer.writePacket(encoded, 0, encoded.length);
             }
-            t2 = SystemClock.elapsedRealtime();
-//		        totalEnc += t2-t1;
-
             offset += l;
         }
         this._onRecordingCompleted(audioData);
-//	      Logger.i(TAG, "encodeAndWrite time: " + totalEnc + "|uploadedAudioSize: " + uploadedAudioSize);
         return uploadedAudioSize;
     }
 
@@ -273,7 +221,6 @@ public class ChuckJNISpeexEnc implements SpeechEncoder {
      * @see com.ibm.cio.audio.SpeechEncoder#close()
      */
     public void close() {
-        //speexEncoder
         try {
             writer.close();
         } catch (IOException e) {
@@ -283,13 +230,11 @@ public class ChuckJNISpeexEnc implements SpeechEncoder {
 
     @Override
     public long getCompressionTime() {
-        // TODO Auto-generated method stub
         return this.compressDataTime;
     }
 
     @Override
     public void setDelegate(SpeechRecorderDelegate obj) {
-        // TODO Auto-generated method stub
         this.delegate = obj;
     }
 }

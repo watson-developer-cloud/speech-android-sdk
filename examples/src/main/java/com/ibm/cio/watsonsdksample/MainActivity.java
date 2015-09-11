@@ -124,8 +124,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(this,
-                android.R.layout.simple_spinner_item, items);
+        ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item, items);
         spinner.setAdapter(spinnerArrayAdapter);
     }
 
@@ -165,8 +164,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(this,
-                android.R.layout.simple_spinner_item, items);
+        ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item, items);
         spinner.setAdapter(spinnerArrayAdapter);
     }
 
@@ -374,7 +372,5 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 
 	@Override
 	public void onRecordingCompleted(byte[] rawAudioData) {
-		// TODO Auto-generated method stub
-//		Logger.e(TAG, "###"+rawAudioData.length+"###");
 	}
 }

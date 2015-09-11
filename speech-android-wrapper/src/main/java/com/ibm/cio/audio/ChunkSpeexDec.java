@@ -11,8 +11,8 @@ import org.xiph.speex.SpeexDecoder;
 
 import android.util.Log;
 
-public class VaniSpeexDec {
-	private static final String TAG = VaniSpeexDec.class.getName();
+public class ChunkSpeexDec {
+	private static final String TAG = ChunkSpeexDec.class.getName();
 	
 	/** Speex Decoder */
 	  protected SpeexDecoder speexDecoder;
@@ -27,12 +27,8 @@ public class VaniSpeexDec {
 	  private int sampleRate    = 8000;
 	  /** If input is raw, defines th number of channels (1=mono, 2=stereo). */
 	  private int channels      = 1;
-	  /** The percentage of packets to lose in the packet loss simulation. */
-//	  private int loss          = 0;
-	
-    public VaniSpeexDec() {
-    	
-    }
+
+    public ChunkSpeexDec() {}
     
 	public byte[] decode(InputStream is)
 			 {
@@ -74,7 +70,6 @@ public class VaniSpeexDec {
 					decodedAudioByte = baos.toByteArray();
 					Log.i(TAG, "not SPX file: " + decodedAudioByte.length);
 					return decodedAudioByte;
-//					return null;
 				}
 				/* how many segments are there? */
 				segments = header[OGG_SEGOFFSET] & 0xFF;
@@ -88,7 +83,6 @@ public class VaniSpeexDec {
 						System.err.println("Sorry, don't handle 255 sizes!");
 						decodedAudioByte = baos.toByteArray();
 						return decodedAudioByte;
-//						return null;
 					}
 					dis.readFully(payload, 0, bodybytes);
 					chksum = OggCrc.checksum(chksum, payload, 0, bodybytes);
@@ -110,7 +104,6 @@ public class VaniSpeexDec {
 						}
 						/* get the amount of decoded data */
 						if ((decsize = speexDecoder.getProcessedData(decdat, 0)) > 0) {
-//							System.out.println("decsize: " + decsize);
 							byte[] processedAudio = new byte[decsize];
 							System.arraycopy(decdat, 0, processedAudio, 0, decsize);
 							baos.write(processedAudio);
@@ -124,14 +117,12 @@ public class VaniSpeexDec {
 				}
 			}
 		} catch (EOFException eof) {
-//			System.out.println("End of file");
+            eof.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return null;
 		}
 		decodedAudioByte = baos.toByteArray();
-		
 		return decodedAudioByte;
 	}
     
@@ -184,9 +175,6 @@ public class VaniSpeexDec {
 		sampleRate = readInt(packet, offset + 36);
 		channels = readInt(packet, offset + 48);
 		nframes = readInt(packet, offset + 64);
-		/*System.out.println("readSpeexHeader mode: " + mode);
-		System.out.println("readSpeexHeader Sample Rate: " + sampleRate);
-		System.out.println("readSpeexHeader Channels: " + channels);*/
 		return speexDecoder.init(mode, sampleRate, channels, enhanced);
 	}
 }

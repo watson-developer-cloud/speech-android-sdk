@@ -18,7 +18,7 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.SystemClock;
 
-import com.ibm.cio.audio.AudioConsumer;
+import com.ibm.cio.audio.IAudioConsumer;
 import com.ibm.cio.util.Logger;
 // TODO: Auto-generated Javadoc
 
@@ -80,7 +80,7 @@ public class RawAudioRecorder {
 	private long beginRecordingTime = 0;
 	private long recordingTime = 0;
 
-    private AudioConsumer mAudioConsumer = null;
+    private IAudioConsumer mIAudioConsumer = null;
 	
 //	private volatile boolean recording;
 
@@ -129,9 +129,9 @@ public class RawAudioRecorder {
 	 *
 	 * @param sampleRate the sample rate
 	 */
-	public RawAudioRecorder(int sampleRate, AudioConsumer audioConsumer) {
+	public RawAudioRecorder(int sampleRate, IAudioConsumer IAudioConsumer) {
 		this(DEFAULT_AUDIO_SOURCE, sampleRate);
-        this.mAudioConsumer = audioConsumer;
+        this.mIAudioConsumer = IAudioConsumer;
 	}
 	/**
 	 * Instantiates a new audio recorder with default audio source and sample rate.
@@ -166,7 +166,7 @@ public class RawAudioRecorder {
             double volume = 0;
             if(amplitude > 0)
                 volume = 10 * Math.log10(amplitude);
-            this.mAudioConsumer.onAmplitude(amplitude, volume);
+            this.mIAudioConsumer.onAmplitude(amplitude, volume);
 
             add(mBuffer, numberOfBytes);
         }

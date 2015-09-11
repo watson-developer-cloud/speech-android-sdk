@@ -18,14 +18,12 @@ import javax.net.ssl.HttpsURLConnection;
 import com.ibm.cio.dto.QueryResult;
 import com.ibm.cio.watsonsdk.SpeechDelegate;
 
-// TODO: Auto-generated Javadoc
 /**
  * The uploader interface.
  */
-public interface VaniUploader {
-    // Use PROPRIETARY notice if class contains a main() method, otherwise use
-    // COPYRIGHT notice.
-    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
+public interface IChunkUploader {
+    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /**
      * On has data.
      *
@@ -70,7 +68,6 @@ public interface VaniUploader {
     public long getResponseTime();
     public long getDataTransmissionTime();
     public long getRequestEstablishingTime();
-
     /**
      * Set timeout value in second
      *

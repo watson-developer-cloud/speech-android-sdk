@@ -33,10 +33,9 @@ import com.sun.jna.ptr.PointerByReference;
 /**
  * JNI Speex encoder.
  */
-public class ChuckJNAOpusEnc implements SpeechEncoder {
-    // Use PROPRIETARY notice if class contains a main() method, otherwise use
-    // COPYRIGHT notice.
-    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2014";
+public class ChuckJNAOpusEnc implements ISpeechEncoder {
+    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /** The Constant TAG. */
     private static final String TAG = ChuckJNAOpusEnc.class.getName();
 
@@ -49,7 +48,6 @@ public class ChuckJNAOpusEnc implements SpeechEncoder {
     private SpeechRecorderDelegate delegate = null;
     //
     public ChuckJNAOpusEnc() {
-        Logger.i(TAG, "Construct SpeechJNAOpusEnc");
         this.compressDataTime = 0;
     }
     /* (non-Javadoc)
@@ -62,9 +60,7 @@ public class ChuckJNAOpusEnc implements SpeechEncoder {
      * @throws IOException
      */
     public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client) throws IOException{
-//		this.client = client;
         writer = new ChuckOpusWriter(client);
-//		writer.writeHeader("");
 
         IntBuffer error = IntBuffer.allocate(4);
         this.opusEncoder = JNAOpus.INSTANCE.opus_encoder_create(this.sampleRate, 1, JNAOpus.OPUS_APPLICATION_VOIP, error);
@@ -81,7 +77,6 @@ public class ChuckJNAOpusEnc implements SpeechEncoder {
     }
     @Override
     public byte[] encode(byte[] rawAudio) {
-//		Log.d(TAG, "[encode] Audio Length Passed="+rawAudio.length);
         int read = 0;
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -139,12 +134,9 @@ public class ChuckJNAOpusEnc implements SpeechEncoder {
      * @see com.ibm.cio.audio.SpeechEncoder#encodeAndWrite(byte[])
      */
     public int encodeAndWrite(byte[] rawAudio) throws IOException {
-//		Log.d(TAG, "[encodeAndWrite] Audio Length Passed="+rawAudio.length);
         int read = 0;
-//		long totalEnc = 0;
         int uploadedAudioSize = 0;
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);
-//		Logger.e(TAG, "@@@rawAudio="+rawAudio.length);
         byte[] data = new byte[this.frameSize*2];
         int bufferSize;
 

@@ -54,16 +54,7 @@ public class VaniUtils {
 	// COPYRIGHT notice.
 	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
 	private static final String TAG = VaniUtils.class.getName();
-	/**
-	 * Parse result from input stream.
-	 * @param is the input stream
-	 * @return query result
-	 */
-	public static QueryResult parseQueryResult(InputStream is) {
-		QueryResult queryResult = QueryResult.create(VaniUtils.stream2bytes(is));
-		return queryResult;
-	}
-	
+
 	/**
 	 * <p>Get data from input stream.</p>
 	 *

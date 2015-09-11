@@ -9,7 +9,7 @@ import org.xiph.speex.OggSpeexWriter;
  * @author chienlk
  *
  */
-public class VaniOggSpeexWriter extends OggSpeexWriter {
+public class ChunkOggSpeexWriter extends OggSpeexWriter {
 	SpeexParam pam;
 	/**
 	 * Builds an Ogg Speex Writer. 
@@ -17,7 +17,7 @@ public class VaniOggSpeexWriter extends OggSpeexWriter {
 	 * number of frames per speex packet, vbr (Variable Bit Rate)
 	 * @param out the OutputStream write to
 	 */
-	public VaniOggSpeexWriter(SpeexParam pam, OutputStream out) {
+	public ChunkOggSpeexWriter(SpeexParam pam, OutputStream out) {
 		super(pam.mode, pam.sampleRate, pam.channels, pam.nframes, pam.vbr);
 		this.pam = pam;
 		this.setSerialNumber(pam.streamSerialNumber);		

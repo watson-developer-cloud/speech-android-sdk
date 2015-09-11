@@ -32,10 +32,9 @@ import com.sun.jna.ptr.PointerByReference;
 /**
  * JNI Speex encoder.
  */
-public class SpeechJNAOpusEnc implements SpeechEncoder {
-    // Use PROPRIETARY notice if class contains a main() method, otherwise use
-    // COPYRIGHT notice.
-    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2014";
+public class SpeechJNAOpusEnc implements ISpeechEncoder {
+    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /** The Constant TAG. */
     private static final String TAG = SpeechJNAOpusEnc.class.getName();
 
@@ -59,9 +58,7 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
      * @throws IOException
      */
     public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client) throws IOException{
-//		this.client = client;
         writer = new OpusWriter(client);
-//		writer.writeHeader("");
 
         IntBuffer error = IntBuffer.allocate(4);
         this.opusEncoder = JNAOpus.INSTANCE.opus_encoder_create(this.sampleRate, 1, JNAOpus.OPUS_APPLICATION_VOIP, error);
@@ -78,7 +75,6 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
     }
     @Override
     public byte[] encode(byte[] rawAudio) {
-//		Log.d(TAG, "[encode] Audio Length Passed="+rawAudio.length);
         int read = 0;
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -114,12 +110,10 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
                 try {
                     bos.write(opusdata);
                 } catch (IOException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -130,7 +124,6 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
             ios.close();
             ios = null;
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return byteData;
@@ -139,12 +132,9 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
      * @see com.ibm.cio.audio.SpeechEncoder#encodeAndWrite(byte[])
      */
     public int encodeAndWrite(byte[] rawAudio) throws IOException {
-//		Log.d(TAG, "[encodeAndWrite] Audio Length Passed="+rawAudio.length);
         int read = 0;
-//		long totalEnc = 0;
         int uploadedAudioSize = 0;
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);
-//		Logger.e(TAG, "@@@rawAudio="+rawAudio.length);
         byte[] data = new byte[SpeechConfiguration.FRAME_SIZE*2];
         int bufferSize;
 
@@ -176,13 +166,10 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
                 uploadedAudioSize += opusdata.length;
                 writer.writePacket(opusdata, 0, opusdata.length);
             }
-//			long t2 = SystemClock.elapsedRealtime();
-//			totalEnc += t2 - t1;
         }
 
         ios.close();
         ios = null;
-//		Logger.i(TAG, "encodeAndWrite time: " + totalEnc + ", uploadedAudioSize: " + uploadedAudioSize);
         this._onRecordingCompleted(rawAudio);
         return uploadedAudioSize;
     }
@@ -203,7 +190,6 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
     }
     @Override
     public long getCompressionTime() {
-        // TODO Auto-generated method stub
         return this.compressDataTime;
     }
 

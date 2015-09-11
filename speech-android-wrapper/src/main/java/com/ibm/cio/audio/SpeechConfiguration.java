@@ -23,12 +23,14 @@ public class SpeechConfiguration {
     // SSL flag
     public boolean isSSL = true;
 
+    // This method is only used for testing purpose
     public void enableOpusTesting(){
         this.audioFormat = AUDIO_FORMAT_OGGOPUS;
         this.isAuthNeeded = false;
         this.isSSL = false;
     }
 
+    // This method is only used for testing purpose
     public void enableWavTesting(){
         this.audioFormat = AUDIO_FORMAT_DEFAULT;
         this.isAuthNeeded = false;

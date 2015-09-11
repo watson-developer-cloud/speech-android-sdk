@@ -16,18 +16,17 @@ import com.ibm.cio.util.Logger;
  *
  */
 public class ChuckRawWriter extends AudioFileWriter{
-
+    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     private String TAG = this.getClass().getSimpleName();
     private ChuckWebSocketUploader client;
 
-
     /**
-     *
+     * Construct with WebSocketClient
      */
     public ChuckRawWriter(ChuckWebSocketUploader client) {
         this.client = client;
     }
-
 
     @Override
     public void close() throws IOException {
@@ -56,12 +55,10 @@ public class ChuckRawWriter extends AudioFileWriter{
 
     }
 
-
     @Override
     public void writePacket(byte[] data, int offset, int len)
             throws IOException {
         this.client.upload(data);
 
     }
-
 }

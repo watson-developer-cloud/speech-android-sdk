@@ -18,15 +18,12 @@ import java.io.OutputStream;
 
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 
-// TODO: Auto-generated Javadoc
 /**
  * Encoder interface.
  */
-public interface SpeechEncoder {
-    // Use PROPRIETARY notice if class contains a main() method, otherwise use
-    // COPYRIGHT notice.
+public interface ISpeechEncoder {
+    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
-
     /**
      * In compression mode, construct an encoder and write (SPX) header code.
      * In non-compression mode, construct an output stream.
@@ -41,7 +38,6 @@ public interface SpeechEncoder {
      * @throws IOException
      */
     public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client) throws IOException;
-
 
     /**
      * In compression mode, encode raw audio data to SPX audio.

@@ -15,19 +15,20 @@ import java.nio.ByteOrder;
  *
  */
 public class AudioCaptureThread extends Thread {
-
+    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     private static final String TAG = "AudioCaptureThread";
     private boolean mStop = false;
     private boolean mStopped = false;
     private int mSamplingRate = -1;
-    private AudioConsumer mAudioConsumer = null;
+    private IAudioConsumer mIAudioConsumer = null;
 
     // the thread receives high priority because it needs to do real time audio capture
     // THREAD_PRIORITY_URGENT_AUDIO = "Standard priority of the most important audio threads"
-    public AudioCaptureThread(int iSamplingRate, AudioConsumer audioConsumer) {
+    public AudioCaptureThread(int iSamplingRate, IAudioConsumer IAudioConsumer) {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
         mSamplingRate = iSamplingRate;
-        mAudioConsumer = audioConsumer;
+        mIAudioConsumer = IAudioConsumer;
     }
 
     // once the thread is started it runs nonstop until it is stopped from the outside
@@ -57,7 +58,7 @@ public class AudioCaptureThread extends Thread {
                 double volume = 0;
                 if(amplitude > 0)
                     volume = 10 * Math.log10(amplitude);
-                mAudioConsumer.onAmplitude(amplitude, volume);
+                mIAudioConsumer.onAmplitude(amplitude, volume);
 
                 // convert to an array of bytes and send it to the server
                 ByteBuffer bufferBytes = ByteBuffer.allocate(buffer.length*2);
@@ -65,8 +66,7 @@ public class AudioCaptureThread extends Thread {
                 bufferBytes.asShortBuffer().put(buffer);
                 byte[] bytes = bufferBytes.array();
                 int length = bytes.length;
-                //Log.i(TAG, "Writing new data to buffer: " + length + " bytes");
-                mAudioConsumer.consume(bytes);
+                mIAudioConsumer.consume(bytes);
             }
         }
         catch(Throwable x) {

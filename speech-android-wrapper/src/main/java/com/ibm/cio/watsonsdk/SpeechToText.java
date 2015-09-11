@@ -18,26 +18,22 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.media.AudioManager;
-import android.media.AudioRecord;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.ibm.cio.audio.AudioConsumer;
+import com.ibm.cio.audio.IAudioConsumer;
 import com.ibm.cio.audio.AudioCaptureThread;
-import com.ibm.cio.audio.ChuckJNAOpusEnc;
 import com.ibm.cio.audio.ChuckOggOpusEnc;
 import com.ibm.cio.audio.ChuckRawEnc;
 import com.ibm.cio.audio.RecognizerIntentService;
 import com.ibm.cio.audio.SpeechConfiguration;
-import com.ibm.cio.audio.SpeechEncoder;
+import com.ibm.cio.audio.ISpeechEncoder;
 import com.ibm.cio.audio.ChuckWebSocketUploader;
-import com.ibm.cio.audio.VaniRecorder;
-import com.ibm.cio.audio.VaniUploader;
+import com.ibm.cio.audio.IChunkUploader;
 import com.ibm.cio.audio.RecognizerIntentService.RecognizerBinder;
 import com.ibm.cio.audio.RecognizerIntentService.State;
-import com.ibm.cio.audio.player.PlayerUtil;
 import com.ibm.cio.dto.QueryResult;
 import com.ibm.cio.util.Logger;
 import com.ibm.crl.speech.vad.RawAudioRecorder;
@@ -79,8 +75,7 @@ public class SpeechToText {
     boolean doneUploadData;
     boolean stillDoesNotCallStartRecord = false;
 
-    private VaniRecorder mRecorder;
-    private VaniUploader uploader = null;
+    private IChunkUploader uploader = null;
 
     private Thread onHasDataThread;
     private SpeechDelegate delegate = null;
@@ -97,7 +92,7 @@ public class SpeechToText {
     public String transcript;
 
     /** Audio encoder. */
-    private SpeechEncoder encoder;
+    private ISpeechEncoder encoder;
     /** Service to record audio. */
     private RecognizerIntentService mService;
     private boolean mStartRecording = false;
@@ -489,8 +484,9 @@ public class SpeechToText {
             }
             else {
                 Logger.w(TAG, "Query result: ERROR code 401");
-                if (isUseTTS() && mAm.getRingerMode() == 2)
-                    PlayerUtil.ins8k.playIdontUnderstand(getAppCtx());
+                if (isUseTTS() && mAm.getRingerMode() == 2){
+                    // Play sound like "I do not understand"
+                }
             }
             stopAllHandler();
             mService.processContinu();
@@ -499,11 +495,11 @@ public class SpeechToText {
 
     }
 
-    private class STTAudioConsumer implements AudioConsumer {
+    private class STTIAudioConsumer implements IAudioConsumer {
 
-        private VaniUploader mUploader = null;
+        private IChunkUploader mUploader = null;
 
-        public STTAudioConsumer(VaniUploader uploader) {
+        public STTIAudioConsumer(IChunkUploader uploader) {
 
             mUploader = uploader;
         }
@@ -525,7 +521,7 @@ public class SpeechToText {
     private void startRecordingWithoutVAD() {
         Logger.i(TAG, "-> startRecordingWithoutVAD");
         uploader.prepare();
-        STTAudioConsumer audioConsumer = new STTAudioConsumer(uploader);
+        STTIAudioConsumer audioConsumer = new STTIAudioConsumer(uploader);
 
         audioCaptureThread = new AudioCaptureThread(SpeechConfiguration.SAMPLE_RATE, audioConsumer);
         audioCaptureThread.start();
@@ -596,7 +592,7 @@ public class SpeechToText {
 //					audioUploadedLength = 0;
 //					spxAudioUploadedLength = 0;
 
-                    STTAudioConsumer audioConsumer = new STTAudioConsumer(uploader);
+                    STTIAudioConsumer audioConsumer = new STTIAudioConsumer(uploader);
                     mService.start(SpeechConfiguration.SAMPLE_RATE, audioConsumer); // recording was started, State = State.RECORDING
                     handleRecording();
                 }
@@ -609,9 +605,6 @@ public class SpeechToText {
 
     /**
      * Start recording audio:
-     * <p>
-     * 1. Create and prepare recorder ({@link VaniRecorder}) </br> 2. Play beep
-     * </p>
      */
     public void recognize() {
         Log.i(TAG, "startRecording");
@@ -620,9 +613,7 @@ public class SpeechToText {
         mAm = (AudioManager) appCtx.getSystemService(Context.AUDIO_SERVICE);
         doneUploadData = false;
         // Initiate Uploader, Encoder
-
         SpeechConfiguration sConfig = new SpeechConfiguration();
-        sConfig.enableOpusTesting();
 
         try {
             HashMap<String, String> header = new HashMap<String, String>();
@@ -671,53 +662,6 @@ public class SpeechToText {
 
         if(uploader != null)
             uploader.close();
-    }
-
-    /**
-     * Stop recording audio:
-     * <p>
-     * 1. Stop {@link AudioRecord} </br> 2. Get transcript
-     * </p>
-     */
-    public void stopRecording() {
-        System.out.println("stopRecording");
-        shouldStopRecording = true;
-        if (mRecorder != null) {
-            if (stillDoesNotCallStartRecord) {
-                Log.d(TAG,"WARN: stillDoesNotCallStartRecord!");
-                releaseAll();
-                return;
-            }
-
-            mRecorder.stop();
-            // Listen to onHasDataThread for getting result of recognizing
-            synchronized (this) {
-                try {
-                    this.wait(10000); // Wait for done upload data. Active after
-                    // 10s if NOT received notification
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            if (!uploader.isUploadPrepared()) {
-                // FAIL to prepare connection
-                // for uploading audio
-            } else
-                mRecorder.getTranscript(mAm.getRingerMode(), gettingTranscriptTimeout);
-
-        } else {
-            //to do
-        }
-    }
-
-    /**
-     * Release Vani Recorder
-     */
-    private void releaseAll() {
-        if (mRecorder != null) {
-            mRecorder.close();
-        }
     }
 
     private void buildAuthenticationHeader(HttpGet httpGet) {
