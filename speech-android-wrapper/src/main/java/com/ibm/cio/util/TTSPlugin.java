@@ -45,7 +45,10 @@ public class TTSPlugin extends Application {
 	private static final String TAG = TTSPlugin.class.getName();
 
 	public static final String CODEC_WAV = "audio/wav";
+    public static final int CODEC_WAV_SAMPLE_RATE = 0;
+
 	public static final String CODEC_OPUS = "audio/opus";
+    public static final int CODEC_OPUS_SAMPLE_RATE = 48000;
 
 	Context ct;
 	AudioManager am;
@@ -78,14 +81,6 @@ public class TTSPlugin extends Application {
 	public void setCodec(String codec){
 		this.codec = codec;
 	}
-
-    /**
-     * Set sample rate
-     * @param val
-     */
-    public void setSampleRate(int val){
-        this.sampleRate = val;
-    }
 
 	private void stopAudioPlayer(JSONArray arguments) {
 		Log.i(TAG, "stop all AudioPlayer");
@@ -140,15 +135,18 @@ public class TTSPlugin extends Application {
 	 * @param arguments
 	 */
 	public void tts(String[] arguments) {
-		Log.i(TAG, "Requesting TTS...");
+		Log.i(TAG, "Start requesting TTS... ("+this.codec+")");
 		try {
 			parseParams(arguments);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-        if(this.sampleRate > 0){
-            this.initPlayer();
+        if(this.codec == CODEC_WAV){
+            this.sampleRate = CODEC_WAV_SAMPLE_RATE;
+        }
+        else{
+            this.sampleRate = CODEC_OPUS_SAMPLE_RATE;
         }
 
 		TTSThread thread = new TTSThread();
@@ -161,8 +159,6 @@ public class TTSPlugin extends Application {
         // IMPORTANT: minimum required buffer size for the successful creation of an AudioTrack instance in streaming mode.
         int bufferSize = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
 
-        Log.i(TAG, "Construct AudioTrack, sampleRate = " + sampleRate + ", bufferSize=" + bufferSize);
-
         synchronized (this) {
             audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
                     sampleRate,
@@ -170,8 +166,6 @@ public class TTSPlugin extends Application {
                     AudioFormat.ENCODING_PCM_16BIT,
                     bufferSize,
                     AudioTrack.MODE_STREAM);
-            Log.i(TAG, "TTS after new AudioTrack: " + audioTrack);
-            // Start playback
             if (audioTrack != null)
                 audioTrack.play();
         }
@@ -251,54 +245,63 @@ public class TTSPlugin extends Application {
 				post = createPost(server, username, password, token, content, voice, codec);
 		        InputStream is = post.getEntity().getContent();
 
-				byte[] temp;
+				byte[] data = null;
 				if(codec == CODEC_WAV) {
-					temp = analyzeWavData(is);
-					audioTrack.write(temp, 0, temp.length);
+					data = analyzeWavData(is);
+
 				}
 				else if(codec == CODEC_OPUS){
-
-					String inFilePath = getBaseDir()+"Watson.opus";
-					String outFilePath = getBaseDir()+"Watson.pcm";
-					File inFile = new File(inFilePath);
-					File outFile = new File(outFilePath);
-					outFile.deleteOnExit();
-					inFile.deleteOnExit();
-
-					RandomAccessFile inRaf = new RandomAccessFile(inFile, "rw");
-
-					inRaf.write(IOUtils.toByteArray(is));
-
-                    sampleRate = OggOpus.decode(inFilePath, outFilePath, sampleRate); // zero means to detect the sample rate by decoder
-
-                    Logger.w(TAG, "*** Detected sample rate="+ sampleRate + " Hz ***");
-                    initPlayer();
-
-					RandomAccessFile outRaf = new RandomAccessFile(outFile, "r");
-
-					temp = new byte[(int)outRaf.length()];
-
-					int outLength = outRaf.read(temp);
-
-					audioTrack.write(temp, 0, temp.length);
-
-					inRaf.close();
-					outRaf.close();
+					data = analyzeOpusData(is);
 				}
+                initPlayer();
+                audioTrack.write(data, 0, data.length);
                 is.close();
 
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
-                Log.i(TAG, "call stop audioTrack");
+                Log.i(TAG, "Stopping audioTrack...");
 				if (audioTrack != null && audioTrack.getState() != AudioTrack.STATE_UNINITIALIZED) {
-//					audioTrack.stop();
 					audioTrack.release();
-//					System.out.println("tts after release: " + audioTrack + ", state: " + audioTrack.getState());
 				}
 			}
 		}
 	}
+
+    private byte[] analyzeOpusData(InputStream is) {
+        String inFilePath = getBaseDir()+"Watson.opus";
+        String outFilePath = getBaseDir()+"Watson.pcm";
+        File inFile = new File(inFilePath);
+        File outFile = new File(outFilePath);
+        outFile.deleteOnExit();
+        inFile.deleteOnExit();
+
+        try {
+            RandomAccessFile inRaf = new RandomAccessFile(inFile, "rw");
+            byte[] opus = IOUtils.toByteArray(is);
+            inRaf.write(opus);
+
+            sampleRate = OggOpus.decode(inFilePath, outFilePath, sampleRate); // zero means to detect the sample rate by decoder
+
+            RandomAccessFile outRaf = new RandomAccessFile(outFile, "r");
+
+            byte[] data = new byte[(int)outRaf.length()];
+
+            int outLength = outRaf.read(data);
+
+            inRaf.close();
+            outRaf.close();
+            if(outLength == 0){
+                throw new IOException("Data reading failed");
+            }
+            return data;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new byte[0];
+    }
 
     /**
      * Analyze sample rate and return the PCM data
@@ -313,9 +316,8 @@ public class TTSPlugin extends Application {
                 throw new IOException("Wrong Wav header");
             }
 
-            if(this.sampleRate == 0) {
+            if(this.sampleRate == 0 && data.length > 28) {
                 this.sampleRate = readInt(data, 24); // 24 is the position of sample rate in wav format
-                this.initPlayer();
             }
 
             int destPos = headSize + metaDataSize;
@@ -325,7 +327,7 @@ public class TTSPlugin extends Application {
 			System.arraycopy(data, destPos, d, 0, rawLength);
             return d;
 		} catch (IOException e) {
-			Log.d(TAG,"Error while formatting header");
+            Log.e(TAG, "Error while formatting header");
 		}
 		return new byte[0];
 	}

@@ -1,9 +1,6 @@
 package com.ibm.cio.opus;
 
-import com.ibm.cio.util.Logger;
-
 public class OggOpus {
-    private static final String TAG = OggOpus.class.getSimpleName().toString();
     public static native void initAudio();
     public static native void startRecorder( int sample_rate);
     public static native void stopRecorder();
@@ -12,6 +9,5 @@ public class OggOpus {
     public static native float volume();
     static {
         System.loadLibrary("oggopus");
-        Logger.e(TAG, "OggOpus library is loaded...");
     }
 }

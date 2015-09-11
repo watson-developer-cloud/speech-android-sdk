@@ -9,10 +9,9 @@ import org.apache.http.HttpResponse;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -67,14 +66,17 @@ public class TextToSpeech {
 
     public void synthesize(String ttsString) {
         Log.i(TAG, "synthesize called: " + this.hostURL.toString()+"/v1/synthesize");
-        String[] Arguments = { this.hostURL.toString()+"/v1/synthesize", this.username, this.password,
-                this.voice, ttsString, this.tokenProvider.getToken()};
+        String[] Arguments = { this.hostURL.toString()+"/v1/synthesize",
+                this.username, this.password,
+                this.voice, ttsString,
+                this.tokenProvider.getToken()};
         try {
             ttsPlugin= new TTSPlugin();
             ttsPlugin.setCodec(TTSPlugin.CODEC_WAV);
             ttsPlugin.tts(Arguments);
-        } catch (Exception e) {
-            Log.e(TAG, "Error calling TTSplugin");
+        }
+        catch (Exception e) {
+            Log.e(TAG, "Error calling TTS plugin");
             e.printStackTrace();
         }
     }

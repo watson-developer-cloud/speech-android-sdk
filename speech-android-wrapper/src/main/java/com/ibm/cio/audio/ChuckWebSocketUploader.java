@@ -148,7 +148,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
         }
         else {
             try {
-                System.out.println("### WAITING FOR ESTABLISHING CONNECTION ###");
                 initStreamToServerThread.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();

@@ -515,7 +515,7 @@ public class SpeechToText {
 
         @Override
         public void onAmplitude(double amplitude, double volume) {
-            Logger.d(TAG, "####### volume=" + volume + ", amplitude="+amplitude);
+//            Logger.d(TAG, "####### volume=" + volume + ", amplitude="+amplitude);
         }
     }
 

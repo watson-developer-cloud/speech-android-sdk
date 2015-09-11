@@ -1,19 +1,14 @@
 package com.ibm.cio.watsonsdksample;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 
 import android.app.Activity;
 import android.content.Context;
-import android.media.session.MediaSession;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.StrictMode;
@@ -28,7 +23,6 @@ import android.widget.TextView;
 
 import com.ibm.cio.dto.QueryResult;
 import com.ibm.cio.util.Logger;
-import com.ibm.cio.util.TTSPlugin;
 import com.ibm.cio.watsonsdk.SpeechDelegate;
 import com.ibm.cio.watsonsdk.SpeechToText;
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
@@ -37,12 +31,11 @@ import com.ibm.cio.watsonsdk.TokenProvider;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
-import org.apache.http.auth.UsernamePasswordCredentials;
+
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -65,7 +58,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 
     //private static String STT_URL = "wss://speech.tap.ibm.com/speech-to-text-beta/api";
     //private static String TTS_URL = "https://speech.tap.ibm.com/text-to-speech-beta/api";
-    //private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
+//    private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
 
     private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
     private static String TTS_URL = "https://stream.watsonplatform.net/text-to-speech/api";
@@ -82,12 +75,11 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 		super.onCreate(savedInstanceState);
 
 		// Strictmode needed to run the http/wss request for devices > Gingerbread
-				if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.GINGERBREAD) {
-					StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
-							.permitAll().build();
-					StrictMode.setThreadPolicy(policy);
-				}
-				
+        if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.GINGERBREAD) {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
+
 		setContentView(R.layout.activity_main);
 
         //Initialize the speech service
@@ -178,7 +170,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         spinner.setAdapter(spinnerArrayAdapter);
     }
 
-
     class MyTokenProvider implements TokenProvider {
 
         String m_strTokenFactoryURL = null;
@@ -215,7 +206,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 	private void initSpeechRecognition() {
 		//STT
 		SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), false);
-        SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT,this.PASSWORD_STT);
+        SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT, this.PASSWORD_STT);
         SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
         SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
         SpeechToText.sharedInstance().setDelegate(this);
