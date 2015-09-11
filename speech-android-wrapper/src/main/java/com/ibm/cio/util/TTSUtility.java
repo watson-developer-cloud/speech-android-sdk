@@ -1,11 +1,9 @@
 package com.ibm.cio.util;
 
 import android.app.Application;
-import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.media.MediaPlayer;
 import android.os.Environment;
 import android.util.Log;
 
@@ -35,8 +33,8 @@ import java.io.RandomAccessFile;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TTSPlugin extends Application {
-	private static final String TAG = TTSPlugin.class.getName();
+public class TTSUtility extends Application {
+	private static final String TAG = TTSUtility.class.getName();
 
 	public static final String CODEC_WAV = "audio/wav";
     public static final int CODEC_WAV_SAMPLE_RATE = 0;
@@ -44,24 +42,20 @@ public class TTSPlugin extends Application {
 	public static final String CODEC_OPUS = "audio/opus";
     public static final int CODEC_OPUS_SAMPLE_RATE = 48000;
 
-	Context ct;
-	AudioManager am;
 	private String username;
 	private String password;
     private String token;
     private String voice;
 	private String content;
 	private String codec;
-	private String language;
 	private int sampleRate;
 	private String server;
 	
 	private AudioTrack audioTrack;
-	private MediaPlayer	wavPlayer = null;
 
 	//private static final int MIN_FRAME_COUNT = 600;
 
-	public TTSPlugin(){
+	public TTSUtility(){
 		this.codec = CODEC_WAV;
         // By default, the sample rate would be detected by the SDK if the value is set to zero
         // However, the metadata is not reliable, need to decode at the maximum sample rate
@@ -317,7 +311,6 @@ public class TTSPlugin extends Application {
             wR.close();
             Log.i(TAG, "save file OK");
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             Log.d(TAG, "save file FAIL");
             e.printStackTrace();
         }

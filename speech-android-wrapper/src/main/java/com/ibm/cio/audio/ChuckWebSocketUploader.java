@@ -64,8 +64,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
      */
     public ChuckWebSocketUploader(ISpeechEncoder encoder, String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
         super(new URI(serverURL), new Draft_17(), header);
-        Logger.i(TAG, "### New ChuckWebSocketUploader ###");
-        Logger.d(TAG, serverURL);
         this.encoder = encoder; // for WebSocket only
         this.sConfig = config;
     }
@@ -76,8 +74,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
      * @throws NoSuchAlgorithmException
      */
     private void trustServer() throws KeyManagementException, NoSuchAlgorithmException {
-        Logger.d(TAG, "Trusting server");
-        // Create a trust manager that does not validate certificate chains  
+        // Create a trust manager that does not validate certificate chains
         TrustManager[] certs = new TrustManager[]{ new X509TrustManager() {
             public java.security.cert.X509Certificate[] getAcceptedIssuers() {
                 return new java.security.cert.X509Certificate[]{};
@@ -141,16 +138,15 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
                     this.send(buffer);
                 }
             } catch (IOException e) {
-                Logger.e(TAG, "Error occured in writeBufferToOutputStream, recording is aborted");
                 e.printStackTrace();
             }
         }
         else {
             try {
                 initStreamToServerThread.join();
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 e.printStackTrace();
-                Logger.d(TAG, "Finish Join prepare upload, result = " + this.isUploadPrepared());
             }
         }
         return uploadedAudioSize;
@@ -169,7 +165,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     @Override
     public void stopUploaderPrepareThread() {
         if (initStreamToServerThread != null) {
-            Logger.i(TAG, "stopUploaderPrepareThread");
             initStreamToServerThread.interrupt();
         }
     }
@@ -188,14 +183,12 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
                             e.printStackTrace();
                         }
                         finally{
-                            Logger.e(TAG, "Then close...");
                             encoder.close();
                         }
                     }
                 }.start();
             }
             catch (Exception e) {
-                Logger.e(TAG, "encoder close FAIL");
                 e.printStackTrace();
             }
         }
@@ -219,7 +212,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
 
     @Override
     public boolean stopGetQueryResultByAudio() {
-        Logger.i(TAG, "stopGetQueryResultByAudio");
         if (future != null)
             return future.cancel(true);
         return false;
@@ -310,7 +302,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     public void upload(byte[] data){
         try{
             this.send(data);
-            //Logger.w(TAG, "uploader sending data through the socket.");
         }
         catch(NotYetConnectedException ex){
             this.transcript = ex.getLocalizedMessage();
@@ -324,7 +315,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
 
     @Override
     public void close() {
-        Logger.i(TAG, "calling close!!");
         super.close();
     }
 

@@ -2,7 +2,6 @@ package com.ibm.cio.speex;
 
 import com.ibm.cio.util.Logger;
 
-// TODO: Auto-generated Javadoc
 /**
  * A thin wrapper around some JNI wrapped around the Xiph Speex library.
  *

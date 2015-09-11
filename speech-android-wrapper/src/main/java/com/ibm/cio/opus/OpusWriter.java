@@ -1,10 +1,6 @@
 package com.ibm.cio.opus;
 
-import android.os.Environment;
-
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Random;
 
@@ -68,7 +64,6 @@ public class OpusWriter extends AudioFileWriter {
     public void close() throws IOException {
         Logger.d(TAG, "Opus Writer Closing...");
         flush(true);
-//        this.closeFile();
         this.client.stop();
     }
 
@@ -80,8 +75,6 @@ public class OpusWriter extends AudioFileWriter {
 
     @Override
     public void writeHeader(String comment) {
-//        this.createFile();
-
         Logger.d(TAG, "Opus Writer Headering...");
 
         byte[] header;
@@ -114,7 +107,6 @@ public class OpusWriter extends AudioFileWriter {
         if (len <= 0) {
             return;
         }
-//        System.out.println("PACKETS_PER_OGG_PAGE=" + PACKETS_PER_OGG_PAGE + ", packetCount=" + packetCount + ", granulepos=" + granulepos);
         if (packetCount > PACKETS_PER_OGG_PAGE) {
             flush(false);
         }
@@ -147,64 +139,24 @@ public class OpusWriter extends AudioFileWriter {
         packetCount     = 0;
     }
 
+    /**
+     * Write data into Socket
+     * @param data
+     */
     public void write(byte[] data){
-//        Logger.d(TAG, "Opus Writer Writing...[" + data.length + "]");
-
-//        this.writeFile(data);
-
         this.client.upload(data);
     }
 
+    /**
+     * Write data into Socket
+     * @param data
+     * @param offset
+     * @param count
+     */
     public void write(byte[] data, int offset, int count){
-//        Logger.d(TAG, "Opus Writer Writing...["+data.length+", "+offset+", "+count+"]");
-
         byte[] tmp = new byte[count];
         System.arraycopy(data, offset, tmp, 0, count);
 
-//        this.writeFile(tmp);
-
         this.client.upload(tmp);
     }
-
-    // ################# FOR TESTING PURPOSE ################# //
-    File myFile = null;
-    FileOutputStream fos = null;
-    public String getBaseDir() {
-        String baseDir = "";
-        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            baseDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
-        }
-        return baseDir;
-    }
-    private void createFile(){
-        myFile = new File(this.getBaseDir()+"WatsonR.opus");
-        try {
-            myFile.deleteOnExit();
-            myFile.createNewFile();
-            fos = new FileOutputStream(myFile);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void writeFile(byte[] data){
-        try {
-            fos.write(data);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void closeFile(){
-        try {
-            fos.flush();
-            fos.close();
-            Logger.w(TAG, "Encoded file size=" + myFile.length());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
 }

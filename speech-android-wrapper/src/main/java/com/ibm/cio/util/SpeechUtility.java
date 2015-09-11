@@ -40,20 +40,16 @@ import org.xiph.speex.PcmWaveWriter;
 
 import android.content.Context;
 import android.os.Environment;
-import android.os.SystemClock;
-
-import com.ibm.cio.dto.QueryResult;
 
 /**
- * Utilities.
+ * Speech Utility.
  * @author chienlk
  *
  */
-public class VaniUtils {
-	// Use PROPRIETARY notice if class contains a main() method, otherwise use
-	// COPYRIGHT notice.
-	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
-	private static final String TAG = VaniUtils.class.getName();
+public class SpeechUtility {
+	// Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
+	private static final String TAG = SpeechUtility.class.getName();
 
 	/**
 	 * <p>Get data from input stream.</p>
@@ -64,68 +60,33 @@ public class VaniUtils {
 	 */
 	public static byte[] stream2bytes(InputStream is) {
 		try {
-			long beginReadIs = SystemClock.elapsedRealtime();
 			BufferedInputStream bis = new BufferedInputStream(is);
 			ByteArrayBuffer baf = new ByteArrayBuffer(16384);
 			int nRead;
 			byte[] bf = new byte[4096];
-			long downloadDataTime = 0;
-			long readStep = SystemClock.elapsedRealtime();
 			while ((nRead = bis.read(bf)) != -1) {
-				Logger.d(TAG, "time get read is real read: " + nRead + "|time: " + (SystemClock.elapsedRealtime() - readStep));
-				downloadDataTime += (SystemClock.elapsedRealtime() - readStep);
 				baf.append(bf, 0, nRead);
-				readStep = SystemClock.elapsedRealtime();
 			}
-			Logger.d(TAG, "time get read is: " + (SystemClock.elapsedRealtime() - beginReadIs) + ", data lenght="+baf.toByteArray().length);
 			return baf.toByteArray();
-			
-			/*ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-			int nRead;
-			byte[] data = new byte[16384];
-			while ((nRead = is.read(data, 0, data.length)) != -1) {
-				buffer.write(data, 0, nRead);
-			}
-			buffer.flush();
-
-			return buffer.toByteArray();*/
 		} catch (IOException e) {
-			// LMC Cookies expired -> File not found, EOFExecption???
 			e.printStackTrace();
 		}
         return new byte[0];
 	}
 	public static byte[] stream2bytes2(InputStream is) {
 		try {
-			long beginReadIs = SystemClock.elapsedRealtime();
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			int nRead;
 			byte[] bf = new byte[4096];
-			Logger.d(TAG, "time get read is data available: " + is.available());
-			long readStep = SystemClock.elapsedRealtime();
 			while ((nRead = is.read(bf)) != -1) {
-				Logger.d(TAG, "time get read is real read: " + nRead + "|time: " + (SystemClock.elapsedRealtime() - readStep));
 				bos.write(bf, 0, nRead);
-				readStep = SystemClock.elapsedRealtime();
 			}
-			Logger.d(TAG, "time get read is 2: " + (SystemClock.elapsedRealtime() - beginReadIs));
 			bos.flush();
 			return bos.toByteArray();
-			
-			/*ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-			int nRead;
-			byte[] data = new byte[16384];
-			while ((nRead = is.read(data, 0, data.length)) != -1) {
-				buffer.write(data, 0, nRead);
-			}
-			buffer.flush();
-
-			return buffer.toByteArray();*/
 		} catch (IOException e) {
 			e.printStackTrace();
-
-			return new byte[0];
 		}
+        return new byte[0];
 	}
 
 	 /**
@@ -136,24 +97,8 @@ public class VaniUtils {
  	 */
  	public static String getSpxFilePath(String pcmFilePath) {
 		 return pcmFilePath==null ? "": pcmFilePath.replace("pcm", "spx");
-	 }
-	/**
-	 * Gets the hided password.
-	 *
-	 * @param urlString the url string
-	 * @return the hided password
-	 */
-	public static String getHidedPassword(String urlString) {
-		String ret = "";
-		
-		int idx1 = urlString.indexOf("password");
-		int idx2 = urlString.indexOf("&", idx1);
-		
-		ret = urlString.substring(0, idx1) + "password=xxx" + urlString.substring(idx2, urlString.length());
-		
-		return ret;
-	}
-	
+    }
+
 	/**
 	 * Pass untrusted certificate.
 	 *
@@ -161,45 +106,35 @@ public class VaniUtils {
 	 * @throws KeyManagementException the key management exception
 	 */
 	public static void passUntrustedCertificate() throws NoSuchAlgorithmException, KeyManagementException {
-		Logger.i(TAG, "passUntrustedCertificate");
 		TrustManager[] trustAllCerts = new TrustManager[] {
-				new X509TrustManager() {
-					
-					@Override
-					public X509Certificate[] getAcceptedIssuers() {
-						// TODO Auto-generated method stub
-						return null;
-					}
-					
-					@Override
-					public void checkServerTrusted(X509Certificate[] arg0, String arg1)
-							throws CertificateException {
-						// TODO Auto-generated method stub
-						
-					}
-					
-					@Override
-					public void checkClientTrusted(X509Certificate[] arg0, String arg1)
-							throws CertificateException {
-						// TODO Auto-generated method stub
-						
-					}
-				}	
-			};
-			
-			SSLContext sslc = SSLContext.getInstance("SSL");
-			sslc.init(null, trustAllCerts, new SecureRandom());
-			HttpsURLConnection.setDefaultSSLSocketFactory(sslc.getSocketFactory());
-			HostnameVerifier allHostValid = new HostnameVerifier() {
-				
-				@Override
-				public boolean verify(String arg0, SSLSession arg1) {
-					// TODO Auto-generated method stub
-					return true;
-				}
-			};
-			
-			HttpsURLConnection.setDefaultHostnameVerifier(allHostValid);
+            new X509TrustManager() {
+
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] arg0, String arg1)
+                        throws CertificateException {
+                }
+
+                @Override
+                public void checkClientTrusted(X509Certificate[] arg0, String arg1)
+                        throws CertificateException {
+                }
+            }
+        };
+        SSLContext sslc = SSLContext.getInstance("SSL");
+        sslc.init(null, trustAllCerts, new SecureRandom());
+        HttpsURLConnection.setDefaultSSLSocketFactory(sslc.getSocketFactory());
+        HostnameVerifier allHostValid = new HostnameVerifier() {
+            @Override
+            public boolean verify(String arg0, SSLSession arg1) {
+                return true;
+            }
+        };
+        HttpsURLConnection.setDefaultHostnameVerifier(allHostValid);
 	}
 
 	/**
@@ -225,9 +160,8 @@ public class VaniUtils {
 	public static short[] toShorts(byte[] bytes, int startPos, int byteNumber) {
 		// to turn bytes to shorts as either big endian or little endian.
 		short[] shorts = new short[byteNumber/2];
-		
 		ByteBuffer.wrap(bytes, startPos, byteNumber).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shorts);
-		
+
 		return shorts;
 	}
 	/**
@@ -246,8 +180,7 @@ public class VaniUtils {
 		return baseDir;
 	}
 	
-	public static void saveWavFile(byte[] d, String filePath) {
-		Logger.e(TAG, "saveWavFile: " + filePath);
+	public static boolean saveWavFile(byte[] d, String filePath) {
 		PcmWaveWriter wR = new PcmWaveWriter(8000, 1);
 		String fileName = filePath + "a.wav";
 		try {
@@ -256,38 +189,26 @@ public class VaniUtils {
 			wR.writePacket(d, 0, d.length);
 			wR.close();
 			Logger.i(TAG, "save file OK");
+            return true;
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			Logger.d(TAG, "save file FAIL");
 			e.printStackTrace();
 		}
+        return false;
 	}
-	
-	public static void saveRawFile(byte[] d, String filePath) {
+
+	public static boolean saveRawFile(byte[] d, String filePath) {
 		Logger.e(TAG, "saveRawFile: " + filePath);
-//		String fileName = filePath + "a.pcm";
 		try {
 			OutputStream os = new FileOutputStream(filePath);
 			os.write(d);
 			os.close();
+            return true;
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		/*try {
-			wR.open(fileName);
-			wR.writeHeader("by jspeex");
-			wR.writePacket(d, 0, d.length);
-			wR.close();
-			Logger.i(TAG, "save file OK");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			Logger.d(TAG, "save file FAIL");
-			e.printStackTrace();
-		}*/
+        return false;
 	}
 }

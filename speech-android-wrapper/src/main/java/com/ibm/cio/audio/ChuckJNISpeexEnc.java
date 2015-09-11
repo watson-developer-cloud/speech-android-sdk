@@ -26,7 +26,7 @@ import com.ibm.cio.speex.ChuckSpeexWriter;
 import com.ibm.cio.speex.FrequencyBand;
 import com.ibm.cio.speex.JNISpeexEncoder;
 import com.ibm.cio.util.Logger;
-import com.ibm.cio.util.VaniUtils;
+import com.ibm.cio.util.SpeechUtility;
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 
 // TODO: Auto-generated Javadoc
@@ -113,7 +113,7 @@ public class ChuckJNISpeexEnc implements ISpeechEncoder {
             if (l + offset > rawAudio.length)
                 l = rawAudio.length - offset;
             long t1 = SystemClock.elapsedRealtime();
-            byte[] encoded = speexEncoder.encode(VaniUtils.toShorts(rawAudio, offset, l));
+            byte[] encoded = speexEncoder.encode(SpeechUtility.toShorts(rawAudio, offset, l));
             compressDataTime += SystemClock.elapsedRealtime() - t1;
             try {
                 if (spxFrameSize == 0)
@@ -157,7 +157,7 @@ public class ChuckJNISpeexEnc implements ISpeechEncoder {
                 l =  audioData.length - offset;
 
             t1 = SystemClock.elapsedRealtime();
-            byte[] encoded = speexEncoder.encode(VaniUtils.toShorts(audioData, offset, l));
+            byte[] encoded = speexEncoder.encode(SpeechUtility.toShorts(audioData, offset, l));
             compressDataTime += SystemClock.elapsedRealtime() - t1;
 
             if (encoded.length > 0) {

@@ -3,7 +3,7 @@ package com.ibm.cio.watsonsdk;
 import android.content.Context;
 import android.util.Log;
 
-import com.ibm.cio.util.TTSPlugin;
+import com.ibm.cio.util.TTSUtility;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -29,7 +29,7 @@ public class TextToSpeech {
 
     protected static final String TAG = "TextToSpeech";
 
-    private TTSPlugin ttsPlugin;
+    private TTSUtility ttsUtility;
 
     private Context appCtx;
 
@@ -71,12 +71,11 @@ public class TextToSpeech {
                 this.voice, ttsString,
                 this.tokenProvider.getToken()};
         try {
-            ttsPlugin= new TTSPlugin();
-            ttsPlugin.setCodec(TTSPlugin.CODEC_WAV);
-            ttsPlugin.tts(Arguments);
+            ttsUtility = new TTSUtility();
+            ttsUtility.setCodec(TTSUtility.CODEC_WAV);
+            ttsUtility.tts(Arguments);
         }
         catch (Exception e) {
-            Log.e(TAG, "Error calling TTS plugin");
             e.printStackTrace();
         }
     }
