@@ -18,14 +18,12 @@ import java.io.OutputStream;
 
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 
-// TODO: Auto-generated Javadoc
 /**
- * Non-encode.
+ * Non-encode
  */
-public class ChuckRawEnc implements SpeechEncoder {
-    // Use PROPRIETARY notice if class contains a main() method, otherwise use
-    // COPYRIGHT notice.
-    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
+public class ChuckRawEnc implements ISpeechEncoder {
+    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /** The Constant TAG. */
     private static final String TAG = ChuckRawEnc.class.getName();
     /** Output stream */
@@ -36,8 +34,7 @@ public class ChuckRawEnc implements SpeechEncoder {
     /**
      * Constructor.
      */
-    public ChuckRawEnc() {
-    }
+    public ChuckRawEnc() {}
 
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
@@ -49,10 +46,7 @@ public class ChuckRawEnc implements SpeechEncoder {
      * @throws java.io.IOException
      */
     public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client) throws IOException{
-//		this.client = client;
         writer = new ChuckRawWriter(client);
-//		writer.writeHeader("");
-
     }
 
     @Override
@@ -66,7 +60,7 @@ public class ChuckRawEnc implements SpeechEncoder {
 
         writer.writePacket(b, 0, b.length);
         if(this.delegate != null)
-            this.delegate.onRecordingCompleted(b);
+            this.delegate.onRecording(b);
         return b.length;
     }
     /* (non-Javadoc)
@@ -83,30 +77,12 @@ public class ChuckRawEnc implements SpeechEncoder {
     }
 
     @Override
-    public long getCompressionTime() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
     public byte[] encode(byte[] b) {
-        // TODO Auto-generated method stub
         return b;
     }
 
     @Override
-    public void writeChunk(byte[] b) throws IOException {
-        // TODO Auto-generated method stub
-        out.write(b);
-    }
-
-    @Override
     public void setDelegate(SpeechRecorderDelegate obj) {
-        // TODO Auto-generated method stub
         this.delegate = obj;
-    }
-
-    protected void _onRecordingCompleted(byte[] rawAudioData){
-        if(this.delegate != null) delegate.onRecordingCompleted(rawAudioData);
     }
 }

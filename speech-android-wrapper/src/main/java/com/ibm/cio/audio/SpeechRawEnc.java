@@ -1,16 +1,19 @@
-/* ***************************************************************** */
-/*                                                                   */
-/* IBM Confidential                                                  */
-/*                                                                   */
-/* OCO Source Materials                                              */
-/*                                                                   */
-/* Copyright IBM Corp. 2013                                          */
-/*                                                                   */
-/* The source code for this program is not published or otherwise    */
-/* divested of its trade secrets, irrespective of what has been      */
-/* deposited with the U.S. Copyright Office.                         */
-/*                                                                   */
-/* ***************************************************************** */
+/**
+ * Copyright IBM Corporation 2015
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.ibm.cio.audio;
 
 import java.io.IOException;
@@ -18,22 +21,20 @@ import java.io.OutputStream;
 
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 
-// TODO: Auto-generated Javadoc
 /**
  * Non-encode.
  */
-public class SpeechRawEnc implements SpeechEncoder {
-    // Use PROPRIETARY notice if class contains a main() method, otherwise use
-    // COPYRIGHT notice.
-    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
+public class SpeechRawEnc implements ISpeechEncoder {
+    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /** Output stream */
     private OutputStream out;
     private SpeechRecorderDelegate delegate = null;
+
     /**
      * Constructor.
      */
-    public SpeechRawEnc() {
-    }
+    public SpeechRawEnc() {}
 
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
@@ -50,12 +51,12 @@ public class SpeechRawEnc implements SpeechEncoder {
      * @see com.ibm.cio.audio.SpeechEncoder#encodeAndWrite(byte[])
      */
     @Override
-    public int encodeAndWrite(byte[] b) throws IOException {
-        out.write(b);
-        if(this.delegate != null)
-            this.delegate.onRecordingCompleted(b);
-        return b.length;
+    public int encodeAndWrite(byte[] rawAudioData) throws IOException {
+        out.write(rawAudioData);
+        this._onRecording(rawAudioData);
+        return rawAudioData.length;
     }
+
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#close()
      */
@@ -65,39 +66,26 @@ public class SpeechRawEnc implements SpeechEncoder {
             out.flush();
             out.close();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
 
     @Override
-    public long getCompressionTime() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
     public byte[] encode(byte[] b) {
-        // TODO Auto-generated method stub
         return b;
     }
 
     @Override
-    public void writeChunk(byte[] b) throws IOException {
-        // TODO Auto-generated method stub
-        out.write(b);
-    }
-
-    @Override
     public void setDelegate(SpeechRecorderDelegate obj) {
-        // TODO Auto-generated method stub
         this.delegate = obj;
     }
 
     @Override
     public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client)
             throws IOException {
-        // TODO Auto-generated method stub
+    }
 
+    private void _onRecording(byte[] rawAudioData){
+        if(this.delegate != null) delegate.onRecording(rawAudioData);
     }
 }

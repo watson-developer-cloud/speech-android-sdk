@@ -1,16 +1,19 @@
-/* ***************************************************************** */
-/*                                                                   */
-/* IBM Confidential                                                  */
-/*                                                                   */
-/* OCO Source Materials                                              */
-/*                                                                   */
-/* Copyright IBM Corp. 2013                                          */
-/*                                                                   */
-/* The source code for this program is not published or otherwise    */
-/* divested of its trade secrets, irrespective of what has been      */
-/* deposited with the U.S. Copyright Office.                         */
-/*                                                                   */
-/* ***************************************************************** */
+/**
+ * Copyright IBM Corporation 2015
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.ibm.cio.audio;
 
 import java.io.ByteArrayInputStream;
@@ -22,6 +25,8 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import android.os.SystemClock;
+
+import com.ibm.cio.dto.SpeechConfiguration;
 import com.ibm.cio.opus.JNAOpus;
 import com.ibm.cio.opus.OpusWriter;
 import com.ibm.cio.util.Logger;
@@ -32,23 +37,18 @@ import com.sun.jna.ptr.PointerByReference;
 /**
  * JNI Speex encoder.
  */
-public class SpeechJNAOpusEnc implements SpeechEncoder {
-    // Use PROPRIETARY notice if class contains a main() method, otherwise use
-    // COPYRIGHT notice.
-    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2014";
+public class SpeechJNAOpusEnc implements ISpeechEncoder {
+    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /** The Constant TAG. */
     private static final String TAG = SpeechJNAOpusEnc.class.getName();
 
     private OpusWriter writer = null;
     private PointerByReference opusEncoder;
     private int sampleRate = 16000;
-    private long compressDataTime = 0;
     private SpeechRecorderDelegate delegate = null;
     //
-    public SpeechJNAOpusEnc() {
-        Logger.i(TAG, "Construct SpeechJNAOpusEnc");
-        this.compressDataTime = 0;
-    }
+    public SpeechJNAOpusEnc() {}
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
      */
@@ -59,9 +59,7 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
      * @throws IOException
      */
     public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client) throws IOException{
-//		this.client = client;
         writer = new OpusWriter(client);
-//		writer.writeHeader("");
 
         IntBuffer error = IntBuffer.allocate(4);
         this.opusEncoder = JNAOpus.INSTANCE.opus_encoder_create(this.sampleRate, 1, JNAOpus.OPUS_APPLICATION_VOIP, error);
@@ -71,14 +69,7 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
     public void onStart() {}
 
     @Override
-    public void writeChunk(byte[] data) throws IOException {
-        long t0 = SystemClock.elapsedRealtime();
-        writer.writePacket(data, 0, data.length);
-        Logger.d(TAG, "writeChunk time: " + (SystemClock.elapsedRealtime() - t0));
-    }
-    @Override
     public byte[] encode(byte[] rawAudio) {
-//		Log.d(TAG, "[encode] Audio Length Passed="+rawAudio.length);
         int read = 0;
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -100,26 +91,22 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
                 }
                 shortBuffer.flip();
                 ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
-                long t1 = SystemClock.elapsedRealtime();
 
                 int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, SpeechConfiguration.FRAME_SIZE, opusBuffer, bufferSize);
 
-                compressDataTime += SystemClock.elapsedRealtime() - t1;
                 opusBuffer.position(opus_encoded);
                 opusBuffer.flip();
-                byte[] opusdata = new byte[opusBuffer.remaining()+1];
-                opusdata[0] = (byte) opus_encoded;
-                opusBuffer.get(opusdata, 1, opusdata.length-1);
+                byte[] opusData = new byte[opusBuffer.remaining()+1];
+                opusData[0] = (byte) opus_encoded;
+                opusBuffer.get(opusData, 1, opusData.length-1);
 
                 try {
-                    bos.write(opusdata);
+                    bos.write(opusData);
                 } catch (IOException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -130,7 +117,6 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
             ios.close();
             ios = null;
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return byteData;
@@ -139,12 +125,9 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
      * @see com.ibm.cio.audio.SpeechEncoder#encodeAndWrite(byte[])
      */
     public int encodeAndWrite(byte[] rawAudio) throws IOException {
-//		Log.d(TAG, "[encodeAndWrite] Audio Length Passed="+rawAudio.length);
         int read = 0;
-//		long totalEnc = 0;
         int uploadedAudioSize = 0;
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);
-//		Logger.e(TAG, "@@@rawAudio="+rawAudio.length);
         byte[] data = new byte[SpeechConfiguration.FRAME_SIZE*2];
         int bufferSize;
 
@@ -161,11 +144,9 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
             }
             shortBuffer.flip();
             ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
-            long t1 = SystemClock.elapsedRealtime();
 
             int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, SpeechConfiguration.FRAME_SIZE, opusBuffer, bufferSize);
 
-            compressDataTime += SystemClock.elapsedRealtime() - t1;
             opusBuffer.position(opus_encoded);
             opusBuffer.flip();
             byte[] opusdata = new byte[opusBuffer.remaining()+1];
@@ -176,20 +157,18 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
                 uploadedAudioSize += opusdata.length;
                 writer.writePacket(opusdata, 0, opusdata.length);
             }
-//			long t2 = SystemClock.elapsedRealtime();
-//			totalEnc += t2 - t1;
         }
 
         ios.close();
         ios = null;
-//		Logger.i(TAG, "encodeAndWrite time: " + totalEnc + ", uploadedAudioSize: " + uploadedAudioSize);
-        this._onRecordingCompleted(rawAudio);
+        this._onRecording(rawAudio);
         return uploadedAudioSize;
     }
 
-    private void _onRecordingCompleted(byte[] rawAudioData){
-        if(this.delegate != null) delegate.onRecordingCompleted(rawAudioData);
+    private void _onRecording(byte[] rawAudioData){
+        if(this.delegate != null) delegate.onRecording(rawAudioData);
     }
+
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#close()
      */
@@ -200,11 +179,6 @@ public class SpeechJNAOpusEnc implements SpeechEncoder {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-    @Override
-    public long getCompressionTime() {
-        // TODO Auto-generated method stub
-        return this.compressDataTime;
     }
 
     public void setDelegate(SpeechRecorderDelegate obj){

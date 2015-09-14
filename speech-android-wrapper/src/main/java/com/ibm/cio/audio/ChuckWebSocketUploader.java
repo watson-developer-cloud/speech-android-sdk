@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corporation 2015
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.ibm.cio.audio;
 
 import java.io.IOException;
@@ -9,7 +25,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -24,33 +39,27 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.os.SystemClock;
 import android.util.Log;
 
 import com.ibm.cio.dto.QueryResult;
+import com.ibm.cio.dto.SpeechConfiguration;
 import com.ibm.cio.util.Logger;
 import com.ibm.cio.watsonsdk.SpeechDelegate;
 
-public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploader{
+public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUploader {
+    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     private static final String TAG = ChuckWebSocketUploader.class.getName();
 
-    private SpeechEncoder encoder = null;
+    private ISpeechEncoder encoder = null;
     private String transcript = "";
     private Thread initStreamToServerThread;
 
     private boolean uploadPrepared = false;
     private int uploadErrorCode = 0;
-    private long beginRequestTime = 0;
-    private long requestEstablishingTime = 0;
-    private long requestTime = 0;
-    private long beginGetResponse = 0;
-    private long responseTime = 0;
-    private long dataTransmissionTime = 0;
-    private long beginSendRequest = 0;
     private long timeout = 0;
 
     private SpeechDelegate delegate = null;
-    private Future<QueryResult> future = null;
     private SpeechConfiguration sConfig = null;
 
     /**
@@ -60,13 +69,16 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
      * @param serverURL LMC server, delivery to back end server
      * @throws URISyntaxException
      */
-    public ChuckWebSocketUploader(SpeechEncoder encoder, String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
+    public ChuckWebSocketUploader(ISpeechEncoder encoder, String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
         super(new URI(serverURL), new Draft_17(), header);
-//		super( new URI(serverURL), new Draft_17());
         Logger.i(TAG, "### New ChuckWebSocketUploader ### " + serverURL);
         Logger.d(TAG, serverURL);
         this.encoder = encoder; // for WebSocket only
         this.sConfig = config;
+
+        if(serverURL.toLowerCase().startsWith("wss") || serverURL.toLowerCase().startsWith("https"))
+            this.sConfig.isSSL = true;
+        else this.sConfig.isSSL = false;
     }
     /**
      * Trust server
@@ -75,8 +87,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
      * @throws NoSuchAlgorithmException
      */
     private void trustServer() throws KeyManagementException, NoSuchAlgorithmException {
-        Logger.d(TAG, "Trusting server");
-        // Create a trust manager that does not validate certificate chains  
+        // Create a trust manager that does not validate certificate chains
         TrustManager[] certs = new TrustManager[]{ new X509TrustManager() {
             public java.security.cert.X509Certificate[] getAcceptedIssuers() {
                 return new java.security.cert.X509Certificate[]{};
@@ -97,16 +108,15 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
      * @throws InterruptedException
      * @throws Exception
      */
-    private void initStreamAudioToServer() throws IOException, InterruptedException, Exception {
+    private void initStreamAudioToServer() throws Exception{
         Logger.i(TAG, "********** Connecting... **********");
-        beginRequestTime = SystemClock.elapsedRealtime();
-        Logger.i(TAG, "prepareUploader, initStreamAudioToServer begin at: " + beginRequestTime);
-        this.encoder.initEncoderWithWebSocketClient(this);//lifted up for initializing writer, using isRunning to control the flow
+        //lifted up for initializing writer, using isRunning to control the flow
+        this.encoder.initEncoderWithWebSocketClient(this);
 
         if(this.sConfig.isSSL)
             this.trustServer();
 
-        boolean rc = false;
+        boolean rc;
         rc = this.connectBlocking();
 
         if(!rc){
@@ -124,36 +134,27 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
      */
     private void sendMessage(int code){
         if(delegate != null){
-            delegate.receivedMessage(code, this.fetchTranscript(this.timeout));
+            delegate.onMessage(code, this.fetchTranscript(this.timeout));
         }
     }
     @Override
-    public int onHasData(byte[] buffer, boolean needEncode) {
-        //Logger.e(TAG, "onHasData: " + buffer.length + " " + (needEncode? "true" : "false"));
+    public int onHasData(byte[] buffer) {
         int uploadedAudioSize = 0;
         // NOW, WE HAVE STATUS OF UPLOAD PREPARING, UPLOAD PREPARING OK
         if (this.isUploadPrepared()) {
             try {
-                if (needEncode) {
-                    Logger.e(TAG, "needEncode == true");
-                    uploadedAudioSize = encoder.encodeAndWrite(buffer);
-                }
-                else{
-                    Logger.e(TAG, "needEncode == false");
-                    this.send(buffer);
-                }
+                uploadedAudioSize = encoder.encodeAndWrite(buffer);
             } catch (IOException e) {
-                Logger.e(TAG, "Error occurred in writeBufferToOutputStream, recording is aborted");
                 e.printStackTrace();
             }
         }
         else {
             try {
-                //System.out.println("### WAITING FOR ESTABLISHING CONNECTION ###");
+                Logger.e(TAG, "### WAITING FOR ESTABLISHING CONNECTION ###");
                 initStreamToServerThread.join();
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 e.printStackTrace();
-                Logger.d(TAG, "Finish Join prepare upload, result = " + this.isUploadPrepared());
             }
         }
         //Logger.e(TAG, "onHasData: " + buffer.length + " " + (needEncode? "true" : "false") + "outputData: " + uploadedAudioSize);
@@ -173,7 +174,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
     @Override
     public void stopUploaderPrepareThread() {
         if (initStreamToServerThread != null) {
-            Logger.i(TAG, "stopUploaderPrepareThread");
             initStreamToServerThread.interrupt();
         }
     }
@@ -192,15 +192,12 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
                             e.printStackTrace();
                         }
                         finally{
-                            Logger.e(TAG, "Then close...");
                             encoder.close();
                         }
                     }
                 }.start();
             }
             catch (Exception e) {
-                // TODO: handle exception
-                Logger.e(TAG, "encoder close FAIL");
                 e.printStackTrace();
             }
         }
@@ -219,15 +216,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
      * null if {@link IOException}
      */
     private QueryResult fetchTranscript(long timeout) {
-        return QueryResult.createSimpleResult(this.getTranscript());
-    }
-
-    @Override
-    public boolean stopGetQueryResultByAudio() {
-        Logger.i(TAG, "stopGetQueryResultByAudio");
-        if (future != null)
-            return future.cancel(true);
-        return false;
+        return new QueryResult(this.getTranscript());
     }
 
     @Override
@@ -241,19 +230,15 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
                         Logger.i(TAG, "### WebSocket Connection established");
                     } catch (IOException e1) {
                         Logger.e(TAG, "### IOException: "+e1.getMessage());
-                        // TODO Auto-generated catch block
                         throw e1;
                     } catch (InterruptedException e1) {
                         Logger.e(TAG, "### InterruptedException:"+e1.getMessage());
-                        // TODO Auto-generated catch block
                         throw e1;
                     } catch (Exception e1) {
                         Logger.e(TAG, "### Exception: "+e1.getMessage());
-                        // TODO Auto-generated catch block
                         throw e1;
                     }
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
                     Logger.e(TAG, "Connection failed: " + (e == null ? "NULL EXCEPTION" : e.getMessage()));
                     if (e.getMessage() == null || e.getMessage().contains("Connection closed by peer") ||  e.getMessage().contains("reset by peer") || e.getMessage().contains("Connection failed")) {
                         uploadErrorCode = -1;
@@ -266,26 +251,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
         };
         initStreamToServerThread.setName("initStreamToServerThread");
         initStreamToServerThread.start();
-    }
-
-    @Override
-    public long getRequestTime() {
-        return this.requestTime;
-    }
-
-    @Override
-    public long getResponseTime() {
-        return this.responseTime;
-    }
-
-    @Override
-    public long getDataTransmissionTime() {
-        return this.dataTransmissionTime;
-    }
-
-    @Override
-    public long getRequestEstablishingTime() {
-        return this.requestEstablishingTime;
     }
 
     /**
@@ -308,8 +273,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
         }
         catch(NotYetConnectedException ex){
             this.transcript = ex.getLocalizedMessage();
-            // Send the error message to the delegate
-//	    	this.sendMessage(SpeechDelegate.ERROR);
         }
     }
 
@@ -321,47 +284,29 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
     public void upload(byte[] data){
         try{
             this.send(data);
-            //Logger.w(TAG, "uploader sending data through the socket.");
         }
         catch(NotYetConnectedException ex){
             this.transcript = ex.getLocalizedMessage();
-            // Send the error message to the delegate
-//	    	this.sendMessage(SpeechDelegate.ERROR);
         }
     }
 
     public void stop(){
-        JSONObject stopHeader = new JSONObject();
-        try {
-            stopHeader.put("action", "stop");
-            this.upload(stopHeader.toString());
-            Logger.w(TAG, "Sending stop action to stop the recognition...");
-            byte[] stopData = new byte[0];
-            this.upload(stopData); // Close streaming
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        byte[] stopData = new byte[0];
+        this.upload(stopData);
     }
 
     @Override
     public void close() {
-        Logger.i(TAG, "calling close!!");
-        //this.stop();
         super.close();
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
         Logger.i(TAG, "********** Closed **********");
-
         // Send the last part of messages to the delegate
         this.sendMessage(SpeechDelegate.CLOSE);
-
-        beginGetResponse = SystemClock.elapsedRealtime();
-        dataTransmissionTime = beginGetResponse - beginSendRequest;
-        requestTime = beginGetResponse - beginRequestTime;
         this.uploadPrepared = false;
-        Logger.d(TAG, "### Response Time: " + responseTime + " code: " + code + " reason: " + reason + " remote: " + remote);
+        Logger.d(TAG, "### Code: " + code + " reason: " + reason + " remote: " + remote);
     }
 
     @Override
@@ -399,10 +344,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
     public void onOpen(ServerHandshake arg0) {
         Logger.i(TAG, "********** WS connection opened Successfully **********");
         this.uploadPrepared = true;
-        beginSendRequest = SystemClock.elapsedRealtime();
-        requestEstablishingTime = (beginSendRequest - beginRequestTime);
-        Logger.i(TAG, "requestEstablishingTime: " + requestEstablishingTime);
-
         this.sendMessage(SpeechDelegate.OPEN);
     }
 
@@ -439,10 +380,8 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
             if(jObj.has("state")){
                 //if has status
                 Log.d(TAG, "Found JSON status: "+ jObj.getString("state"));
-//				result="state: "+jObj.getString("state");
-//                result="";
-
-            }else if(jObj.has("results")){
+            }
+            else if(jObj.has("results")){
                 //if has result
                 Log.d(TAG, "Found JSON results ");
 
@@ -457,8 +396,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
                             JSONObject obj1 = jArr1.getJSONObject(j);
                             result=obj1.getString("transcript");
                         }
-                        //close connection
-                        //super.close();
                     }else{
                         //get transcript
                         JSONArray jArr1 = obj.getJSONArray("alternatives");

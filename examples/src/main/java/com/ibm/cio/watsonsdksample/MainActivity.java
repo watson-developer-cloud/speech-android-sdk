@@ -26,6 +26,11 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.app.ActionBar;
 import android.app.Fragment;
+
+import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
@@ -41,6 +46,7 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.ibm.cio.dto.SpeechConfiguration;
 import com.ibm.cio.dto.QueryResult;
 import com.ibm.cio.util.Logger;
 import com.ibm.cio.watsonsdk.SpeechDelegate;
@@ -54,6 +60,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -374,8 +381,8 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         }
     }
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
         //Initialize the speech service
@@ -416,7 +423,25 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 
 	}
 
-    public static class ItemModel {
+    /**
+     * Initializing instance of SpeechToText and configuring the rest of parameters
+     */
+    private void initSpeechRecognition() {
+        // STT
+        SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), new SpeechConfiguration());
+        SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT, this.PASSWORD_STT);
+        SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
+        SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
+        SpeechToText.sharedInstance().setDelegate(this);
+//		SpeechToText.sharedInstance().setTimeout(0); // Optional - set the duration for delaying connection closure in millisecond
+        // TTS
+        TextToSpeech.sharedInstance().initWithContext(this.getHost(TTS_URL));
+        TextToSpeech.sharedInstance().setCredentials(this.USERNAME_TTS, this.PASSWORD_TTS);
+        TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(this.strTTSTokenFactoryURL));
+        TextToSpeech.sharedInstance().setVoice("en-US_MichaelVoice");
+    }
+
+    public class ItemModel {
 
         public JSONObject mObject = null;
 
@@ -434,9 +459,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         }
     }
 
-
-
-    public static class ItemVoice {
+    public class ItemVoice {
 
         public JSONObject mObject = null;
 
@@ -452,6 +475,28 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
                 return null;
             }
         }
+    }
+
+    public void addItemsOnSpinnerVoices() {
+
+        Spinner spinner = (Spinner) findViewById(R.id.spinnerVoices);
+
+        JSONObject obj = TextToSpeech.sharedInstance().getVoices();
+
+        if(obj == null)
+            return;
+        ItemVoice [] items = null;
+        try {
+            JSONArray voices = obj.getJSONArray("voices");
+            items = new ItemVoice[voices.length()];
+            for (int i = 0; i < voices.length(); ++i) {
+                items[i] = new ItemVoice(voices.getJSONObject(i));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item, items);
+        spinner.setAdapter(spinnerArrayAdapter);
     }
 
     class MyTokenProvider implements TokenProvider {
@@ -512,10 +557,16 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 	 * Called when the user clicks the Send button
 	 * 
 	 * @param view
-	 */
-	public void startRecord(View view) throws JSONException {
+     */
+    public void startRecord(View view) throws JSONException {
 		Log.d(TAG, "record pressed");
-        if (mRecognizing == false) {
+        if (mRecognizing) {
+            mRecognizing = false;
+            Spinner spinner = (Spinner) findViewById(R.id.spinnerModels);
+            spinner.setEnabled(true);
+            SpeechToText.sharedInstance().stopRecognition();
+        }
+        else {
             mRecognizing = true;
             Spinner spinner = (Spinner) findViewById(R.id.spinnerModels);
             spinner.setEnabled(false);
@@ -524,29 +575,8 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             displayStatus("connecting to the STT service...");
             SpeechToText.sharedInstance().recognize();
             SpeechToText.sharedInstance().setRecorderDelegate(this);
-
-            /*final MainActivity activity = this;
-            final Runnable runnableUi = new Runnable(){
-                @Override
-                public void run() {
-                    displayStatus("connecting to the STT service....");
-                    SpeechToText.sharedInstance().recognize();
-                    SpeechToText.sharedInstance().setRecorderDelegate(activity);
-                }
-            };
-            new Thread(){
-                public void run(){
-                    handler.post(runnableUi);
-                }
-            }.start();*/
-
-        } else {
-            mRecognizing = false;
-            Spinner spinner = (Spinner) findViewById(R.id.spinnerModels);
-            spinner.setEnabled(true);
-            SpeechToText.sharedInstance().stopRecognition();
-        }
 	}
+    }
 
 	/**
 	 * Display the faces results
@@ -557,7 +587,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 		final Runnable runnableUi = new Runnable(){  
 	        @Override  
 	        public void run() {   
-	        	SpeechToText.sharedInstance().transcript = result;
+	        	SpeechToText.sharedInstance().setTranscript(result);
 	        	textResult = (TextView) findViewById(R.id.textResult);
 	    		textResult.setText(result);
 	        }
@@ -578,7 +608,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         final Runnable runnableUi = new Runnable(){
             @Override
             public void run() {
-                SpeechToText.sharedInstance().transcript = status;
+                SpeechToText.sharedInstance().setTranscript(status);
                 textResult = (TextView) findViewById(R.id.sttStatus);
                 textResult.setText(status);
             }
@@ -640,11 +670,14 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 		return null;
 	}
 
-	/**
-	 * Delegate function, receive messages from the Speech SDK
-	 */
+    /**
+     * Delegate function, receive messages from the Speech SDK
+     *
+     * @param code
+     * @param result
+     */
 	@Override
-	public void receivedMessage(int code, QueryResult result) {
+	public void onMessage(int code, QueryResult result) {
 		switch(code){
 			case SpeechDelegate.OPEN:
 				Logger.i(TAG, "################ receivedMessage.Open, code: " + code + " result: " + result.getTranscript());
@@ -655,10 +688,12 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 				Logger.i(TAG, "################ receivedMessage.Close, code: " + code + " result: " + result.getTranscript());
                 displayStatus("connection closed");
                 setButtonLabel(R.id.buttonRecord, "start recording");
+                mRecognizing = false;
 				break;
 			case SpeechDelegate.ERROR:
 				Logger.e(TAG, result.getTranscript());
-				fragmentTabSTT.displayResult(result.getTranscript());
+ 				fragmentTabSTT.displayResult(result.getTranscript());
+                                mRecognizing = false;
 				break;
 			case SpeechDelegate.MESSAGE:
 				//displayResult(result.getTranscript()); // Instant results
@@ -667,11 +702,20 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 		}
 	}
 
+    /**
+     * Delegate function, receive amplitude and volume
+     *
+     * @param amplitude
+     * @param volume
+     */
+    @Override
+    public void onAmplitude(double amplitude, double volume) {}
 
-
-	@Override
-	public void onRecordingCompleted(byte[] rawAudioData) {
-		// TODO Auto-generated method stub
-//		Logger.e(TAG, "###"+rawAudioData.length+"###");
-	}
+    /**
+     * Delegate function, when the recording happens, the raw data will be passed to this method for processing
+     *
+     * @param rawAudioData
+     */
+    @Override
+	public void onRecording(byte[] rawAudioData) {}
 }

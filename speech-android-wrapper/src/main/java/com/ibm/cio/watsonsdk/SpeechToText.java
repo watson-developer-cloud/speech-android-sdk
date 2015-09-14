@@ -1,12 +1,24 @@
 /**
+ * Copyright IBM Corporation 2015
  *
- */
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.ibm.cio.watsonsdk;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -17,27 +29,22 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.media.AudioManager;
-import android.media.AudioRecord;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 
-import com.ibm.cio.audio.AudioConsumer;
+import com.ibm.cio.audio.IAudioConsumer;
 import com.ibm.cio.audio.AudioCaptureThread;
-import com.ibm.cio.audio.ChuckJNAOpusEnc;
 import com.ibm.cio.audio.ChuckOggOpusEnc;
 import com.ibm.cio.audio.ChuckRawEnc;
 import com.ibm.cio.audio.RecognizerIntentService;
-import com.ibm.cio.audio.SpeechConfiguration;
-import com.ibm.cio.audio.SpeechEncoder;
+import com.ibm.cio.dto.SpeechConfiguration;
+import com.ibm.cio.audio.ISpeechEncoder;
 import com.ibm.cio.audio.ChuckWebSocketUploader;
-import com.ibm.cio.audio.VaniRecorder;
-import com.ibm.cio.audio.VaniUploader;
+import com.ibm.cio.audio.IChunkUploader;
 import com.ibm.cio.audio.RecognizerIntentService.RecognizerBinder;
 import com.ibm.cio.audio.RecognizerIntentService.State;
-import com.ibm.cio.audio.player.PlayerUtil;
 import com.ibm.cio.dto.QueryResult;
 import com.ibm.cio.util.Logger;
 import com.ibm.crl.speech.vad.RawAudioRecorder;
@@ -65,39 +72,25 @@ import java.io.InputStreamReader;
 public class SpeechToText {
     protected static final String TAG = "SpeechToText";
 
+    private String transcript;
+
     private Context appCtx;
-
-    private boolean useStreaming;
-    private boolean useCompression;
-    private boolean useTTS;
-    private boolean useVAD;
-    private boolean isCertificateValidationDisabled;
-
+    private SpeechConfiguration sConfig;
     private AudioCaptureThread audioCaptureThread = null;
+    private boolean shouldStopRecording;
+    private boolean doneUploadData;
 
-    boolean shouldStopRecording;
-    boolean doneUploadData;
-    boolean stillDoesNotCallStartRecord = false;
-
-    private VaniRecorder mRecorder;
-    private VaniUploader uploader = null;
-
+    private IChunkUploader uploader = null;
     private Thread onHasDataThread;
     private SpeechDelegate delegate = null;
-
-    AudioManager mAm;
-
-    private String sessionCookie;
-    private String speechModel;
     private String username;
     private String password;
     private String model;
     private TokenProvider tokenProvider = null;
     private URI hostURL;
-    public String transcript;
 
     /** Audio encoder. */
-    private SpeechEncoder encoder;
+    private ISpeechEncoder encoder;
     /** Service to record audio. */
     private RecognizerIntentService mService;
     private boolean mStartRecording = false;
@@ -131,10 +124,6 @@ public class SpeechToText {
     private int mMaxRecordingTime = 30000;
     /** Handler to schedule stopping runnable. */
     private Handler mHandlerStop = new Handler();
-    /**
-     * Timeout to wait for the uploader to be done and then the transcript is retrieved
-     */
-    private long gettingTranscriptTimeout = 10000;
     /** Begin thinking (recognizing, query and return result) time. */
     private long beginThinking = 0;
     /** Max thinking time in milliseconds. */
@@ -142,16 +131,12 @@ public class SpeechToText {
     /** UPLOADING TIIMEOUT  */
     private int UPLOADING_TIMEOUT = 5000; // default duration of closing connection
 
-    /**Constructor
-     *
+    /**
+     * Constructor
      */
     public SpeechToText() {
-        this.setUseTTS(false);
-        this.setUseCompression(true);
-        this.setUseStreaming(true);
-        this.setCertificateValidationDisabled(false);
         this.setTimeout(0);
-        this.setUseVAD(false);
+        this.sConfig = null;
     }
 
     /**Speech Recognition Shared Instance
@@ -172,14 +157,14 @@ public class SpeechToText {
      * Init the shared instance with the context
      * @param uri
      * @param ctx
-     * @param isUsingVad
+     * @param sc
      */
-    public void initWithContext(URI uri, Context ctx, boolean isUsingVad){
+    public void initWithContext(URI uri, Context ctx, SpeechConfiguration sc){
         this.setHostURL(uri);
         this.appCtx = ctx;
-        this.setUseVAD(isUsingVad);
+        this.sConfig = sc;
 
-        if(isUsingVad)
+        if(this.sConfig.isUsingVAD)
             this.initVadService();
         else
             this.doUnbindService();
@@ -196,8 +181,6 @@ public class SpeechToText {
 
             if (mStartRecording && ! mService.isWorking()) {
                 recognize();
-            } else {
-//				setGui();
             }
         }
 
@@ -232,7 +215,7 @@ public class SpeechToText {
             this.appCtx.unbindService(mConnection);
             mIsBound = false;
             mService = null;
-            Logger.i(TAG, "Service is UNBOUND");
+            Logger.i(TAG, "Service is unbound");
         }
     }
 
@@ -241,7 +224,6 @@ public class SpeechToText {
      * Connect to recording service.
      */
     public void initVadService() {
-        Logger.i(TAG, "initVadService");
         RawAudioRecorder.CreateInstance(SpeechConfiguration.SAMPLE_RATE);
 
         // Save the current recording data to a temp array and send it to Vad processing
@@ -257,18 +239,8 @@ public class SpeechToText {
                         byte[] tmp = new byte[allAudio.length - currentOffset];
                         System.arraycopy(allAudio, currentOffset, tmp, 0, tmp.length);
                         if (tmp.length > 0) {
-                            //if use compression
-                            if (SpeechToText.this.useCompression) {
-                                // Encode audio before insert to buffer
-                                byte[] encodedData = encoder.encode(tmp);
-                                Logger.d(TAG, "[Vad] Encoded length="+encodedData.length);
-                                recordedData.put(encodedData);
-                            } else
-                                recordedData.put(tmp);
-                            // update currentOffset, numberData
-                            // Logger.d(TAG, "[encode] temp size: " + tmp.length);
+                            recordedData.put(tmp);
                             currentOffset += tmp.length;
-//							audioUploadedLength += tmp.length;
                             numberData++;
                         }
                     } catch (Exception e) {
@@ -289,22 +261,11 @@ public class SpeechToText {
                         Logger.i(TAG, "Recording is cancelled as USER hit cancel");
                         return;
                     }
-                    else if (mMaxRecordingTime < (SystemClock.elapsedRealtime() - mService
-                            .getStartTime())) {
+                    else if (mMaxRecordingTime < (SystemClock.elapsedRealtime() - mService.getStartTime())) {
                         Logger.i(TAG, "Max recording time exceeded");
                         stopServiceRecording();
                     } else if (mService.isPausing()) {
                         Logger.i(TAG, "Speaker finished speaking");
-
-//                        try {
-//                            byte[] end = new byte[0];
-//                            recordedData.put(end);
-//                            numberData++;
-//                        } catch (InterruptedException e) {
-//                            Log.e(TAG,"Error writing null to end of audio");
-//                            e.printStackTrace();
-//                        }
-
                         stopServiceRecording();
                     } else if (stopByUser) {
                         Logger.i(TAG, "Stop by USER/ hit the mic button while recording");
@@ -323,11 +284,10 @@ public class SpeechToText {
      * Remove any pending post of Runnable. Stop recording service and reset flags.
      */
     private void stopServiceRecording() {
-//        Logger.i(TAG, "stopServiceRecording by user: " + stopByUser);
         shouldStopRecording = true;
         mHandlerBytes.removeCallbacks(mRunnableBytes);
         mHandlerStop.removeCallbacks(mRunnableStop);
-        mService.stop(); // state = State.PROCESSING
+        mService.stop();
         handleRecording();
     }
 
@@ -340,10 +300,9 @@ public class SpeechToText {
         }
         switch(mService.getState()) {
             case RECORDING:
-                prepareRecording();
+                this.prepareRecording();
                 break;
             case PROCESSING:
-                //finishRecord();
                 this.stopRecognition();
                 break;
             case ERROR:
@@ -375,7 +334,7 @@ public class SpeechToText {
         Logger.i(TAG, "finishRecord");
         beginThinking = SystemClock.elapsedRealtime();
         // Listen to onHasDataThread for getting result of recognizing
-        if (!doneUploadData) // DON'T wait when data has been uploaded (when recording time quite long)
+        if (!doneUploadData) { // DON'T wait when data has been uploaded (when recording time quite long)
             synchronized (uploader) {
                 try {
                     uploader.wait(THINKING_TIMEOUT); // Wait for done upload data. Active after 5s if NOT received notification
@@ -383,8 +342,8 @@ public class SpeechToText {
                     e.printStackTrace();
                 }
             }
+        }
 
-        Logger.i(TAG, "finishRecord upload done at: " + new Date().getTime() + "|" + numberData + "|" + isCancelled);
         final long gettingTranscriptTimeout = THINKING_TIMEOUT - (SystemClock.elapsedRealtime() - beginThinking);
         Logger.i(TAG, "gettingTranscriptTimeout = " + gettingTranscriptTimeout);
         if (!isCancelled) {
@@ -401,20 +360,15 @@ public class SpeechToText {
 
                     if (uploader.getUploadErrorCode() < 0) {
                         result = new QueryResult(QueryResult.CONNECTION_CLOSED, QueryResult.CONNECTION_CLOSED_MESSAGE);
-//						showResult("{'code':103, 'text':'Connection reset or closed by peer', 'jobId':''}", callbackCtx);
                     } else {
                         result = new QueryResult(QueryResult.CONNECTION_FAILED, QueryResult.CONNECTION_FAILED_MESSAGE);
-//						showResult("{'code':100, 'text':'Network is unreachable', 'jobId':''}", callbackCtx);	
                     }
-//					showResult(result.toFailureJson(), callbackCtx);
                     isCancelled = true; // To stop onHasDataThread if failed interrupt it
-//					this.returnTranscription.transcriptionErrorCallback(result.toFailureJson());
                     this.sendMessage(SpeechDelegate.ERROR, result);
                 } else {
                     getVADTranscript(gettingTranscriptTimeout);
                 }
             } else { // Timeout prepare uploader (>15s), alert "Thinking timeout"
-//				showResult(new QueryResult(QueryResult.TIME_OUT, QueryResult.TIME_OUT_MESSAGE).toFailureJson(), callbackCtx);
                 if (onHasDataThread != null)
                     onHasDataThread.interrupt();
                 isCancelled = true; // To stop onHasDataThread if failed interrupt it
@@ -422,14 +376,11 @@ public class SpeechToText {
                 stopAllHandler();
                 mService.processContinu();
                 Logger.i(TAG, "Timeout prepare uploader (>15s)");
-//				this.returnTranscription.transcriptionErrorCallback(new QueryResult(QueryResult.TIME_OUT, QueryResult.TIME_OUT_MESSAGE).toFailureJson());
                 this.sendMessage(SpeechDelegate.ERROR, new QueryResult(QueryResult.TIME_OUT, QueryResult.TIME_OUT_MESSAGE));
             }
         } else {
             Logger.i(TAG, "Thinking cancelled");
-//			this.returnTranscription.transcriptionErrorCallback(new QueryResult(QueryResult.CANCEL_ALL, QueryResult.CANCEL_ALL_MESSAGE).toFailureJson());
             this.sendMessage(SpeechDelegate.ERROR, new QueryResult(QueryResult.CANCEL_ALL, QueryResult.CANCEL_ALL_MESSAGE));
-//			callbackCtx.success("{'code':102, 'text':'Thinking cancelled', 'jobId':''}");
         }
     }
 
@@ -440,11 +391,9 @@ public class SpeechToText {
         Logger.i(TAG, "stopAllHandler");
         try {
             isCancelled = true;
-//			onHasDataThread.stop();
             mHandlerBytes.removeCallbacks(mRunnableBytes);
             mHandlerStop.removeCallbacks(mRunnableStop);
             recordedData.clear();
-//			compressedData.clear();
         } catch (Exception e) {
             // TODO: handle exception
             Logger.d(TAG, "removeCallbacks FAIL");
@@ -461,11 +410,11 @@ public class SpeechToText {
      */
     private void sendMessage(int code, QueryResult result){
         if(this.delegate != null){
-            Logger.w(TAG, "INVOKING sendMessage FROM VANI MANAGER");
-            this.delegate.receivedMessage(code, result);
+            Logger.w(TAG, "INVOKING sendMessage FROM SpeechToText");
+            this.delegate.onMessage(code, result);
         }
         else{
-            Logger.w(TAG, "INVOKING sendMessage FAILED FROM VANI MANAGER");
+            Logger.w(TAG, "INVOKING sendMessage FAILED FROM SpeechToText");
         }
     }
 
@@ -474,23 +423,17 @@ public class SpeechToText {
      * @param timeout
      */
     public void getVADTranscript(long timeout) {
-        QueryResult	result = null;
-        long t0 = System.currentTimeMillis();
+        QueryResult	result;
         result = uploader.getQueryResultByAudio(timeout);
-        Logger.i(TAG, "getVADTranscript time = " + (System.currentTimeMillis() - t0));
-        Logger.d(TAG, result.getTranscript());
         if (!isCancelled) {
             if (result != null) {
                 //Set transcript received from iTrans
                 String transcript = result.getTranscript();
                 setTranscript(transcript);
-                Logger.i(TAG, "this.isUsingWebSocket(): getVADTranscript(long timeout)");
                 this.sendMessage(SpeechDelegate.MESSAGE, result);
             }
             else {
                 Logger.w(TAG, "Query result: ERROR code 401");
-                if (isUseTTS() && mAm.getRingerMode() == 2)
-                    PlayerUtil.ins8k.playIdontUnderstand(getAppCtx());
             }
             stopAllHandler();
             mService.processContinu();
@@ -499,23 +442,23 @@ public class SpeechToText {
 
     }
 
-    private class STTAudioConsumer implements AudioConsumer {
+    private class STTIAudioConsumer implements IAudioConsumer {
+        private IChunkUploader mUploader = null;
 
-        private VaniUploader mUploader = null;
-
-        public STTAudioConsumer(VaniUploader uploader) {
-
+        public STTIAudioConsumer(IChunkUploader uploader) {
             mUploader = uploader;
         }
 
         public void consume(byte [] data) {
-            //Logger.i(TAG, "consume called with " + data.length + " bytes");
-            mUploader.onHasData(data, isUseCompression());
+            mUploader.onHasData(data);
         }
 
         @Override
         public void onAmplitude(double amplitude, double volume) {
             //Logger.d(TAG, "####### volume=" + volume + ", amplitude="+amplitude);
+            if(delegate != null){
+                delegate.onAmplitude(amplitude, volume);
+            }
         }
     }
 
@@ -525,7 +468,7 @@ public class SpeechToText {
     private void startRecordingWithoutVAD() {
         Logger.i(TAG, "-> startRecordingWithoutVAD");
         uploader.prepare();
-        STTAudioConsumer audioConsumer = new STTAudioConsumer(uploader);
+        STTIAudioConsumer audioConsumer = new STTIAudioConsumer(uploader);
 
         audioCaptureThread = new AudioCaptureThread(SpeechConfiguration.SAMPLE_RATE, audioConsumer);
         audioCaptureThread.start();
@@ -558,7 +501,6 @@ public class SpeechToText {
                             // NOTE: Need time to have recording audio data
                             if ((shouldStopRecording && numberData == 0)/* || !uploader.isUploadPrepared()*/) {
                                 doneUploadData = true;
-//								requestTransmisionTime = SystemClock.elapsedRealtime() - uploader.getBeginSendRequest();
                                 synchronized (uploader) {
                                     uploader.notify();
                                 }
@@ -568,16 +510,7 @@ public class SpeechToText {
                                 if (numberData > 0) {
                                     byte[] dataToUpload = recordedData.take();
                                     if (dataToUpload != null) {
-//										long tHasData = SystemClock.elapsedRealtime();
-//										if (tUploadChunkDone > 0) {
-//											dataBufferTime += (tHasData - tUploadChunkDone);
-//											Logger.d(TAG, "bufferDataTime trace: " + (tHasData - tUploadChunkDone));
-//										}
-//                                        Log.d(TAG, "Uploading Chunk No."+numberData);
-                                        uploader.onHasData(dataToUpload, !useVAD); // synchronize
-//										tUploadChunkDone = SystemClock.elapsedRealtime();
-//										audioUploadedLength += dataToUpload.length;
-//										spxAudioUploadedLength += dataToUpload.length;
+                                        uploader.onHasData(dataToUpload);
                                         numberData--;
                                     }
                                 }
@@ -591,12 +524,10 @@ public class SpeechToText {
                 onHasDataThread.setName("onHasDataThread");
                 onHasDataThread.start();
 
-                if (mService.init()) { // State = State.INITIALIZED
+                if (mService.init()) {
                     Logger.i(TAG, "startServiceRecording");
-//					audioUploadedLength = 0;
-//					spxAudioUploadedLength = 0;
 
-                    STTAudioConsumer audioConsumer = new STTAudioConsumer(uploader);
+                    STTIAudioConsumer audioConsumer = new STTIAudioConsumer(uploader);
                     mService.start(SpeechConfiguration.SAMPLE_RATE, audioConsumer); // recording was started, State = State.RECORDING
                     handleRecording();
                 }
@@ -608,22 +539,13 @@ public class SpeechToText {
     }
 
     /**
-     * Start recording audio:
-     * <p>
-     * 1. Create and prepare recorder ({@link VaniRecorder}) </br> 2. Play beep
-     * </p>
+     * Start recording audio
      */
     public void recognize() {
         Log.i(TAG, "startRecording");
         shouldStopRecording = false;
-        // stillDoesNotCallStartRecord = true;
-        mAm = (AudioManager) appCtx.getSystemService(Context.AUDIO_SERVICE);
         doneUploadData = false;
         // Initiate Uploader, Encoder
-
-        SpeechConfiguration sConfig = new SpeechConfiguration();
-        //sConfig.enableOpusTesting();
-        sConfig.enableWavTesting();
 
         try {
             HashMap<String, String> header = new HashMap<String, String>();
@@ -649,13 +571,13 @@ public class SpeechToText {
 
             String wsURL = getHostURL().toString() + "/v1/recognize" + (this.model != null ? ("?model=" + this.model) : "");
 
-            uploader = new ChuckWebSocketUploader(encoder, wsURL, header, sConfig);
+            uploader = new ChuckWebSocketUploader(encoder, wsURL, headr, sConfig);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
         uploader.setTimeout(UPLOADING_TIMEOUT); // default timeout
         uploader.setDelegate(this.delegate);
-        if (this.useVAD) { // Record audio in service
+        if (this.sConfig.isUsingVAD) { // Record audio in service
             startRecordingWithVAD();
         } else {
 			startRecordingWithoutVAD();
@@ -666,7 +588,7 @@ public class SpeechToText {
         if(audioCaptureThread != null)
             audioCaptureThread.end();
 
-        if(this.useVAD){
+        if(this.sConfig.isUsingVAD){
             finishRecord();
         }
 
@@ -674,55 +596,7 @@ public class SpeechToText {
             uploader.close();
     }
 
-    /**
-     * Stop recording audio:
-     * <p>
-     * 1. Stop {@link AudioRecord} </br> 2. Get transcript
-     * </p>
-     */
-    public void stopRecording() {
-        System.out.println("stopRecording");
-        shouldStopRecording = true;
-        if (mRecorder != null) {
-            if (stillDoesNotCallStartRecord) {
-                Log.d(TAG,"WARN: stillDoesNotCallStartRecord!");
-                releaseAll();
-                return;
-            }
-
-            mRecorder.stop();
-            // Listen to onHasDataThread for getting result of recognizing
-            synchronized (this) {
-                try {
-                    this.wait(10000); // Wait for done upload data. Active after
-                    // 10s if NOT received notification
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            if (!uploader.isUploadPrepared()) {
-                // FAIL to prepare connection
-                // for uploading audio
-            } else
-                mRecorder.getTranscript(mAm.getRingerMode(), gettingTranscriptTimeout);
-
-        } else {
-            //to do
-        }
-    }
-
-    /**
-     * Release Vani Recorder
-     */
-    private void releaseAll() {
-        if (mRecorder != null) {
-            mRecorder.close();
-        }
-    }
-
     private void buildAuthenticationHeader(HttpGet httpGet) {
-
         // use token based authentication if possible, otherwise Basic Authentication will be used
         if (this.tokenProvider != null) {
             Log.d(TAG, "using token based authentication");
@@ -735,7 +609,6 @@ public class SpeechToText {
 
     // get the list of models for the speech to text service
     public JSONObject getModels() {
-
         JSONObject object = null;
 
         try {
@@ -756,11 +629,8 @@ public class SpeechToText {
                 responseStrBuilder.append(inputStr);
             Log.d(TAG, "response: " + responseStrBuilder.toString());
             object = new JSONObject(responseStrBuilder.toString());
-            Log.d(TAG, "response: " + object.toString());
-            Log.d(TAG, "ending getModels");
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
+            Log.d(TAG, object.toString());
+        } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
         return object;
@@ -789,16 +659,10 @@ public class SpeechToText {
             object = new JSONObject(responseStrBuilder.toString());
             Log.d(TAG, object.toString());
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
+        } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
         return object;
-    }
-
-    public boolean isUseTTS() {
-        return useTTS;
     }
     /**
      * Change default timeout
@@ -811,70 +675,15 @@ public class SpeechToText {
     /**
      * @return the appCtx
      */
-    public Context getAppCtx() {
-        return appCtx;
-    }
+    public Context getAppCtx() { return appCtx; }
     /**
      * @param appCtx the appCtx to set
      */
-    public void setAppCtx(Context appCtx) {
-        this.appCtx = appCtx;
-    }
-    /**
-     * @return the useStreaming
-     */
-    public boolean isUseStreaming() {
-        return useStreaming;
-    }
-    /**
-     * @param useStreaming the useStreaming to set
-     */
-    public void setUseStreaming(boolean useStreaming) {
-        this.useStreaming = useStreaming;
-    }
-    /**
-     * @return the useCompression
-     */
-    public boolean isUseCompression() {
-        return useCompression;
-    }
-    /**
-     * @param useCompression the useCompression to set
-     */
-    public void setUseCompression(boolean useCompression) {
-        this.useCompression = useCompression;
-    }
-    /**
-     * @return the isCertificateValidationDisabled
-     */
-    public boolean isCertificateValidationDisabled() {
-        return isCertificateValidationDisabled;
-    }
-    /**
-     * @param isCertificateValidationDisabled the isCertificateValidationDisabled to set
-     */
-    public void setCertificateValidationDisabled(
-            boolean isCertificateValidationDisabled) {
-        this.isCertificateValidationDisabled = isCertificateValidationDisabled;
-    }
-    /**
-     * @return the sessionCookie
-     */
-    public String getSessionCookie() {
-        return sessionCookie;
-    }
-    /**
-     * @param sessionCookie the sessionCookie to set
-     */
-    public void setSessionCookie(String sessionCookie) {
-        this.sessionCookie = sessionCookie;
-    }
+    public void setAppCtx(Context appCtx) { this.appCtx = appCtx; }
     /**
      * @return the transcript
      */
-    public String getTranscript() {
-        return transcript;
-    }
+    public String getTranscript() { return transcript; }
     /**
      * @param transcript the transcript to set
      */
@@ -890,21 +699,7 @@ public class SpeechToText {
     /**
      * @param isCancelled the isCancelled to set
      */
-    public void setCancelled(boolean isCancelled) {
-        this.isCancelled = isCancelled;
-    }
-    /**
-     * @param useTTS the useTTS to set
-     */
-    public void setUseTTS(boolean useTTS) {
-        this.useTTS = useTTS;
-    }
-    /**
-     * @param useVAD the useVAD to set
-     */
-    public void setUseVAD(boolean useVAD) {
-        this.useVAD = useVAD;
-    }
+    public void setCancelled(boolean isCancelled) { this.isCancelled = isCancelled; }
     /**
      * @return the hostURL
      */
@@ -933,9 +728,9 @@ public class SpeechToText {
      * Set the recorder delegate for the encoder
      */
     public void setRecorderDelegate(SpeechRecorderDelegate obj){
-        encoder.setDelegate(obj);
+        if(encoder != null)
+            encoder.setDelegate(obj);
     }
-
     /**
      * Set API credentials
      * @param username
@@ -944,7 +739,6 @@ public class SpeechToText {
         this.username = username;
         this.password = password;
     }
-
     /**
      * Set token provider (for token based authentication)
      */

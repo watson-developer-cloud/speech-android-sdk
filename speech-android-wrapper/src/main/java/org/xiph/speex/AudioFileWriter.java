@@ -252,7 +252,6 @@ public abstract class AudioFileWriter
         writeInt(buf, offset + 12, sampleRate);     // Input Sample Rate (Hz)
         writeShort(buf, offset + 16, 0);            // Output Gain (Q7.8 in dB), +/- 128 dB
         buf[offset + 18] = 0; // Mapping Family (For channel mapping family 0, this value defaults to C-1 (i.e., 0 for mono and 1 for stereo), and is not coded.)
-//    writeInt(buf, offset + 152, 0); // Optional Channel Mapping Table...
     }
 
     /**

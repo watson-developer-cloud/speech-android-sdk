@@ -1,19 +1,34 @@
+/**
+ * Copyright IBM Corporation 2015
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.ibm.cio.watsonsdk;
 
 import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.ibm.cio.util.TTSPlugin;
+import com.ibm.cio.util.TTSUtility;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -28,13 +43,9 @@ import java.net.URI;
  *
  */
 public class TextToSpeech {
-
     protected static final String TAG = "TextToSpeech";
 
-    private TTSPlugin ttsPlugin;
-
-    private Context appCtx;
-
+    private TTSUtility ttsUtility;
     private String username;
     private String password;
     private URI hostURL;
@@ -58,9 +69,8 @@ public class TextToSpeech {
     /**
      * Init the shared instance with the context when VAD is being used
      * @param uri
-     * @param ctx
      */
-    public void initWithContext(URI uri, Context ctx){
+    public void initWithContext(URI uri){
         this.setHostURL(uri);
         this.appCtx = ctx;
     }
@@ -70,12 +80,11 @@ public class TextToSpeech {
         String[] Arguments = { this.hostURL.toString()+"/v1/synthesize", this.username, this.password,
                 this.voice, ttsString, this.tokenProvider == null ? null : this.tokenProvider.getToken()};
         try {
-            ttsPlugin= new TTSPlugin();
-            ttsPlugin.setCodec(TTSPlugin.CODEC_OPUS);
-            //ttsPlugin.setCodec(TTSPlugin.CODEC_WAV);
-            ttsPlugin.tts(Arguments);
-        } catch (Exception e) {
-            Log.e(TAG, "Error calling TTSplugin");
+            ttsUtility = new TTSUtility();
+            ttsUtility.setCodec(TTSUtility.CODEC_WAV);
+            ttsUtility.tts(Arguments);
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -113,36 +122,36 @@ public class TextToSpeech {
                 responseStrBuilder.append(inputStr);
             object = new JSONObject(responseStrBuilder.toString());
             Log.d(TAG, object.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
+        } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
 
         return object;
     }
 
+    /**
+     * Set credentials
+     * @param username
+     * @param password
+     */
     public void setCredentials(String username, String password) {
         this.username = username;
         this.password = password;
     }
-
+    /**
+     * Get host URL
+     * @return
+     */
     public URI getHostURL() {
         return hostURL;
     }
-
+    /**
+     * Set host URL
+     * @param hostURL
+     */
     public void setHostURL(URI hostURL) {
         this.hostURL = hostURL;
     }
-
-    public Context getAppCtx() {
-        return appCtx;
-    }
-
-    public void setAppCtx(Context appCtx) {
-        this.appCtx = appCtx;
-    }
-
     /**
      * Set token provider (for token based authentication)
      */

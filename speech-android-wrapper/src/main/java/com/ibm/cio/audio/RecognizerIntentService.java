@@ -1,16 +1,19 @@
-/* ***************************************************************** */
-/*                                                                   */
-/* IBM Confidential                                                  */
-/*                                                                   */
-/* OCO Source Materials                                              */
-/*                                                                   */
-/* Copyright IBM Corp. 2013                                          */
-/*                                                                   */
-/* The source code for this program is not published or otherwise    */
-/* divested of its trade secrets, irrespective of what has been      */
-/* deposited with the U.S. Copyright Office.                         */
-/*                                                                   */
-/* ***************************************************************** */
+/**
+ * Copyright IBM Corporation 2015
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.ibm.cio.audio;
 
 import java.io.IOException;
@@ -29,16 +32,11 @@ import com.ibm.crl.speech.vad.RawAudioRecorder;
  * @author Turta@crl.ibm
  */
 public class RecognizerIntentService extends Service {
-	// Use PROPRIETARY notice if class contains a main() method, otherwise use
-	// COPYRIGHT notice.
-	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
+	// Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
 	private static final String TAG = RecognizerIntentService.class.getName();
 
 	private final IBinder mBinder = new RecognizerBinder();
-
-//	private volatile Looper mSendLooper;
-//	private volatile Handler mSendHandler;
-//	private Runnable mSendTask;
 
 	/**
 	 * Audio recorder.
@@ -49,7 +47,6 @@ public class RecognizerIntentService extends Service {
 	 */
 	private int mErrorCode;
 
-//	private int mChunkCount = 0;
 	/**
 	 * Starting time of service
 	 */
@@ -133,12 +130,7 @@ public class RecognizerIntentService extends Service {
 		}
 		return mRecorder.getLength();
 	}
-	public long getRecordingTime() {
-		if (mRecorder == null) {
-			return 0;
-		}
-		return mRecorder.getRecordingTime();
-	}
+
 	/**
 	 * Get recent sound pressure.
 	 * @return dB value of recent sound pressure
@@ -167,10 +159,6 @@ public class RecognizerIntentService extends Service {
 		return mRecorder.getCompleteRecording();
 	}
 
-	/*public int getChunkCount() {
-		return mChunkCount;
-	}*/
-
 	/**
 	 * Get error code of service.
 	 * @return
@@ -192,15 +180,14 @@ public class RecognizerIntentService extends Service {
 	 *
 	 * @param sampleRate sample rate in Hz, e.g. 16000
 	 */
-	public boolean start(int sampleRate, AudioConsumer audioConsumer) {
+	public boolean start(int sampleRate, IAudioConsumer IAudioConsumer) {
 		if (mState != State.INITIALIZED) {
 			processError(RawAudioRecorder.RESULT_VAD_ERROR, null);
 			return false;
 		}
 		try {
-			startRecording(sampleRate, audioConsumer);
+			startRecording(sampleRate, IAudioConsumer);
 			mStartTime = SystemClock.elapsedRealtime();
-//			startChunkProcessing(false);
 			setState(State.RECORDING);
 			return true;
 		} catch (IOException e) {
@@ -220,61 +207,22 @@ public class RecognizerIntentService extends Service {
 		}
 		mRecorder.stop();
 		setState(State.PROCESSING);
-//		mSendHandler.removeCallbacks(mSendTask);
 
 		return true;
 	}
-	/**
-	 * <p>Starting chunk processing in a separate thread so that would not block the UI.</p>
-	 *
-	 * TODO
-	 *
-	private void startChunkProcessing(final boolean consumeAll) {
-		mChunkCount = 0;
-		HandlerThread thread = new HandlerThread("SendHandlerThread", Process.THREAD_PRIORITY_BACKGROUND);
-		thread.start();
-		mSendLooper = thread.getLooper();
-		mSendHandler = new Handler(mSendLooper);
-
-		mSendTask = new Runnable() {
-			public void run() {
-				if (mRecorder != null) {
-					try {
-						Thread.sleep(100);
-					} catch (Exception e) {
-						Log.i(TAG,e.toString());
-					}
-					if (consumeAll == false) {
-						mSendHandler.postDelayed(this, 300);
-					}
-				}
-			}
-		};
-		mSendHandler.postDelayed(mSendTask, 100);
-	}*/
 	/**
 	 * <p>Starts recording from the microphone with the given sample rate.</p>
 	 *
 	 * @throws IOException if recorder could not be created
 	 */
-	private void startRecording(int recordingRate, AudioConsumer audioConsumer) throws IOException {
-//		VaniRecorder.releaseRecorder();
-		mRecorder = new RawAudioRecorder(recordingRate, audioConsumer);
+	private void startRecording(int recordingRate, IAudioConsumer IAudioConsumer) throws IOException {
+		mRecorder = new RawAudioRecorder(recordingRate, IAudioConsumer);
 		mRecorder.start();
 	}
 	/**
 	 * Release resources.
 	 */
 	private void releaseResources() {
-		/*if (mSendLooper != null) {
-			mSendLooper.quit();
-			mSendLooper = null;
-		}
-
-		if (mSendHandler != null) {
-			mSendHandler.removeCallbacks(mSendTask);
-		}*/
-
 		if (mRecorder != null) {
 			mRecorder.release();
 			mRecorder = null;
@@ -291,7 +239,7 @@ public class RecognizerIntentService extends Service {
 	 * Release resources, reset flags, stop service for next call.
 	 */
 	public void processContinu(){
-		releaseResources(); // mRecorder = null
+		releaseResources();
 		setState(State.IDLE);
 		stopSelf();
 	}

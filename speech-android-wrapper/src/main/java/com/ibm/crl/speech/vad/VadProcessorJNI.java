@@ -1,18 +1,22 @@
-/* ***************************************************************** */
-/*                                                                   */
-/* IBM Confidential                                                  */
-/*                                                                   */
-/* OCO Source Materials                                              */
-/*                                                                   */
-/* Copyright IBM Corp. 2013                                          */
-/*                                                                   */
-/* The source code for this program is not published or otherwise    */
-/* divested of its trade secrets, irrespective of what has been      */
-/* deposited with the U.S. Copyright Office.                         */
-/*                                                                   */
-/* ***************************************************************** */
+/**
+ * Copyright IBM Corporation 2015
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.ibm.crl.speech.vad;
-// TODO: Auto-generated Javadoc
+
+import com.ibm.cio.dto.SpeechConfiguration;
 
 /**
  * Voice activity detector.
@@ -20,14 +24,13 @@ package com.ibm.crl.speech.vad;
  * @author Turta@crl.ibm
  */
 public class VadProcessorJNI {
-	// Use PROPRIETARY notice if class contains a main() method, otherwise use
-	// COPYRIGHT notice.
-	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
+	// Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
 	/** Default sample rate. */
-	private static final int DEFAULT_SAMPLERATE = 16000;
+	private static final int DEFAULT_SAMPLERATE = SpeechConfiguration.SAMPLE_RATE;
 
 	/** Default frame size. */
-	private static final int DEFAULT_FRAMESIZE = 320;
+	private static final int DEFAULT_FRAMESIZE = SpeechConfiguration.FRAME_SIZE*2; // Leave original configuration for VAD
 
 	/** The slot. */
 	private final int slot;
