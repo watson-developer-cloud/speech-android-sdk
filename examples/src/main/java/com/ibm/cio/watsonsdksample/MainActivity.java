@@ -96,11 +96,8 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
      * Initializing instance of SpeechToText and configuring the rest of parameters
      */
     private void initSpeechRecognition() {
-        // Configuration
-        SpeechConfiguration sConfig = new SpeechConfiguration();
-
         //STT
-        SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), sConfig);
+        SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), new SpeechConfiguration());
         SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT, this.PASSWORD_STT);
         SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
         SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
@@ -362,7 +359,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
                 displayStatus("connection closed");
                 setButtonLabel(R.id.buttonRecord, "start recording");
                 mRecognizing = false;
-
 				break;
 			case SpeechDelegate.ERROR:
                 Logger.e(TAG, result.getTranscript());

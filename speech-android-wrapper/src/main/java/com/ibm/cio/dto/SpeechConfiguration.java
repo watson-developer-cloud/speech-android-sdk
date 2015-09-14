@@ -12,31 +12,39 @@ public class SpeechConfiguration {
     public static final int FRAME_SIZE = 160;
     // Sample rate
     public static final int SAMPLE_RATE = 16000;
+    // Timeout
+    public int inactivityTimeout = 600;
 
     // Data format
     public String audioFormat = AUDIO_FORMAT_DEFAULT;
-    // Timeout
-    public int inactivityTimeout = 600;
-    // Authentication flag
-    public boolean isAuthNeeded = true;
-    // SSL flag
-    public boolean isSSL = true;
     // VAD flag
     public boolean isUsingVAD = false;
+    // Authentication flag
+    public boolean isAuthNeeded = true;
+    // SSL flag, this would be detected automatically
+    public boolean isSSL = true;
+    /**
+     * Instantiate default configuration
+     */
+    public SpeechConfiguration(){}
 
-    // This method is only used for testing purpose
-    public void enableOpusTesting(){
-        this.audioFormat = AUDIO_FORMAT_OGGOPUS;
-        this.isAuthNeeded = false;
-        this.isSSL = false;
-        this.isUsingVAD = false;
+    /**
+     * Constructing configuration by parameters
+     *
+     * @param audioFormat
+     */
+    public SpeechConfiguration(String audioFormat){
+        this.audioFormat = audioFormat;
     }
 
-    // This method is only used for testing purpose
-    public void enableWavTesting(){
-        this.audioFormat = AUDIO_FORMAT_DEFAULT;
-        this.isAuthNeeded = false;
-        this.isSSL = false;
-        this.isUsingVAD = false;
+    /**
+     * Constructing configuration by parameters
+     *
+     * @param audioFormat
+     * @param isAuthNeeded
+     */
+    public SpeechConfiguration(String audioFormat, boolean isAuthNeeded){
+        this.audioFormat = audioFormat;
+        this.isAuthNeeded = isAuthNeeded;
     }
 }
