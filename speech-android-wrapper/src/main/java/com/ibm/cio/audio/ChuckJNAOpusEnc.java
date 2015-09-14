@@ -1,16 +1,19 @@
-/* ***************************************************************** */
-/*                                                                   */
-/* IBM Confidential                                                  */
-/*                                                                   */
-/* OCO Source Materials                                              */
-/*                                                                   */
-/* Copyright IBM Corp. 2013                                          */
-/*                                                                   */
-/* The source code for this program is not published or otherwise    */
-/* divested of its trade secrets, irrespective of what has been      */
-/* deposited with the U.S. Copyright Office.                         */
-/*                                                                   */
-/* ***************************************************************** */
+/**
+ * Copyright IBM Corporation 2015
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.ibm.cio.audio;
 
 import java.io.ByteArrayInputStream;
@@ -23,6 +26,7 @@ import java.nio.ShortBuffer;
 
 import android.os.SystemClock;
 
+import com.ibm.cio.dto.SpeechConfiguration;
 import com.ibm.cio.opus.ChuckOpusWriter;
 import com.ibm.cio.opus.JNAOpus;
 import com.ibm.cio.util.Logger;
@@ -41,8 +45,8 @@ public class ChuckJNAOpusEnc implements ISpeechEncoder {
 
     private ChuckOpusWriter writer = null;
     private PointerByReference opusEncoder;
-    private int frameSize = 160;
-    private int sampleRate = 16000;
+    private int frameSize = SpeechConfiguration.FRAME_SIZE;
+    private int sampleRate = SpeechConfiguration.SAMPLE_RATE;
 
     private SpeechRecorderDelegate delegate = null;
     //
