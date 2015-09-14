@@ -62,7 +62,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 //    private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
 
     private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
-//    private static String STT_URL = "ws://192.168.1.102:8001/speech-to-text/api";
     private static String TTS_URL = "https://stream.watsonplatform.net/text-to-speech/api";
 
 	TextView textResult;
