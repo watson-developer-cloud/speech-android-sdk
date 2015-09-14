@@ -398,7 +398,7 @@ public class SpeechToText {
     private void sendMessage(int code, QueryResult result){
         if(this.delegate != null){
             Logger.w(TAG, "INVOKING sendMessage FROM SpeechToText");
-            this.delegate.receivedMessage(code, result);
+            this.delegate.onMessage(code, result);
         }
         else{
             Logger.w(TAG, "INVOKING sendMessage FAILED FROM SpeechToText");
@@ -437,13 +437,14 @@ public class SpeechToText {
         }
 
         public void consume(byte [] data) {
-//            Logger.i(TAG, "consume called with " + data.length + " bytes");
             mUploader.onHasData(data);
         }
 
         @Override
         public void onAmplitude(double amplitude, double volume) {
-//            Logger.d(TAG, "####### volume=" + volume + ", amplitude="+amplitude);
+            if(delegate != null){
+                delegate.onAmplitude(amplitude, volume);
+            }
         }
     }
 

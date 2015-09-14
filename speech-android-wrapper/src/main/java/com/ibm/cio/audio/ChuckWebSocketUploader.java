@@ -127,7 +127,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
      */
     private void sendMessage(int code){
         if(delegate != null){
-            delegate.receivedMessage(code, this.fetchTranscript(this.timeout));
+            delegate.onMessage(code, this.fetchTranscript(this.timeout));
         }
     }
     @Override

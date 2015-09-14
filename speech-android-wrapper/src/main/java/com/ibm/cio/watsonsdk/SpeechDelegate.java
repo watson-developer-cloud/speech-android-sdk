@@ -8,5 +8,17 @@ public interface SpeechDelegate {
 	public final static int OPEN = 1;
     public final static int WAIT = 2;
 
-	public void receivedMessage(int code, QueryResult result);
+    /**
+     * Receive message with status code
+     * @param code
+     * @param result
+     */
+	public void onMessage(int code, QueryResult result);
+
+    /**
+     * Recieve the data of amplitude and volume
+     * @param amplitude
+     * @param volume
+     */
+    public void onAmplitude(double amplitude, double volume);
 }
