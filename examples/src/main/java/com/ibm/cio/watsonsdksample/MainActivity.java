@@ -78,9 +78,10 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
     //private static String TTS_URL = "https://speech.tap.ibm.com/text-to-speech-beta/api";
     //private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
 
-//    private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
+    //private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
+    private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
 
-    private static String STT_URL = "ws://t430tb.watson.ibm.com:1080/speech-to-text/api";
+    //private static String STT_URL = "ws://t430tb.watson.ibm.com:1080/speech-to-text/api";
     private static String TTS_URL = "https://stream-s.watsonplatform.net/text-to-speech/api";
 
 	TextView textResult;
@@ -94,11 +95,12 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
     FragmentTabSTT fragmentTabSTT = new FragmentTabSTT();
     FragmentTabTTS fragmentTabTTS = new FragmentTabTTS();
 
-    public class FragmentTabSTT extends Fragment {
+    public static class FragmentTabSTT extends Fragment {
 
         public View mView = null;
         public Context mContext = null;
         public JSONObject jsonModels = null;
+        private Handler mHandler = null;
 
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
@@ -111,7 +113,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             addItemsOnSpinnerModels();
             setText();
 
-            Button buttonRecord = (Button)mView.findViewById(R.id.buttonRecord);
+            /*Button buttonRecord = (Button)mView.findViewById(R.id.buttonRecord);
             buttonRecord.setOnClickListener(new View.OnClickListener() {
 
                 @Override
@@ -120,7 +122,9 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
                     Log.d(TAG, "onClickRecord");
                     //backward_img.setBackgroundColor(Color.BLUE);
                 }
-            });
+            });*/
+
+            mHandler = new Handler();
 
             return mView;
         }
@@ -188,23 +192,25 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
                 @Override
                 public void run() {
                     SpeechToText.sharedInstance().transcript = result;
-                    textResult = (TextView)mView.findViewById(R.id.textResult);
+                    TextView textResult = (TextView)mView.findViewById(R.id.textResult);
                     textResult.setText(result);
                 }
             };
+
             new Thread(){
                 public void run(){
-                    handler.post(runnableUi);
+                    mHandler.post(runnableUi);
                 }
             }.start();
         }
     }
 
-    public class FragmentTabTTS extends Fragment {
+    public static class FragmentTabTTS extends Fragment {
 
         public View mView = null;
         public Context mContext = null;
         public JSONObject jsonVoices = null;
+        private Handler mHandler = null;
 
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
@@ -213,9 +219,9 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             mContext = getActivity().getApplicationContext();
 
             if (jsonVoices == null) {
-                //jsonVoices = new TTSCommands().doInBackground();
+                jsonVoices = new TTSCommands().doInBackground();
             }
-            //addItemsOnSpinnerVoices();
+            addItemsOnSpinnerVoices();
             setText();
             updatePrompt(getString(R.string.voiceDefault));
 
@@ -233,7 +239,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
                     };
                     new Thread(){
                         public void run(){
-                            handler.post(runnableUi);
+                            mHandler.post(runnableUi);
                         }
                     }.start();
                 }
@@ -243,6 +249,8 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
                     // your code here
                 }
             });
+
+            mHandler = new Handler();
 
             return mView;
         }
@@ -323,6 +331,8 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
                 viewPrompt.setText(getString(R.string.ttsItalianPrompt));
             } else if (strVoice.startsWith("de-DE")) {
                 viewPrompt.setText(getString(R.string.ttsGermanPrompt));
+            } else if (strVoice.startsWith("ja-JP")) {
+                viewPrompt.setText(getString(R.string.ttsJapanesePrompt));
             }
         }
     }
@@ -514,6 +524,22 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             displayStatus("connecting to the STT service...");
             SpeechToText.sharedInstance().recognize();
             SpeechToText.sharedInstance().setRecorderDelegate(this);
+
+            /*final MainActivity activity = this;
+            final Runnable runnableUi = new Runnable(){
+                @Override
+                public void run() {
+                    displayStatus("connecting to the STT service....");
+                    SpeechToText.sharedInstance().recognize();
+                    SpeechToText.sharedInstance().setRecorderDelegate(activity);
+                }
+            };
+            new Thread(){
+                public void run(){
+                    handler.post(runnableUi);
+                }
+            }.start();*/
+
         } else {
             mRecognizing = false;
             Spinner spinner = (Spinner) findViewById(R.id.spinnerModels);

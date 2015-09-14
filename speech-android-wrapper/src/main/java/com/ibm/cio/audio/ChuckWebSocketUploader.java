@@ -63,7 +63,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
     public ChuckWebSocketUploader(SpeechEncoder encoder, String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
         super(new URI(serverURL), new Draft_17(), header);
 //		super( new URI(serverURL), new Draft_17());
-        Logger.i(TAG, "### New ChuckWebSocketUploader ###");
+        Logger.i(TAG, "### New ChuckWebSocketUploader ### " + serverURL);
         Logger.d(TAG, serverURL);
         this.encoder = encoder; // for WebSocket only
         this.sConfig = config;
@@ -129,32 +129,34 @@ public class ChuckWebSocketUploader extends WebSocketClient implements VaniUploa
     }
     @Override
     public int onHasData(byte[] buffer, boolean needEncode) {
+        //Logger.e(TAG, "onHasData: " + buffer.length + " " + (needEncode? "true" : "false"));
         int uploadedAudioSize = 0;
         // NOW, WE HAVE STATUS OF UPLOAD PREPARING, UPLOAD PREPARING OK
         if (this.isUploadPrepared()) {
             try {
                 if (needEncode) {
-//                    Logger.e(TAG, "needEncode == true");
+                    Logger.e(TAG, "needEncode == true");
                     uploadedAudioSize = encoder.encodeAndWrite(buffer);
                 }
                 else{
-//                    Logger.e(TAG, "needEncode == false");
+                    Logger.e(TAG, "needEncode == false");
                     this.send(buffer);
                 }
             } catch (IOException e) {
-                Logger.e(TAG, "Error occured in writeBufferToOutputStream, recording is aborted");
+                Logger.e(TAG, "Error occurred in writeBufferToOutputStream, recording is aborted");
                 e.printStackTrace();
             }
         }
         else {
             try {
-                System.out.println("### WAITING FOR ESTABLISHING CONNECTION ###");
+                //System.out.println("### WAITING FOR ESTABLISHING CONNECTION ###");
                 initStreamToServerThread.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 Logger.d(TAG, "Finish Join prepare upload, result = " + this.isUploadPrepared());
             }
         }
+        //Logger.e(TAG, "onHasData: " + buffer.length + " " + (needEncode? "true" : "false") + "outputData: " + uploadedAudioSize);
         return uploadedAudioSize;
     }
 

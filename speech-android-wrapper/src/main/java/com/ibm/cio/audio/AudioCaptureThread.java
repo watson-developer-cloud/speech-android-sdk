@@ -48,9 +48,8 @@ public class AudioCaptureThread extends Thread {
 
             while(!mStop) {
                 int r = recorder.read(buffer,0,buffer.length);
-
                 long v = 0;
-                for (int i = 0; i < buffer.length; i++) {
+                for (int i = 0; i < r; i++) {
                     v += buffer[i] * buffer[i];
                 }
                 double amplitude = v / (double) r;
@@ -60,12 +59,12 @@ public class AudioCaptureThread extends Thread {
                 mAudioConsumer.onAmplitude(amplitude, volume);
 
                 // convert to an array of bytes and send it to the server
-                ByteBuffer bufferBytes = ByteBuffer.allocate(buffer.length*2);
+                ByteBuffer bufferBytes = ByteBuffer.allocate(r*2);
                 bufferBytes.order(ByteOrder.LITTLE_ENDIAN);
-                bufferBytes.asShortBuffer().put(buffer);
+                bufferBytes.asShortBuffer().put(buffer,0,r);
                 byte[] bytes = bufferBytes.array();
                 int length = bytes.length;
-                //Log.i(TAG, "Writing new data to buffer: " + length + " bytes");
+                //Log.i(TAG, "Writing new data to buffer: " + length + " bytes (samplingRate: " + mSamplingRate + ")");
                 mAudioConsumer.consume(bytes);
             }
         }

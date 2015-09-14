@@ -515,7 +515,7 @@ public class SpeechToText {
 
         @Override
         public void onAmplitude(double amplitude, double volume) {
-            Logger.d(TAG, "####### volume=" + volume + ", amplitude="+amplitude);
+            //Logger.d(TAG, "####### volume=" + volume + ", amplitude="+amplitude);
         }
     }
 
@@ -622,7 +622,8 @@ public class SpeechToText {
         // Initiate Uploader, Encoder
 
         SpeechConfiguration sConfig = new SpeechConfiguration();
-        sConfig.enableOpusTesting();
+        //sConfig.enableOpusTesting();
+        sConfig.enableWavTesting();
 
         try {
             HashMap<String, String> header = new HashMap<String, String>();
@@ -753,8 +754,9 @@ public class SpeechToText {
             String inputStr;
             while ((inputStr = streamReader.readLine()) != null)
                 responseStrBuilder.append(inputStr);
+            Log.d(TAG, "response: " + responseStrBuilder.toString());
             object = new JSONObject(responseStrBuilder.toString());
-            Log.d(TAG, object.toString());
+            Log.d(TAG, "response: " + object.toString());
             Log.d(TAG, "ending getModels");
         } catch (IOException e) {
             e.printStackTrace();
