@@ -48,13 +48,19 @@ Installation
 ```
 4. Clean and run the Android Studio project
 
-#Speech To Text
+Speech To Text
 ===============
 
 Implement the SpeechDelegate and SpeechRecorderDelgate in the MainActivity
 --------------------------------------------------------------------------
 
-These delgates implement the callbacks when a response from the server is recieved or when the recording is completed.
+These delgates implement the callbacks when a response from the server is recieved or when the recorder is sending back the auidio data, and SpeechRecorderDelegate is optional.
+
+```
+   public class MainActivity extends Activity implements SpeechDelegate{}
+```
+
+With SpeechRecorderDelegate
 
 ```
    public class MainActivity extends Activity implements SpeechDelegate, SpeechRecorderDelegate{}
@@ -65,6 +71,20 @@ Instantiate the SpeechToText instance
 
 ```
    SpeechToText.sharedInstance().initWithContext(this.getHost(), this.getApplicationContext(), new SpeechConfiguration());
+```
+
+**Enabling audio compression**
+
+By default audio sent to the server is uncompressed PCM encoded data, compressed audio using the Opus codec can be enabled.
+```
+   SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS));
+```
+Or this way:
+```
+    // Configuration
+    SpeechConfiguration sConfig = new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS);
+    // STT
+    SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), sConfig);
 ```
 
 **Set the Credentials and the delegate**
@@ -107,7 +127,12 @@ Start Audio Transcription
 
 ```
    SpeechToText.sharedInstance().recognize();
-   SpeechToText.sharedInstance().setRecorderDelegate(this); // This is optional, so does SpeechRecorderDelegate
+```
+
+If you implemented SpeechRecorderDelegate, and needs to process the audio data which is recorded, you can use set the delegate.
+```
+SpeechToText.sharedInstance().recognize();
+SpeechToText.sharedInstance().setRecorderDelegate(this);
 ```
 
 **Delegate function to receive messages from the sdk**
@@ -117,13 +142,13 @@ Start Audio Transcription
 	public void onMessage(int code, QueryResult result) {
 		switch(code){
 			case SpeechDelegate.OPEN:
-				Log.i(TAG, "################ receivedMessage.Open");
+				// The connection is established
 			break;
 			case SpeechDelegate.CLOSE:
-				Log.i(TAG, "################ receivedMessage.Close"); // Final results
+				// The connection is closed
 				break;
 			case SpeechDelegate.ERROR:
-				Log.e(TAG, result.getTranscript());
+				// Error
 				break;
 			case SpeechDelegate.MESSAGE:
 				displayResult(result.getStatusCode(), result.getTranscript()); // Instant results
@@ -133,8 +158,6 @@ Start Audio Transcription
 
 End Audio Transcription
 ------------------------------
-
-By default the SDK uses Voice Activated Detection (VAD) to detect when a user has stopped speaking, this can be disabled with [SpeechToText.sharedInstance().setUseVAD(false);]
 
 ```
    SpeechRecognition.sharedInstance().stopRecording();
