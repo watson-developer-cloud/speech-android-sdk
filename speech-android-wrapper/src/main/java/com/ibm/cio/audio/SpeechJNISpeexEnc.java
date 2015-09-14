@@ -58,7 +58,6 @@ public class SpeechJNISpeexEnc implements ISpeechEncoder {
     /** Speex encoder. */
     JNISpeexEncoder speexEncoder;
     private int spxFrameSize = 0;
-    private long compressDataTime = 0;
     private SpeechRecorderDelegate delegate = null;
     /**
      * Create a speex encoder with channel = 1, sample rate = 16000Hz.
@@ -68,7 +67,6 @@ public class SpeechJNISpeexEnc implements ISpeechEncoder {
         pam.channels = 1;
         pam.sampleRate = 16000;
         pam.mode = getEncMode(pam.sampleRate);
-        this.compressDataTime = 0;
         // Construct a new encoder
         speexEncoder = new JNISpeexEncoder(FrequencyBand.WIDE_BAND, pam.quality);
     }
@@ -80,14 +78,11 @@ public class SpeechJNISpeexEnc implements ISpeechEncoder {
      * @see com.ibm.cio.audio.SpeechEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
      */
     public void initEncodeAndWriteHeader(OutputStream out) throws IOException {
-        Logger.e(TAG, "initEncodeAndWriteHeader");
         writer = new ChunkOggSpeexWriter(pam, out);
         writer.writeHeader("Encoded with: " + VERSION);
     }
     @Override
     public byte[] encode(byte[] rawAudio) {
-        Logger.i(TAG, "encodeAndWrite data length: " + rawAudio.length + ", pam.nframes=" + pam.nframes);
-
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         int pcmPacketSize = 2 * pam.channels * speexEncoder.getFrameSize(); // 640
 
@@ -96,9 +91,7 @@ public class SpeechJNISpeexEnc implements ISpeechEncoder {
         while (offset < rawAudio.length) {
             if (l + offset > rawAudio.length)
                 l = rawAudio.length - offset;
-            long t1 = SystemClock.elapsedRealtime();
             byte[] encoded = speexEncoder.encode(SpeechUtility.toShorts(rawAudio, offset, l));
-            compressDataTime += SystemClock.elapsedRealtime() - t1;
             try {
                 if (spxFrameSize == 0)
                     spxFrameSize = encoded.length;
@@ -128,8 +121,6 @@ public class SpeechJNISpeexEnc implements ISpeechEncoder {
      */
     public int encodeAndWrite(byte[] audioData) throws IOException {
         int pcmPacketSize = 2 * pam.channels * speexEncoder.getFrameSize(); // 640
-        Logger.d(TAG, "[encodeAndWrite] pcmPacketSize: " + pcmPacketSize);
-
         int offset = 0;
         long t1;
         int l = pcmPacketSize;
@@ -139,9 +130,7 @@ public class SpeechJNISpeexEnc implements ISpeechEncoder {
             if (l + offset > audioData.length)
                 l =  audioData.length - offset;
 
-            t1 = SystemClock.elapsedRealtime();
             byte[] encoded = speexEncoder.encode(SpeechUtility.toShorts(audioData, offset, l));
-            compressDataTime += SystemClock.elapsedRealtime() - t1;
 
             if (encoded.length > 0) {
                 uploadedAudioSize += encoded.length;
@@ -149,13 +138,14 @@ public class SpeechJNISpeexEnc implements ISpeechEncoder {
             }
             offset += l;
         }
-        this._onRecordingCompleted(audioData);
+        this._onRecording(audioData);
         return uploadedAudioSize;
     }
 
-    private void _onRecordingCompleted(byte[] rawAudioData){
-        if(this.delegate != null) delegate.onRecordingCompleted(rawAudioData);
+    private void _onRecording(byte[] rawAudioData){
+        if(this.delegate != null) delegate.onRecording(rawAudioData);
     }
+
     /**
      * Gets the encode mode.
      *
@@ -208,11 +198,6 @@ public class SpeechJNISpeexEnc implements ISpeechEncoder {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public long getCompressionTime() {
-        return this.compressDataTime;
     }
 
     @Override

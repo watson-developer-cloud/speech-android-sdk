@@ -20,7 +20,6 @@ import android.os.SystemClock;
 
 import com.ibm.cio.audio.IAudioConsumer;
 import com.ibm.cio.util.Logger;
-// TODO: Auto-generated Javadoc
 
 /**
  * Audio recorder.
@@ -28,9 +27,8 @@ import com.ibm.cio.util.Logger;
  * @author Turta@crl.ibm
  */
 public class RawAudioRecorder {
-	// Use PROPRIETARY notice if class contains a main() method, otherwise use
-	// COPYRIGHT notice.
-	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
+	// Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
 	/** The Constant RESULT_AUDIO_ERROR. */
 	public final static int RESULT_AUDIO_ERROR  = 1;
 	
@@ -38,7 +36,7 @@ public class RawAudioRecorder {
 	public final static int RESULT_VAD_ERROR  = 2;
 
 	/** The Constant LOG_TAG. */
-	private static final String LOG_TAG = RawAudioRecorder.class.getName();
+	private static final String TAG = RawAudioRecorder.class.getName();
 
 	/** Default audio source. */
 	private static final int DEFAULT_AUDIO_SOURCE = MediaRecorder.AudioSource.VOICE_RECOGNITION;
@@ -61,9 +59,6 @@ public class RawAudioRecorder {
 	/** Voice activity detector. */
 	private static VadProcessorJNI sp = null;
 	
-	/** Sample rate. */
-	private final int mSampleRate;
-	
 	/** Buffer size. */
 	private int mBufferSize;
 
@@ -77,8 +72,6 @@ public class RawAudioRecorder {
 	private int mRecordedLength = 0;
 	/** Buffer. */
 	private byte[] mBuffer;
-	private long beginRecordingTime = 0;
-	private long recordingTime = 0;
 
     private IAudioConsumer mIAudioConsumer = null;
 	
@@ -91,20 +84,19 @@ public class RawAudioRecorder {
 	 * @param sampleRate Sample rate (e.g. 16000)
 	 */
 	public RawAudioRecorder(int audioSource, int sampleRate) {
-		mSampleRate = sampleRate;
-		rawData =  new byte[RESOLUTION_IN_BYTES * CHANNELS * mSampleRate * 35];
+		rawData =  new byte[RESOLUTION_IN_BYTES * CHANNELS * sampleRate * 35];
 		try {
 			setBufferSizeAndFramePeriod();
-			mRecorder = new AudioRecord(audioSource, mSampleRate, AudioFormat.CHANNEL_IN_MONO, RESOLUTION, mBufferSize);
-			CreateInstance(mSampleRate);
+			mRecorder = new AudioRecord(audioSource, sampleRate, AudioFormat.CHANNEL_IN_MONO, RESOLUTION, mBufferSize);
+			CreateInstance(sampleRate);
 			mBuffer = new byte[mFramePeriod * RESOLUTION_IN_BYTES * CHANNELS];
 //			Logger.d(LOG_TAG, "construct rawaudiorecorder");
 		} catch (Exception e) {
 			release();
 			if (e.getMessage() == null) {
-				Logger.e(LOG_TAG, "Unknown error occured while initializing recording");
+				Logger.e(TAG, "Unknown error occured while initializing recording");
 			} else {
-				Logger.e(LOG_TAG, e.getMessage());
+				Logger.e(TAG, e.getMessage());
 			}
 		}
 	}
@@ -112,12 +104,11 @@ public class RawAudioRecorder {
 	/**
 	 * Creates the Voice activity detector.
 	 *
-	 * @param mSampleRate the sample rate of audio
+	 * @param sampleRate the sample rate of audio
 	 */
-	public static void CreateInstance(int mSampleRate){
-		if(sp==null) {
-			Logger.i(LOG_TAG, "create sp");
-			sp = new VadProcessorJNI(mSampleRate);
+	public static void CreateInstance(int sampleRate){
+		if(sp == null) {
+			sp = new VadProcessorJNI(sampleRate);
 			byte[] pad = new byte[5120];
 			for (int i=0; i<10; i++) {
 				sp.preprocessChunk(pad);
@@ -147,17 +138,19 @@ public class RawAudioRecorder {
 	 */
 	private int read(AudioRecord recorder) {
 		int numberOfBytes = recorder.read(mBuffer, 0, mBuffer.length);
-//		Logger.d(LOG_TAG, "read audio: " + mBuffer.length + "|" + numberOfBytes);
-		if (numberOfBytes == 0 || numberOfBytes == AudioRecord.ERROR_INVALID_OPERATION
-				|| numberOfBytes == AudioRecord.ERROR_BAD_VALUE) {
-			Logger.e(LOG_TAG, "Read zero bytes");
-
-            if(numberOfBytes==0){Logger.d(LOG_TAG,"as number of bytes are zero");}
-            if(numberOfBytes == AudioRecord.ERROR_INVALID_OPERATION){Logger.d(LOG_TAG,"ERROR INVALID OP");}
-            if(numberOfBytes == AudioRecord.ERROR_BAD_VALUE){Logger.d(LOG_TAG,"ERROR BAD VAL");}
-
+		if (numberOfBytes == 0 || numberOfBytes == AudioRecord.ERROR_INVALID_OPERATION || numberOfBytes == AudioRecord.ERROR_BAD_VALUE) {
+            if(numberOfBytes == 0){
+                Logger.w(TAG,"ZERO BYTE");
+            }
+            if(numberOfBytes == AudioRecord.ERROR_INVALID_OPERATION){
+                Logger.w(TAG,"ERROR INVALID OPERATION");
+            }
+            if(numberOfBytes == AudioRecord.ERROR_BAD_VALUE){
+                Logger.w(TAG,"ERROR BAD VALUE");
+            }
             return -1;
-		}else{
+		}
+        else{
             long v = 0;
             for (int i = 0; i < mBuffer.length; i++) {
                 v += mBuffer[i] * mBuffer[i];
@@ -178,15 +171,12 @@ public class RawAudioRecorder {
 	private void setBufferSizeAndFramePeriod() {
 		mFramePeriod = (16000/1000) * 160;
 		mBufferSize = (mFramePeriod * 2 * 16 * 1) / 8;
-//		Logger.d(LOG_TAG, "bufferSize="+ mBufferSize + "|framePeriod=" + mFramePeriod);
-//		Logger.d(LOG_TAG, "buffersize min: " + AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, RESOLUTION));
-		 if (mBufferSize < AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, RESOLUTION))
-		 { // Check to make sure buffer size is not smaller than the smallest allowed one 
+		 if (mBufferSize < AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, RESOLUTION)) {
+		    // Check to make sure buffer size is not smaller than the smallest allowed one
 			 mBufferSize = AudioRecord.getMinBufferSize(16000, AudioFormat.CHANNEL_IN_MONO, RESOLUTION);
 			 // Set frame period and timer interval accordingly
 			 mFramePeriod = mBufferSize / ( 2 * 16 * 1 / 8 );
 		 }
-		 
 		 mBufferSize = mBufferSize*5;
 	}
 	/**
@@ -196,7 +186,6 @@ public class RawAudioRecorder {
 	 */
 	public byte[] getCompleteRecording() {
 		return getCurrentRawRecording(7040); // REMOVE 0.22 s at first to remove noise
-//		return getCurrentRawRecording(0);
 	}
 	/**
 	 * Gets the current recorded audio data.
@@ -243,65 +232,57 @@ public class RawAudioRecorder {
 		}
 	}
 	/**
-	 * <p>Starts the recording, and sets the state to RECORDING.</p>
+	 * Starts the recording, and sets the state to RECORDING
 	 */
 	public void start() {
 		if (mRecorder != null && mRecorder.getState() == AudioRecord.STATE_INITIALIZED) {
-			beginRecordingTime = SystemClock.elapsedRealtime();
 			mRecorder.startRecording();
-//			mRecorder.read(mBuffer, 0, mBuffer.length);
-			
 			if (mRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
 				new Thread() {
 					public void run() {
 						while (mRecorder != null && mRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
 							int status = read(mRecorder);
-//							if (status < 0) {
-//								break;
-//							}
 						}
 					}
 				}.start();
 			} else {
-				Logger.e(LOG_TAG, "startRecording() failed");
+				Logger.e(TAG, "startRecording() failed");
 			}
 		} else {
-			Logger.e(LOG_TAG, "start() called on illegal state");
+			Logger.e(TAG, "start() called on illegal state");
 		}
 	}
 	/**
-	 * Stop recording.
+	 * Stop recording
 	 */
 	public void stop() {
-		Logger.d(LOG_TAG, "stop");
-//		recording = false;
+		Logger.d(TAG, "Stopping recording...");
 		
 		if (mRecorder != null && mRecorder.getState() == AudioRecord.STATE_INITIALIZED &&
 				mRecorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
 			try {
 				mRecorder.stop();
-				recordingTime = SystemClock.elapsedRealtime() - beginRecordingTime;
 			} catch (IllegalStateException e) {
-				Logger.e(LOG_TAG, "native stop() called in illegal state: " + e.getMessage());
+				Logger.e(TAG, "native stop() called in illegal state: " + e.getMessage());
 			}
 		} else {
-			Logger.e(LOG_TAG, "stop() called in illegal state");
+			Logger.e(TAG, "stop() called in illegal state");
 		}
 	}
 	/**
-	 * <p>Copy the given byte array into the total recording array and process it by Voice activity detector.</p>
+	 * Copy the given byte array into the total recording array and process it by Voice activity detector
 	 * @param buffer audio buffer
 	 */
 	private void add(byte[] buffer, int length) {
 		if (rawData.length >= mRecordedLength + buffer.length) {
 			System.arraycopy(buffer, 0, rawData, mRecordedLength, length);
-			for (int i=0; i<3; i++) { // speed up VAD detection
+            // Normally 3 times of calling sp.preprocessChunk(buffer); to make VAD sensitive
+			for (int i = 0; i < 3; i++) {
 				sp.preprocessChunk(buffer);
 			}
-			// sp.preprocessChunk(buffer);
 			mRecordedLength += length;
 		} else {
-			Logger.e(LOG_TAG, "Recorder buffer overflow: " + mRecordedLength);
+			Logger.e(TAG, "Recorder buffer overflow: " + mRecordedLength);
 			release();
 		}
 	}
@@ -314,8 +295,7 @@ public class RawAudioRecorder {
             long sumOfSquares = getRms(mRecordedLength, mBuffer.length);
             double rootMeanSquare = Math.sqrt(sumOfSquares / (mBuffer.length / 2));
             if (rootMeanSquare > 1) {
-                    Logger.i(LOG_TAG, "getRmsdb(): " + rootMeanSquare);
-                    return (float) (10 * Math.log10(rootMeanSquare));
+                return (float) (10 * Math.log10(rootMeanSquare));
             }
             return 0;
     }
@@ -342,8 +322,5 @@ public class RawAudioRecorder {
 			sum += curSample * curSample;
 		}
 		return sum;
-	}
-	public long getRecordingTime() {
-		return recordingTime;
 	}
 }

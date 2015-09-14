@@ -46,6 +46,7 @@ public interface ISpeechEncoder {
      * @throws IOException Signals that an I/O exception has occurred.
      */
     public byte[] encode(byte[] b);
+
     public void writeChunk(byte[] b) throws IOException ;
     /**
      * In compression mode, encode audio data (to SPX) before write to ouput stream.
@@ -59,7 +60,6 @@ public interface ISpeechEncoder {
      * Get compression audio time in compression mode.
      * @return the time for compression audio.
      */
-    public long getCompressionTime();
     void onStart();
     /**
      * Close output stream.

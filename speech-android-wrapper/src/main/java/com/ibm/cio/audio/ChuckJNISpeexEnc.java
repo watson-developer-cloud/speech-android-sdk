@@ -22,6 +22,7 @@ import org.xiph.speex.AudioFileWriter;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.ibm.cio.dto.SpeechConfiguration;
 import com.ibm.cio.speex.ChuckSpeexWriter;
 import com.ibm.cio.speex.FrequencyBand;
 import com.ibm.cio.speex.JNISpeexEncoder;
@@ -29,7 +30,6 @@ import com.ibm.cio.util.Logger;
 import com.ibm.cio.util.SpeechUtility;
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 
-// TODO: Auto-generated Javadoc
 /**
  * JNI Speex encoder.
  */
@@ -60,7 +60,6 @@ public class ChuckJNISpeexEnc implements ISpeechEncoder {
     /** Speex encoder. */
     JNISpeexEncoder speexEncoder;
     private int spxFrameSize = 0;
-    private long compressDataTime = 0;
     private SpeechRecorderDelegate delegate = null;
 
     /**
@@ -76,9 +75,8 @@ public class ChuckJNISpeexEnc implements ISpeechEncoder {
     public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client) throws IOException{
         pam = new  SpeexParam();
         pam.channels = 1;
-        pam.sampleRate = 16000;
+        pam.sampleRate = SpeechConfiguration.SAMPLE_RATE;
         pam.mode = getEncMode(pam.sampleRate);
-        this.compressDataTime = 0;
 
         // Construct a new ChuckSpeexWriter
         writer = new ChuckSpeexWriter(client);
@@ -94,14 +92,8 @@ public class ChuckJNISpeexEnc implements ISpeechEncoder {
      * @see com.ibm.cio.audio.SpeechEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
      */
     public void initEncodeAndWriteHeader(OutputStream out) throws IOException {
-        Logger.e(TAG, "initEncodeAndWriteHeader");
-        long t1 = System.currentTimeMillis();
-        Logger.i(TAG, "initEncodeAndWriteHeader at: " + t1);
-
         writer = new ChunkOggSpeexWriter(pam, out);
-
         writer.writeHeader("Encoded with: " + VERSION);
-        Logger.i(TAG, "initEncodeAndWriteHeader end after: " + (System.currentTimeMillis() - t1));
     }
     @Override
     public byte[] encode(byte[] rawAudio) {
@@ -112,9 +104,7 @@ public class ChuckJNISpeexEnc implements ISpeechEncoder {
         while (offset < rawAudio.length) {
             if (l + offset > rawAudio.length)
                 l = rawAudio.length - offset;
-            long t1 = SystemClock.elapsedRealtime();
             byte[] encoded = speexEncoder.encode(SpeechUtility.toShorts(rawAudio, offset, l));
-            compressDataTime += SystemClock.elapsedRealtime() - t1;
             try {
                 if (spxFrameSize == 0)
                     spxFrameSize = encoded.length;
@@ -128,7 +118,6 @@ public class ChuckJNISpeexEnc implements ISpeechEncoder {
     }
     @Override
     public void writeChunk(byte[] data) throws IOException {
-        long t0 = SystemClock.elapsedRealtime();
         int offSet = 0;
         if (spxFrameSize == 0)
             spxFrameSize = 70;
@@ -138,15 +127,12 @@ public class ChuckJNISpeexEnc implements ISpeechEncoder {
             writer.writePacket(data, offSet, spxFrameSize);
             offSet += spxFrameSize;
         }
-        Logger.d(TAG, "writeChunk time: " + (SystemClock.elapsedRealtime() - t0));
     }
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#encodeAndWrite(byte[])
      */
     public int encodeAndWrite(byte[] audioData) throws IOException {
-        Logger.i(TAG, "encodeAndWrite data length: " + audioData.length + ", pam.nframes=" + pam.nframes);
         int pcmPacketSize = 2 * pam.channels * speexEncoder.getFrameSize(); // 640
-        Logger.d(TAG, "[encodeAndWrite] pcmPacketSize: " + pcmPacketSize);
         int offset = 0;
         long t1;
         int l = pcmPacketSize;
@@ -156,24 +142,22 @@ public class ChuckJNISpeexEnc implements ISpeechEncoder {
             if (l + offset > audioData.length)
                 l =  audioData.length - offset;
 
-            t1 = SystemClock.elapsedRealtime();
             byte[] encoded = speexEncoder.encode(SpeechUtility.toShorts(audioData, offset, l));
-            compressDataTime += SystemClock.elapsedRealtime() - t1;
 
             if (encoded.length > 0) {
                 uploadedAudioSize += encoded.length;
-                Log.d(TAG, "Writing and uploading speex data");
                 writer.writePacket(encoded, 0, encoded.length);
             }
             offset += l;
         }
-        this._onRecordingCompleted(audioData);
+        this._onRecording(audioData);
         return uploadedAudioSize;
     }
 
-    private void _onRecordingCompleted(byte[] rawAudioData){
-        if(this.delegate != null) delegate.onRecordingCompleted(rawAudioData);
+    private void _onRecording(byte[] rawAudioData){
+        if(this.delegate != null) delegate.onRecording(rawAudioData);
     }
+
     /**
      * Gets the encode mode.
      *
@@ -226,11 +210,6 @@ public class ChuckJNISpeexEnc implements ISpeechEncoder {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public long getCompressionTime() {
-        return this.compressDataTime;
     }
 
     @Override

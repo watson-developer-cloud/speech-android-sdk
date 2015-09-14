@@ -21,6 +21,7 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.ibm.cio.dto.SpeechConfiguration;
 import com.ibm.cio.dto.QueryResult;
 import com.ibm.cio.util.Logger;
 import com.ibm.cio.watsonsdk.SpeechDelegate;
@@ -61,6 +62,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 //    private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
 
     private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
+//    private static String STT_URL = "ws://192.168.1.102:8001/speech-to-text/api";
     private static String TTS_URL = "https://stream.watsonplatform.net/text-to-speech/api";
 
 	TextView textResult;
@@ -90,6 +92,27 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 
 		handler = new Handler();
 	}
+
+    /**
+     * Initializing instance of SpeechToText and configuring the rest of parameters
+     */
+    private void initSpeechRecognition() {
+        // Configuration
+        SpeechConfiguration sConfig = new SpeechConfiguration();
+
+        //STT
+        SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), sConfig);
+        SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT, this.PASSWORD_STT);
+        SpeechToText.sharedInstance().setTokenProvider(new EmptyTokenProvider(this.strSTTTokenFactoryURL));
+        SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
+        SpeechToText.sharedInstance().setDelegate(this);
+//		SpeechToText.sharedInstance().setTimeout(0); // Optional - set the duration for delaying connection closure in millisecond
+        //TTS
+        TextToSpeech.sharedInstance().initWithContext(this.getHost(TTS_URL));
+        TextToSpeech.sharedInstance().setCredentials(this.USERNAME_TTS, this.PASSWORD_TTS);
+        TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(this.strTTSTokenFactoryURL));
+        TextToSpeech.sharedInstance().setVoice("en-US_MichaelVoice");
+    }
 
     public class ItemModel {
 
@@ -197,24 +220,15 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             }
         }
     }
-	
-	/**
-	 * Initializing instance of SpeechToText and configuring the rest of parameters
-	 */
-	private void initSpeechRecognition() {
-		//STT
-		SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), false);
-        SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT, this.PASSWORD_STT);
-        SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
-        SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
-        SpeechToText.sharedInstance().setDelegate(this);
-//		SpeechToText.sharedInstance().setTimeout(0); // Optional - set the duration for delaying connection closure in millisecond
-		//TTS
-		TextToSpeech.sharedInstance().initWithContext(this.getHost(TTS_URL), this.getApplicationContext());
-		TextToSpeech.sharedInstance().setCredentials(this.USERNAME_TTS,this.PASSWORD_TTS);
-        TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(this.strTTSTokenFactoryURL));
-        TextToSpeech.sharedInstance().setVoice("en-US_MichaelVoice");
-	}
+
+    class EmptyTokenProvider implements TokenProvider {
+
+        public EmptyTokenProvider(String strTokenFactoryURL) {}
+
+        public String getToken() {
+            return "";
+        }
+    }
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -255,7 +269,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 		final Runnable runnableUi = new Runnable(){  
 	        @Override  
 	        public void run() {   
-	        	SpeechToText.sharedInstance().transcript = result;
+	        	SpeechToText.sharedInstance().setTranscript(result);
 	        	textResult = (TextView) findViewById(R.id.textResult);
 	    		textResult.setText(result);
 	        }
@@ -276,7 +290,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         final Runnable runnableUi = new Runnable(){
             @Override
             public void run() {
-                SpeechToText.sharedInstance().transcript = status;
+                SpeechToText.sharedInstance().setTranscript(status);
                 textResult = (TextView) findViewById(R.id.sttStatus);
                 textResult.setText(status);
             }
@@ -357,10 +371,13 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 				Logger.i(TAG, "################ receivedMessage.Close, code: " + code + " result: " + result.getTranscript());
                 displayStatus("connection closed");
                 setButtonLabel(R.id.buttonRecord, "start recording");
+                mRecognizing = false;
+
 				break;
 			case SpeechDelegate.ERROR:
                 Logger.e(TAG, result.getTranscript());
                 displayResult(result.getTranscript());
+                mRecognizing = false;
 				break;
 			case SpeechDelegate.MESSAGE:
 				displayResult(result.getTranscript()); // Instant results
@@ -368,9 +385,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
 		}
 	}
 
-
-
 	@Override
-	public void onRecordingCompleted(byte[] rawAudioData) {
-	}
+	public void onRecording(byte[] rawAudioData) {}
 }

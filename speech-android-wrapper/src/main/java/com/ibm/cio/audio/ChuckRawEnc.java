@@ -60,7 +60,7 @@ public class ChuckRawEnc implements ISpeechEncoder {
 
         writer.writePacket(b, 0, b.length);
         if(this.delegate != null)
-            this.delegate.onRecordingCompleted(b);
+            this.delegate.onRecording(b);
         return b.length;
     }
     /* (non-Javadoc)
@@ -74,11 +74,6 @@ public class ChuckRawEnc implements ISpeechEncoder {
                 e.printStackTrace();
             }
         }
-    }
-
-    @Override
-    public long getCompressionTime() {
-        return 0;
     }
 
     @Override

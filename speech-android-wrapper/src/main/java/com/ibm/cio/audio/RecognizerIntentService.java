@@ -127,12 +127,7 @@ public class RecognizerIntentService extends Service {
 		}
 		return mRecorder.getLength();
 	}
-	public long getRecordingTime() {
-		if (mRecorder == null) {
-			return 0;
-		}
-		return mRecorder.getRecordingTime();
-	}
+
 	/**
 	 * Get recent sound pressure.
 	 * @return dB value of recent sound pressure

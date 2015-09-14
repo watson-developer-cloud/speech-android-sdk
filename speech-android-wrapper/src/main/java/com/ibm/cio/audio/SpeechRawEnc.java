@@ -48,12 +48,12 @@ public class SpeechRawEnc implements ISpeechEncoder {
      * @see com.ibm.cio.audio.SpeechEncoder#encodeAndWrite(byte[])
      */
     @Override
-    public int encodeAndWrite(byte[] b) throws IOException {
-        out.write(b);
-        if(this.delegate != null)
-            this.delegate.onRecordingCompleted(b);
-        return b.length;
+    public int encodeAndWrite(byte[] rawAudioData) throws IOException {
+        out.write(rawAudioData);
+        this._onRecording(rawAudioData);
+        return rawAudioData.length;
     }
+
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#close()
      */
@@ -65,11 +65,6 @@ public class SpeechRawEnc implements ISpeechEncoder {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public long getCompressionTime() {
-        return 0;
     }
 
     @Override
@@ -90,5 +85,9 @@ public class SpeechRawEnc implements ISpeechEncoder {
     @Override
     public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client)
             throws IOException {
+    }
+
+    private void _onRecording(byte[] rawAudioData){
+        if(this.delegate != null) delegate.onRecording(rawAudioData);
     }
 }

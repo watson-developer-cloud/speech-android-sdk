@@ -29,7 +29,7 @@ public interface IChunkUploader {
      *
      * @param buffer the buffer
      */
-    public int onHasData(byte[] buffer, boolean needEncode);
+    public int onHasData(byte[] buffer);
 
     /**
      * Checks if uploader has been prepared.

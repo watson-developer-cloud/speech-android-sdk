@@ -6,12 +6,12 @@ import org.xiph.speex.AudioFileWriter;
 import com.ibm.cio.audio.ChuckWebSocketUploader;
 
 public class ChuckOpusWriter extends AudioFileWriter {
-    private String TAG = this.getClass().getSimpleName();
     private ChuckWebSocketUploader client;
 
     public ChuckOpusWriter(ChuckWebSocketUploader client){
         this.client = client;
     }
+
     @Override
     public void close() throws IOException {
         this.client.stop();

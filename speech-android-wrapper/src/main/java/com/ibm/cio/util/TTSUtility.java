@@ -200,7 +200,6 @@ public class TTSUtility extends Application {
 				byte[] data = null;
 				if(codec == CODEC_WAV) {
 					data = analyzeWavData(is);
-
 				}
 				else if(codec == CODEC_OPUS){
 					data = analyzeOpusData(is);

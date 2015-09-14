@@ -28,6 +28,7 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import com.ibm.cio.dto.QueryResult;
+import com.ibm.cio.dto.SpeechConfiguration;
 import com.ibm.cio.util.Logger;
 import com.ibm.cio.watsonsdk.SpeechDelegate;
 
@@ -66,6 +67,10 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         super(new URI(serverURL), new Draft_17(), header);
         this.encoder = encoder; // for WebSocket only
         this.sConfig = config;
+
+        if(serverURL.toLowerCase().startsWith("wss") || serverURL.toLowerCase().startsWith("https"))
+            this.sConfig.isSSL = true;
+        else this.sConfig.isSSL = false;
     }
     /**
      * Trust server
@@ -95,7 +100,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
      * @throws InterruptedException
      * @throws Exception
      */
-    private void initStreamAudioToServer() throws IOException, InterruptedException, Exception {
+    private void initStreamAudioToServer() throws Exception{
         Logger.i(TAG, "********** Connecting... **********");
         beginRequestTime = SystemClock.elapsedRealtime();
         //lifted up for initializing writer, using isRunning to control the flow
@@ -126,17 +131,12 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         }
     }
     @Override
-    public int onHasData(byte[] buffer, boolean needEncode) {
+    public int onHasData(byte[] buffer) {
         int uploadedAudioSize = 0;
         // NOW, WE HAVE STATUS OF UPLOAD PREPARING, UPLOAD PREPARING OK
         if (this.isUploadPrepared()) {
             try {
-                if (needEncode) {
-                    uploadedAudioSize = encoder.encodeAndWrite(buffer);
-                }
-                else{
-                    this.send(buffer);
-                }
+                uploadedAudioSize = encoder.encodeAndWrite(buffer);
             } catch (IOException e) {
                 e.printStackTrace();
             }

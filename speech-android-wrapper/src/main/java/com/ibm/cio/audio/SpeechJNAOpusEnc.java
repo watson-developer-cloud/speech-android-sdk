@@ -22,6 +22,8 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import android.os.SystemClock;
+
+import com.ibm.cio.dto.SpeechConfiguration;
 import com.ibm.cio.opus.JNAOpus;
 import com.ibm.cio.opus.OpusWriter;
 import com.ibm.cio.util.Logger;
@@ -41,13 +43,9 @@ public class SpeechJNAOpusEnc implements ISpeechEncoder {
     private OpusWriter writer = null;
     private PointerByReference opusEncoder;
     private int sampleRate = 16000;
-    private long compressDataTime = 0;
     private SpeechRecorderDelegate delegate = null;
     //
-    public SpeechJNAOpusEnc() {
-        Logger.i(TAG, "Construct SpeechJNAOpusEnc");
-        this.compressDataTime = 0;
-    }
+    public SpeechJNAOpusEnc() {}
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
      */
@@ -96,19 +94,17 @@ public class SpeechJNAOpusEnc implements ISpeechEncoder {
                 }
                 shortBuffer.flip();
                 ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
-                long t1 = SystemClock.elapsedRealtime();
 
                 int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, SpeechConfiguration.FRAME_SIZE, opusBuffer, bufferSize);
 
-                compressDataTime += SystemClock.elapsedRealtime() - t1;
                 opusBuffer.position(opus_encoded);
                 opusBuffer.flip();
-                byte[] opusdata = new byte[opusBuffer.remaining()+1];
-                opusdata[0] = (byte) opus_encoded;
-                opusBuffer.get(opusdata, 1, opusdata.length-1);
+                byte[] opusData = new byte[opusBuffer.remaining()+1];
+                opusData[0] = (byte) opus_encoded;
+                opusBuffer.get(opusData, 1, opusData.length-1);
 
                 try {
-                    bos.write(opusdata);
+                    bos.write(opusData);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -151,11 +147,9 @@ public class SpeechJNAOpusEnc implements ISpeechEncoder {
             }
             shortBuffer.flip();
             ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
-            long t1 = SystemClock.elapsedRealtime();
 
             int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, SpeechConfiguration.FRAME_SIZE, opusBuffer, bufferSize);
 
-            compressDataTime += SystemClock.elapsedRealtime() - t1;
             opusBuffer.position(opus_encoded);
             opusBuffer.flip();
             byte[] opusdata = new byte[opusBuffer.remaining()+1];
@@ -170,13 +164,14 @@ public class SpeechJNAOpusEnc implements ISpeechEncoder {
 
         ios.close();
         ios = null;
-        this._onRecordingCompleted(rawAudio);
+        this._onRecording(rawAudio);
         return uploadedAudioSize;
     }
 
-    private void _onRecordingCompleted(byte[] rawAudioData){
-        if(this.delegate != null) delegate.onRecordingCompleted(rawAudioData);
+    private void _onRecording(byte[] rawAudioData){
+        if(this.delegate != null) delegate.onRecording(rawAudioData);
     }
+
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#close()
      */
@@ -187,10 +182,6 @@ public class SpeechJNAOpusEnc implements ISpeechEncoder {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-    @Override
-    public long getCompressionTime() {
-        return this.compressDataTime;
     }
 
     public void setDelegate(SpeechRecorderDelegate obj){

@@ -15,6 +15,7 @@ package com.ibm.cio.audio;
 
 import android.os.SystemClock;
 
+import com.ibm.cio.dto.SpeechConfiguration;
 import com.ibm.cio.opus.JNAOpus;
 import com.ibm.cio.opus.OpusWriter;
 import com.ibm.cio.util.Logger;
@@ -41,12 +42,10 @@ public class ChuckOggOpusEnc extends OpusWriter implements ISpeechEncoder {
     private OpusWriter writer = null;
     private PointerByReference opusEncoder;
     private int sampleRate = 16000;
-    private long compressDataTime = 0;
+
     private SpeechRecorderDelegate delegate = null;
 
-    public ChuckOggOpusEnc() {
-        this.compressDataTime = 0;
-    }
+    public ChuckOggOpusEnc() {}
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.VaniEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
      */
@@ -98,11 +97,9 @@ public class ChuckOggOpusEnc extends OpusWriter implements ISpeechEncoder {
                 shortBuffer.flip();
 
                 ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
-                long t1 = SystemClock.elapsedRealtime();
 
                 int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, SpeechConfiguration.FRAME_SIZE, opusBuffer, bufferSize);
 
-                compressDataTime += SystemClock.elapsedRealtime() - t1;
                 opusBuffer.position(opus_encoded);
                 opusBuffer.flip();
 
@@ -160,11 +157,9 @@ public class ChuckOggOpusEnc extends OpusWriter implements ISpeechEncoder {
             }
             shortBuffer.flip();
             ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
-            long t1 = SystemClock.elapsedRealtime();
 
             int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, SpeechConfiguration.FRAME_SIZE, opusBuffer, bufferSize);
 
-            compressDataTime += SystemClock.elapsedRealtime() - t1;
             opusBuffer.position(opus_encoded);
             opusBuffer.flip();
 
@@ -179,14 +174,15 @@ public class ChuckOggOpusEnc extends OpusWriter implements ISpeechEncoder {
 
         ios.close();
         ios = null;
-        this._onRecordingCompleted(rawAudio);
+        this._onRecording(rawAudio);
 
         return uploadedAudioSize;
     }
 
-    private void _onRecordingCompleted(byte[] rawAudioData){
-        if(this.delegate != null) delegate.onRecordingCompleted(rawAudioData);
+    private void _onRecording(byte[] rawAudioData){
+        if(this.delegate != null) delegate.onRecording(rawAudioData);
     }
+
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.VaniEncoder#close()
      */
@@ -197,11 +193,6 @@ public class ChuckOggOpusEnc extends OpusWriter implements ISpeechEncoder {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public long getCompressionTime() {
-        return this.compressDataTime;
     }
 
     public void setDelegate(SpeechRecorderDelegate obj){

@@ -44,12 +44,9 @@ public class ChuckJNAOpusEnc implements ISpeechEncoder {
     private int frameSize = 160;
     private int sampleRate = 16000;
 
-    private long compressDataTime = 0;
     private SpeechRecorderDelegate delegate = null;
     //
-    public ChuckJNAOpusEnc() {
-        this.compressDataTime = 0;
-    }
+    public ChuckJNAOpusEnc() {}
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
      */
@@ -98,11 +95,9 @@ public class ChuckJNAOpusEnc implements ISpeechEncoder {
                 }
                 shortBuffer.flip();
                 ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
-                long t1 = SystemClock.elapsedRealtime();
 
                 int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, this.frameSize, opusBuffer, bufferSize);
 
-                compressDataTime += SystemClock.elapsedRealtime() - t1;
                 opusBuffer.position(opus_encoded);
                 opusBuffer.flip();
 
@@ -153,11 +148,9 @@ public class ChuckJNAOpusEnc implements ISpeechEncoder {
             }
             shortBuffer.flip();
             ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
-            long t1 = SystemClock.elapsedRealtime();
 
             int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, this.frameSize, opusBuffer, bufferSize);
 
-            compressDataTime += SystemClock.elapsedRealtime() - t1;
             opusBuffer.position(opus_encoded);
             opusBuffer.flip();
 
@@ -172,12 +165,12 @@ public class ChuckJNAOpusEnc implements ISpeechEncoder {
 
         ios.close();
         ios = null;
-        this._onRecordingCompleted(rawAudio);
+        this._onRecording(rawAudio);
         return uploadedAudioSize;
     }
 
-    private void _onRecordingCompleted(byte[] rawAudioData){
-        if(this.delegate != null) delegate.onRecordingCompleted(rawAudioData);
+    private void _onRecording(byte[] rawAudioData){
+        if(this.delegate != null) delegate.onRecording(rawAudioData);
     }
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#close()
@@ -190,13 +183,8 @@ public class ChuckJNAOpusEnc implements ISpeechEncoder {
             e.printStackTrace();
         }
     }
-    @Override
-    public long getCompressionTime() {
-        return this.compressDataTime;
-    }
 
     public void setDelegate(SpeechRecorderDelegate obj){
         this.delegate = obj;
     }
-
 }

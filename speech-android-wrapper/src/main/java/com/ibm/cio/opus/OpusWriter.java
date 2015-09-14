@@ -8,7 +8,7 @@ import org.xiph.speex.AudioFileWriter;
 import org.xiph.speex.OggCrc;
 
 import com.ibm.cio.audio.ChuckWebSocketUploader;
-import com.ibm.cio.audio.SpeechConfiguration;
+import com.ibm.cio.dto.SpeechConfiguration;
 import com.ibm.cio.util.Logger;
 
 public class OpusWriter extends AudioFileWriter {

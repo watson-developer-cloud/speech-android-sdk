@@ -12,7 +12,8 @@
 /*                                                                   */
 /* ***************************************************************** */
 package com.ibm.crl.speech.vad;
-// TODO: Auto-generated Javadoc
+
+import com.ibm.cio.dto.SpeechConfiguration;
 
 /**
  * Voice activity detector.
@@ -20,14 +21,13 @@ package com.ibm.crl.speech.vad;
  * @author Turta@crl.ibm
  */
 public class VadProcessorJNI {
-	// Use PROPRIETARY notice if class contains a main() method, otherwise use
-	// COPYRIGHT notice.
-	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2013";
+	// Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
+	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
 	/** Default sample rate. */
-	private static final int DEFAULT_SAMPLERATE = 16000;
+	private static final int DEFAULT_SAMPLERATE = SpeechConfiguration.SAMPLE_RATE;
 
 	/** Default frame size. */
-	private static final int DEFAULT_FRAMESIZE = 320;
+	private static final int DEFAULT_FRAMESIZE = SpeechConfiguration.FRAME_SIZE*2; // Leave original configuration for VAD
 
 	/** The slot. */
 	private final int slot;

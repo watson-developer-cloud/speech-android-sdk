@@ -1,6 +1,5 @@
 package com.ibm.cio.watsonsdk;
 
-import android.content.Context;
 import android.util.Log;
 
 import com.ibm.cio.util.TTSUtility;
@@ -26,13 +25,9 @@ import java.net.URI;
  *
  */
 public class TextToSpeech {
-
     protected static final String TAG = "TextToSpeech";
 
     private TTSUtility ttsUtility;
-
-    private Context appCtx;
-
     private String username;
     private String password;
     private URI hostURL;
@@ -56,12 +51,9 @@ public class TextToSpeech {
     /**
      * Init the shared instance with the context when VAD is being used
      * @param uri
-     * @param ctx
      */
-    public void initWithContext(URI uri, Context ctx){
+    public void initWithContext(URI uri){
         this.setHostURL(uri);
-        this.appCtx = ctx;
-
     }
 
     public void synthesize(String ttsString) {
@@ -113,36 +105,36 @@ public class TextToSpeech {
                 responseStrBuilder.append(inputStr);
             object = new JSONObject(responseStrBuilder.toString());
             Log.d(TAG, object.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
+        } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
 
         return object;
     }
 
+    /**
+     * Set credentials
+     * @param username
+     * @param password
+     */
     public void setCredentials(String username, String password) {
         this.username = username;
         this.password = password;
     }
-
+    /**
+     * Get host URL
+     * @return
+     */
     public URI getHostURL() {
         return hostURL;
     }
-
+    /**
+     * Set host URL
+     * @param hostURL
+     */
     public void setHostURL(URI hostURL) {
         this.hostURL = hostURL;
     }
-
-    public Context getAppCtx() {
-        return appCtx;
-    }
-
-    public void setAppCtx(Context appCtx) {
-        this.appCtx = appCtx;
-    }
-
     /**
      * Set token provider (for token based authentication)
      */

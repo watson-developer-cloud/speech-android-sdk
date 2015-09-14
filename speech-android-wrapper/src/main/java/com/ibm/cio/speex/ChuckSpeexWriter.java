@@ -9,7 +9,6 @@ import com.ibm.cio.audio.ChuckWebSocketUploader;
 import com.ibm.cio.util.Logger;
 
 public class ChuckSpeexWriter extends AudioFileWriter {
-    private String TAG = this.getClass().getSimpleName();
     private ChuckWebSocketUploader client;
 
     public ChuckSpeexWriter(ChuckWebSocketUploader client){
@@ -18,7 +17,6 @@ public class ChuckSpeexWriter extends AudioFileWriter {
 
     @Override
     public void close() throws IOException {
-        Logger.d(TAG, "Writer Closing...");
         this.client.stop();
     }
 
