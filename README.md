@@ -64,7 +64,7 @@ Instantiate the SpeechToText instance
 -------------------------------------
 
 ```
-   SpeechToText.sharedInstance().initWithContext(this.getHost(), this.getApplicationContext());
+   SpeechToText.sharedInstance().initWithContext(this.getHost(), this.getApplicationContext(), new SpeechConfiguration());
 ```
 
 **Set the Credentials and the delegate**
@@ -155,7 +155,7 @@ Instantiate the TextToSpeech instance
 ------------------------------
 
 ```
-   TextToSpeech.sharedInstance().initWithContext(this.getHost(TTS_URL), this.getApplicationContext());
+   TextToSpeech.sharedInstance().initWithContext(this.getHost(TTS_URL));
 ```
 
 **Set the Credentials**
