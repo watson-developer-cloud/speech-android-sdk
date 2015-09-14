@@ -107,14 +107,14 @@ Start Audio Transcription
 
 ```
    SpeechToText.sharedInstance().recognize();
-   SpeechToText.sharedInstance().setRecorderDelegate(this);
+   SpeechToText.sharedInstance().setRecorderDelegate(this); // This is optional, so does SpeechRecorderDelegate
 ```
 
 **Delegate function to receive messages from the sdk**
 
 ```
 	@Override
-	public void receivedMessage(int code, QueryResult result) {
+	public void onMessage(int code, QueryResult result) {
 		switch(code){
 			case SpeechDelegate.OPEN:
 				Log.i(TAG, "################ receivedMessage.Open");
@@ -142,9 +142,13 @@ By default the SDK uses Voice Activated Detection (VAD) to detect when a user ha
 
 Receive speech power levels during the recognize
 ------------------------------
+The amplitude is calculated from the audio data buffer, and the volume (in dB) is calculated base on it.
 
 ```
-   ToDo
+   @Override
+    public void onAmplitude(double amplitude, double volume) {
+        // your code here
+    }
 ```
 
 
