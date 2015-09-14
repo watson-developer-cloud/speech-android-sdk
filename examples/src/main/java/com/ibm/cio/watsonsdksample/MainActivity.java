@@ -102,7 +102,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         //STT
         SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), sConfig);
         SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT, this.PASSWORD_STT);
-        SpeechToText.sharedInstance().setTokenProvider(new EmptyTokenProvider(this.strSTTTokenFactoryURL));
+        SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
         SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
         SpeechToText.sharedInstance().setDelegate(this);
 //		SpeechToText.sharedInstance().setTimeout(0); // Optional - set the duration for delaying connection closure in millisecond
@@ -217,15 +217,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
                 e.printStackTrace();
                 return null;
             }
-        }
-    }
-
-    class EmptyTokenProvider implements TokenProvider {
-
-        public EmptyTokenProvider(String strTokenFactoryURL) {}
-
-        public String getToken() {
-            return "";
         }
     }
 
