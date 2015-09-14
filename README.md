@@ -60,7 +60,7 @@ These delgates implement the callbacks when a response from the server is reciev
    public class MainActivity extends Activity implements SpeechDelegate{}
 ```
 
-With SpeechRecorderDelegate
+Or with SpeechRecorderDelegate
 
 ```
    public class MainActivity extends Activity implements SpeechDelegate, SpeechRecorderDelegate{}
