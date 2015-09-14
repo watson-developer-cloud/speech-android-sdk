@@ -52,11 +52,9 @@ public class OggSpeexWriter
   extends AudioFileWriter
 {
   /** Number of packets in an Ogg page (must be less than 255) */
-	//hoailt VANI CUSTOMIZE CODE, original=200
   public static final int PACKETS_PER_OGG_PAGE = 50;
   
   /** The OutputStream */
-  //hoailt VANI CUSTOMIZE CODE
   protected OutputStream out;
 
   /** Defines the encoder mode (0=NB, 1=WB and 2-UWB). */
@@ -69,8 +67,7 @@ public class OggSpeexWriter
   private int     nframes;
   /** Defines whether or not to use VBR (Variable Bit Rate). */
   private boolean vbr;
-  /** */
-//hoailt VANI CUSTOMIZE CODE, to protected
+  /** Size */
   protected int     size;
   /** Ogg Stream Serial Number */
   private int     streamSerialNumber;

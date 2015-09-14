@@ -46,8 +46,10 @@ public class ChuckOggOpusEnc extends OpusWriter implements ISpeechEncoder {
     private SpeechRecorderDelegate delegate = null;
 
     public ChuckOggOpusEnc() {}
-    /* (non-Javadoc)
-     * @see com.ibm.cio.audio.VaniEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
+
+    /**
+     * Initialize the encoder with OutputStream
+     * @param out the OutputStream
      */
     public void initEncodeAndWriteHeader(OutputStream out){}
     /**
@@ -183,8 +185,8 @@ public class ChuckOggOpusEnc extends OpusWriter implements ISpeechEncoder {
         if(this.delegate != null) delegate.onRecording(rawAudioData);
     }
 
-    /* (non-Javadoc)
-     * @see com.ibm.cio.audio.VaniEncoder#close()
+    /**
+     * Close writer
      */
     public void close() {
         try {
