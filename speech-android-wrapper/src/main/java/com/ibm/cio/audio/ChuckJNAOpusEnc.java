@@ -67,12 +67,6 @@ public class ChuckJNAOpusEnc implements ISpeechEncoder {
     public void onStart() {}
 
     @Override
-    public void writeChunk(byte[] data) throws IOException {
-        long t0 = SystemClock.elapsedRealtime();
-        writer.writePacket(data, 0, data.length);
-        Logger.d(TAG, "writeChunk time: " + (SystemClock.elapsedRealtime() - t0));
-    }
-    @Override
     public byte[] encode(byte[] rawAudio) {
         int read = 0;
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);

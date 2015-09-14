@@ -38,7 +38,6 @@ public interface ISpeechEncoder {
      * @throws IOException
      */
     public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client) throws IOException;
-
     /**
      * In compression mode, encode raw audio data to SPX audio.
      *
@@ -46,8 +45,6 @@ public interface ISpeechEncoder {
      * @throws IOException Signals that an I/O exception has occurred.
      */
     public byte[] encode(byte[] b);
-
-    public void writeChunk(byte[] b) throws IOException ;
     /**
      * In compression mode, encode audio data (to SPX) before write to ouput stream.
      * In non-compression mode, write directly raw audio data to ouput stream.

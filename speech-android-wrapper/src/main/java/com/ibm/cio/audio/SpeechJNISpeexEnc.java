@@ -104,18 +104,6 @@ public class SpeechJNISpeexEnc implements ISpeechEncoder {
         }
         return bos.toByteArray();
     }
-    @Override
-    public void writeChunk(byte[] data) throws IOException {
-        int offSet = 0;
-        if (spxFrameSize == 0)
-            spxFrameSize = 70;
-        while (offSet < data.length) {
-            if (offSet + spxFrameSize > data.length)
-                spxFrameSize = data.length - offSet;
-            writer.writePacket(data, offSet, spxFrameSize);
-            offSet += spxFrameSize;
-        }
-    }
     /* (non-Javadoc)
      * @see com.ibm.cio.audio.SpeechEncoder#encodeAndWrite(byte[])
      */

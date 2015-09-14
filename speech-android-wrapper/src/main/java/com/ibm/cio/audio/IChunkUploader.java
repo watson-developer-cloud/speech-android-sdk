@@ -54,20 +54,11 @@ public interface IChunkUploader {
      * @return {@link QueryResult}
      */
     public QueryResult getQueryResultByAudio(long timeout);
-    /**
-     * Stop getting query result.
-     * @return true/false
-     */
-    public boolean stopGetQueryResultByAudio();
 
     /**
      * Start thread to construct an upload http connection to back end server.
      */
     public void prepare();
-    public long getRequestTime();
-    public long getResponseTime();
-    public long getDataTransmissionTime();
-    public long getRequestEstablishingTime();
     /**
      * Set timeout value in second
      *

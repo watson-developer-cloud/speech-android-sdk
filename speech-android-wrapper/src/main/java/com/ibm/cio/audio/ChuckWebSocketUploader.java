@@ -43,17 +43,9 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
 
     private boolean uploadPrepared = false;
     private int uploadErrorCode = 0;
-    private long beginRequestTime = 0;
-    private long requestEstablishingTime = 0;
-    private long requestTime = 0;
-    private long beginGetResponse = 0;
-    private long responseTime = 0;
-    private long dataTransmissionTime = 0;
-    private long beginSendRequest = 0;
     private long timeout = 0;
 
     private SpeechDelegate delegate = null;
-    private Future<QueryResult> future = null;
     private SpeechConfiguration sConfig = null;
 
     /**
@@ -102,7 +94,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
      */
     private void initStreamAudioToServer() throws Exception{
         Logger.i(TAG, "********** Connecting... **********");
-        beginRequestTime = SystemClock.elapsedRealtime();
         //lifted up for initializing writer, using isRunning to control the flow
         this.encoder.initEncoderWithWebSocketClient(this);
 
@@ -211,13 +202,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     }
 
     @Override
-    public boolean stopGetQueryResultByAudio() {
-        if (future != null)
-            return future.cancel(true);
-        return false;
-    }
-
-    @Override
     public void prepare() {
         this.uploadPrepared = false;
         initStreamToServerThread = new Thread() {
@@ -249,26 +233,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         };
         initStreamToServerThread.setName("initStreamToServerThread");
         initStreamToServerThread.start();
-    }
-
-    @Override
-    public long getRequestTime() {
-        return this.requestTime;
-    }
-
-    @Override
-    public long getResponseTime() {
-        return this.responseTime;
-    }
-
-    @Override
-    public long getDataTransmissionTime() {
-        return this.dataTransmissionTime;
-    }
-
-    @Override
-    public long getRequestEstablishingTime() {
-        return this.requestEstablishingTime;
     }
 
     /**
@@ -321,15 +285,10 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     @Override
     public void onClose(int code, String reason, boolean remote) {
         Logger.i(TAG, "********** Closed **********");
-
         // Send the last part of messages to the delegate
         this.sendMessage(SpeechDelegate.CLOSE);
-
-        beginGetResponse = SystemClock.elapsedRealtime();
-        dataTransmissionTime = beginGetResponse - beginSendRequest;
-        requestTime = beginGetResponse - beginRequestTime;
         this.uploadPrepared = false;
-        Logger.d(TAG, "### Response Time: " + responseTime + " code: " + code + " reason: " + reason + " remote: " + remote);
+        Logger.d(TAG, "### Code: " + code + " reason: " + reason + " remote: " + remote);
     }
 
     @Override
@@ -367,10 +326,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     public void onOpen(ServerHandshake arg0) {
         Logger.i(TAG, "********** WS connection opened Successfully **********");
         this.uploadPrepared = true;
-        beginSendRequest = SystemClock.elapsedRealtime();
-        requestEstablishingTime = (beginSendRequest - beginRequestTime);
-        Logger.i(TAG, "requestEstablishingTime: " + requestEstablishingTime);
-
         this.sendMessage(SpeechDelegate.OPEN);
     }
 

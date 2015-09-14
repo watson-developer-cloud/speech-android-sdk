@@ -73,11 +73,6 @@ public class SpeechRawEnc implements ISpeechEncoder {
     }
 
     @Override
-    public void writeChunk(byte[] b) throws IOException {
-        out.write(b);
-    }
-
-    @Override
     public void setDelegate(SpeechRecorderDelegate obj) {
         this.delegate = obj;
     }
