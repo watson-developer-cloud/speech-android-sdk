@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corporation 2015
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.ibm.cio.watsonsdksample;
 
 import java.io.IOException;
@@ -60,9 +76,9 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
     //private static String STT_URL = "wss://speech.tap.ibm.com/speech-to-text-beta/api";
     //private static String TTS_URL = "https://speech.tap.ibm.com/text-to-speech-beta/api";
 //    private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
-//    private static String STT_URL = "ws://192.168.1.102:8001/speech-to-text/api";
+    private static String STT_URL = "ws://192.168.1.102:8001/speech-to-text/api";
 
-    private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
+//    private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
     private static String TTS_URL = "https://stream.watsonplatform.net/text-to-speech/api";
 
 	TextView textResult;
@@ -97,8 +113,10 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
      * Initializing instance of SpeechToText and configuring the rest of parameters
      */
     private void initSpeechRecognition() {
+        // Configuration
+        SpeechConfiguration sConfig = new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS);
         // STT
-        SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), new SpeechConfiguration());
+        SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), sConfig);
         SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT, this.PASSWORD_STT);
         SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
         SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
@@ -144,8 +162,10 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item, items);
-        spinner.setAdapter(spinnerArrayAdapter);
+        if(items != null) {
+            ArrayAdapter<ItemModel> spinnerArrayAdapter = new ArrayAdapter<ItemModel>(this, android.R.layout.simple_spinner_item, items);
+            spinner.setAdapter(spinnerArrayAdapter);
+        }
     }
 
     public class ItemVoice {
@@ -184,8 +204,10 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item, items);
-        spinner.setAdapter(spinnerArrayAdapter);
+        if(items != null) {
+            ArrayAdapter<ItemVoice> spinnerArrayAdapter = new ArrayAdapter<ItemVoice>(this, android.R.layout.simple_spinner_item, items);
+            spinner.setAdapter(spinnerArrayAdapter);
+        }
     }
 
     class MyTokenProvider implements TokenProvider {
@@ -383,7 +405,9 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
      * @param volume
      */
     @Override
-    public void onAmplitude(double amplitude, double volume) {}
+    public void onAmplitude(double amplitude, double volume) {
+//        Logger.e(TAG, "### amplitude="+amplitude+", volume="+volume+" ###");
+    }
 
     /**
      * Delegate function, when the recording happens, the raw data will be passed to this method for processing

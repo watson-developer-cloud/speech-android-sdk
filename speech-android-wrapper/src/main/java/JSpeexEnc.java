@@ -131,8 +131,6 @@ public class JSpeexEnc
   protected float vbr_quality = -1;
   /** Defines whether or not to use VBR (Variable Bit Rate). */
   protected boolean vbr    = false;
-  /** Defines whether or not to use VAD (Voice Activity Detection). */
-  protected boolean vad    = false;
   /** Defines whether or not to use DTX (Discontinuous Transmission). */
   protected boolean dtx    = false;
 
@@ -261,9 +259,6 @@ public class JSpeexEnc
       else if (args[i].equalsIgnoreCase("--vbr")) {
         vbr = true;
       }
-      else if (args[i].equalsIgnoreCase("--vad")) {
-        vad = true;
-      }
       else if (args[i].equalsIgnoreCase("--dtx")) {
         dtx = true;
       }
@@ -314,7 +309,6 @@ public class JSpeexEnc
     System.out.println("         --complexity n Encoding complexity (0-10) default 3");
     System.out.println("         --nframes n    Number of frames per Ogg packet, default 1");
     System.out.println("         --vbr          Enable varible bit-rate (VBR)");
-    System.out.println("         --vad          Enable voice activity detection (VAD)");
     System.out.println("         --dtx          Enable file based discontinuous transmission (DTX)");
     System.out.println("         if the input file is raw PCM (not a Wave file)");
     System.out.println("         --rate n       Sampling rate for raw input");
@@ -468,9 +462,6 @@ public class JSpeexEnc
         speexEncoder.getEncoder().setVbrQuality(vbr_quality);
       }
     }
-    if (vad) {
-      speexEncoder.getEncoder().setVad(vad);
-    }
     if (dtx) {
       speexEncoder.getEncoder().setDtx(dtx);
     }
@@ -485,7 +476,6 @@ public class JSpeexEnc
       System.out.println("Complexity: " + complexity);
       System.out.println("Frames per packet: " + nframes);
       System.out.println("Varible bitrate: " + vbr);
-      System.out.println("Voice activity detection: " + vad);
       System.out.println("Discontinouous Transmission: " + dtx);
     }
     // Open the file writer

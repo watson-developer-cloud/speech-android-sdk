@@ -36,8 +36,6 @@ import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 public class ChuckJNISpeexEnc implements ISpeechEncoder {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
-    /** The Constant TAG. */
-    private static final String TAG = ChuckJNISpeexEnc.class.getName();
 
     /** The Constant NARROW_BAND. */
     public static final int NARROW_BAND = 0;

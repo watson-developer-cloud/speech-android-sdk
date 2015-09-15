@@ -109,7 +109,6 @@ public class NbEncoder
 
   protected int complexity;     /** Complexity setting (0-10 from least complex to most complex) */
   protected int vbr_enabled;    /** 1 for enabling VBR, 0 otherwise */
-  protected int vad_enabled;    /** 1 for enabling VAD, 0 otherwise */
   protected int abr_enabled;    /** ABR setting (in bps), 0 if off */
   protected float vbr_quality;      /** Quality setting for VBR encoding */
   protected float relative_quality; /** Relative quality that will be needed by VBR */
@@ -136,7 +135,6 @@ public class NbEncoder
 
     complexity  = 3; // in C it's 2 here, but set to 3 automatically by the encoder
     vbr_enabled = 0; // disabled by default
-    vad_enabled = 0; // disabled by default
     abr_enabled = 0; // disabled by default
     vbr_quality = 8;
 
@@ -282,7 +280,7 @@ public class NbEncoder
 
       /*Open-loop pitch*/
       if (submodes[submodeID] == null ||
-          vbr_enabled != 0 || vad_enabled != 0 ||
+          vbr_enabled != 0 ||
           submodes[submodeID].forced_pitch_gain != 0 ||
           submodes[submodeID].lbr_pitch != -1)
       {
@@ -331,7 +329,7 @@ public class NbEncoder
     }
 
     /*VBR stuff*/
-    if (vbr != null && (vbr_enabled != 0 || vad_enabled != 0)) {
+    if (vbr != null && (vbr_enabled != 0)) {
       if (abr_enabled != 0)
       {
         float qual_change=0;
@@ -899,24 +897,6 @@ public class NbEncoder
   public boolean getVbr()
   {
     return vbr_enabled != 0;
-  }
-  
-  /**
-   * Sets whether or not to use Voice Activity Detection encoding.
-   * @param vad
-   */
-  public void setVad(final boolean vad)
-  {
-    vad_enabled = vad ? 1 : 0;
-  }
-  
-  /**
-   * Returns whether or not we are using Voice Activity Detection encoding.
-   * @return whether or not we are using Voice Activity Detection encoding.
-   */
-  public boolean getVad()
-  {
-    return vad_enabled != 0;
   }
   
   /**

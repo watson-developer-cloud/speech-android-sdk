@@ -65,7 +65,7 @@ public class TextToSpeech {
     }
 
     /**
-     * Init the shared instance with the context when VAD is being used
+     * Init the shared instance with the context
      * @param uri
      */
     public void initWithContext(URI uri){

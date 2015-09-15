@@ -33,15 +33,12 @@ import com.ibm.cio.util.Logger;
 import com.ibm.cio.watsonsdk.SpeechRecorderDelegate;
 import com.sun.jna.ptr.PointerByReference;
 
-// TODO: Auto-generated Javadoc
 /**
  * JNI Speex encoder.
  */
 public class ChuckJNAOpusEnc implements ISpeechEncoder {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
-    /** The Constant TAG. */
-    private static final String TAG = ChuckJNAOpusEnc.class.getName();
 
     private ChuckOpusWriter writer = null;
     private PointerByReference opusEncoder;

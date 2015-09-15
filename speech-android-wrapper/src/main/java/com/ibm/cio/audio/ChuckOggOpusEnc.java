@@ -36,12 +36,10 @@ import java.nio.ShortBuffer;
 public class ChuckOggOpusEnc extends OpusWriter implements ISpeechEncoder {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
-    /** The Constant TAG. */
-    private static final String TAG = ChuckOggOpusEnc.class.getName();
 
     private OpusWriter writer = null;
     private PointerByReference opusEncoder;
-    private int sampleRate = 16000;
+    private int sampleRate = SpeechConfiguration.SAMPLE_RATE;
 
     private SpeechRecorderDelegate delegate = null;
 
