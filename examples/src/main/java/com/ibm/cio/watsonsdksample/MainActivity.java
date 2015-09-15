@@ -318,10 +318,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             viewInstructions.setText(spannable2);
             viewInstructions.setTextColor(0xFF121212);
         }
-<<<<<<< HEAD
-=======
-    }
->>>>>>> b58853e44a52498cbd2ef767390f3506b957d43f
 
         public class ItemVoice {
 
