@@ -116,7 +116,6 @@ public class SbEncoder
 
   protected int complexity;     /** Complexity setting (0-10 from least complex to most complex) */
   protected int vbr_enabled;    /** 1 for enabling VBR, 0 otherwise */
-  protected int vad_enabled;    /** 1 for enabling VAD, 0 otherwise */
   protected int abr_enabled;    /** ABR setting (in bps), 0 if off */
   protected float vbr_quality;      /** Quality setting for VBR encoding */
   protected float relative_quality; /** Relative quality that will be needed by VBR */
@@ -177,7 +176,6 @@ public class SbEncoder
 
     complexity  = 3; // in C it's 2 here, but set to 3 automatically by the encoder
     vbr_enabled = 0; // disabled by default
-    vad_enabled = 0; // disabled by default
     abr_enabled = 0; // disabled by default
     vbr_quality = 8;
 
@@ -283,7 +281,7 @@ public class SbEncoder
        lsp_dist += (old_lsp[i] - lsp[i])*(old_lsp[i] - lsp[i]);
 
     /*VBR stuff*/
-    if ((vbr_enabled != 0 || vad_enabled != 0) && dtx == 0) {
+    if ((vbr_enabled != 0) && dtx == 0) {
       float e_low=0, e_high=0;
       float ratio;
       if (abr_enabled != 0) {
@@ -783,25 +781,6 @@ public class SbEncoder
   {
     return vbr_enabled != 0;
   }
-  
-  /**
-   * Sets whether or not to use Voice Activity Detection encoding.
-   * @param vad
-   */
-  public void setVad(final boolean vad)
-  {
-    vad_enabled = vad ? 1 : 0;
-  }
-  
-  /**
-   * Returns whether or not we are using Voice Activity Detection encoding.
-   * @return whether or not we are using Voice Activity Detection encoding.
-   */
-  public boolean getVad()
-  {
-    return vad_enabled != 0;
-  }
-  
   /**
    * Sets whether or not to use Discontinuous Transmission encoding.
    * @param dtx

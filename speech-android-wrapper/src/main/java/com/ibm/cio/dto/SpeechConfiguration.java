@@ -33,8 +33,6 @@ public class SpeechConfiguration {
 
     // Data format
     public String audioFormat = AUDIO_FORMAT_DEFAULT;
-    // VAD flag
-    public boolean isUsingVAD = false;
     // Authentication flag
     public boolean isAuthNeeded = true;
     // SSL flag, this would be detected automatically

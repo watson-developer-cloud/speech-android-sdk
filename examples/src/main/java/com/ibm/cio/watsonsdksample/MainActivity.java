@@ -1,3 +1,19 @@
+/**
+ * Copyright IBM Corporation 2015
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ **/
+
 package com.ibm.cio.watsonsdksample;
 
 import java.io.IOException;
@@ -205,11 +221,13 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(getActivity(),
-                    android.R.layout.simple_spinner_item, items);
-            spinner.setAdapter(spinnerArrayAdapter);
-            spinner.setSelection(iIndexDefault);
-        }
+
+            if (items != null) {
+		ArrayAdapter<ItemModel> spinnerArrayAdapter = new ArrayAdapter<ItemModel>(getActivity(), android.R.layout.simple_spinner_item, items);
+		spinner.setAdapter(spinnerArrayAdapter);
+                spinner.setSelection(iIndexDefault);
+            }
+        }  
 
         public void displayResult(final String result) {
             final Runnable runnableUi = new Runnable(){
@@ -300,6 +318,10 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             viewInstructions.setText(spannable2);
             viewInstructions.setTextColor(0xFF121212);
         }
+<<<<<<< HEAD
+=======
+    }
+>>>>>>> b58853e44a52498cbd2ef767390f3506b957d43f
 
         public class ItemVoice {
 
@@ -338,9 +360,11 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(getActivity(), android.R.layout.simple_spinner_item, items);
-            spinner.setAdapter(spinnerArrayAdapter);
-            spinner.setSelection(iIndexDefault);
+	    if (items != null) {
+		ArrayAdapter<ItemVoice> spinnerArrayAdapter = new ArrayAdapter<ItemVoice>(getActivity(), android.R.layout.simple_spinner_item, items);
+		spinner.setAdapter(spinnerArrayAdapter);
+		spinner.setSelection(iIndexDefault);
+            }
         }
 
         // return the selected voice
@@ -455,8 +479,12 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
      * Initializing instance of SpeechToText and configuring the rest of parameters
      */
     private void initSpeechRecognition() {
+
+        // Configuration
+        SpeechConfiguration sConfig = new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS);
+
         // STT
-        SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), new SpeechConfiguration());
+        SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), sConfig);
         SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT, this.PASSWORD_STT);
         SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
         SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
@@ -641,7 +669,9 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
      * @param volume
      */
     @Override
-    public void onAmplitude(double amplitude, double volume) {}
+    public void onAmplitude(double amplitude, double volume) {
+//        Logger.e(TAG, "### amplitude="+amplitude+", volume="+volume+" ###");
+    }
 
     /**
      * Delegate function, when the recording happens, the raw data will be passed to this method for processing

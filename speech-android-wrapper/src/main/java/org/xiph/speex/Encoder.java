@@ -161,19 +161,7 @@ public interface Encoder
    * @return whether or not we are using Variable Bit Rate encoding.
    */
   public boolean getVbr();
-  
-  /**
-   * Sets whether or not to use Voice Activity Detection encoding.
-   * @param vad
-   */
-  public void setVad(boolean vad);
-  
-  /**
-   * Returns whether or not we are using Voice Activity Detection encoding.
-   * @return whether or not we are using Voice Activity Detection encoding.
-   */
-  public boolean getVad();
-  
+
   /**
    * Sets whether or not to use Discontinuous Transmission encoding.
    * @param dtx
