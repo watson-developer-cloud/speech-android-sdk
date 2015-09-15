@@ -571,7 +571,7 @@ public class SpeechToText {
 
             String wsURL = getHostURL().toString() + "/v1/recognize" + (this.model != null ? ("?model=" + this.model) : "");
 
-            uploader = new ChuckWebSocketUploader(encoder, wsURL, headr, sConfig);
+            uploader = new ChuckWebSocketUploader(encoder, wsURL, header, sConfig);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }

@@ -72,7 +72,7 @@ public class TextToSpeech {
      */
     public void initWithContext(URI uri){
         this.setHostURL(uri);
-        this.appCtx = ctx;
+        //this.appCtx = ctx;
     }
 
     public void synthesize(String ttsString) {

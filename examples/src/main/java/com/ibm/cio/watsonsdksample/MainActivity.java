@@ -88,7 +88,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
     //private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
     private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
 
-    //private static String STT_URL = "ws://t430tb.watson.ibm.com:1080/speech-to-text/api";
     private static String TTS_URL = "https://stream-s.watsonplatform.net/text-to-speech/api";
 
 	TextView textResult;
@@ -160,6 +159,24 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             viewInstructions.setTextColor(0xFF121212);
         }
 
+        public class ItemModel {
+
+            public JSONObject mObject = null;
+
+            public ItemModel(JSONObject object) {
+                mObject = object;
+            }
+
+            public String toString() {
+                try {
+                    return mObject.getString("description");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        }
+
         protected void addItemsOnSpinnerModels() {
 
             Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
@@ -169,7 +186,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             ItemModel [] items = null;
             try {
                 JSONArray models = obj.getJSONArray("models");
-                // count the number of Broadband models (narrowband models are for telephony data)
+                // count the number of Broadband models (narrowband models will be ignored since they are for telephony data)
                 Vector<Integer> v = new Vector<>();
                 for (int i = 0; i < models.length(); ++i) {
                     if (models.getJSONObject(i).getString("name").indexOf("Broadband") != -1) {
@@ -194,11 +211,11 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             spinner.setSelection(iIndexDefault);
         }
 
-        public void displayResult(final String result){
+        public void displayResult(final String result) {
             final Runnable runnableUi = new Runnable(){
                 @Override
                 public void run() {
-                    SpeechToText.sharedInstance().transcript = result;
+                    SpeechToText.sharedInstance().setTranscript(result);
                     TextView textResult = (TextView)mView.findViewById(R.id.textResult);
                     textResult.setText(result);
                 }
@@ -284,6 +301,24 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             viewInstructions.setTextColor(0xFF121212);
         }
 
+        public class ItemVoice {
+
+            public JSONObject mObject = null;
+
+            public ItemVoice(JSONObject object) {
+                mObject = object;
+            }
+
+            public String toString() {
+                try {
+                    return mObject.getString("name");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+        }
+
         public void addItemsOnSpinnerVoices() {
 
             Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerVoices);
@@ -303,8 +338,7 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(getActivity(),
-                    android.R.layout.simple_spinner_item, items);
+            ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(getActivity(), android.R.layout.simple_spinner_item, items);
             spinner.setAdapter(spinnerArrayAdapter);
             spinner.setSelection(iIndexDefault);
         }
@@ -388,8 +422,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         //Initialize the speech service
         this.initSpeechRecognition();
 
-        //JSONObject obj = SpeechToText.sharedInstance().getModels();
-
 		// Strictmode needed to run the http/wss request for devices > Gingerbread
 		if (android.os.Build.VERSION.SDK_INT > android.os.Build.VERSION_CODES.GINGERBREAD) {
 			StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
@@ -417,10 +449,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         actionBar.addTab(tabTTS);
 
         //actionBar.setStackedBackgroundDrawable(new ColorDrawable(Color.parseColor("#B5C0D0")));
-
-        //////////////////////////
-
-
 	}
 
     /**
@@ -439,64 +467,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
         TextToSpeech.sharedInstance().setCredentials(this.USERNAME_TTS, this.PASSWORD_TTS);
         TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(this.strTTSTokenFactoryURL));
         TextToSpeech.sharedInstance().setVoice("en-US_MichaelVoice");
-    }
-
-    public class ItemModel {
-
-        public JSONObject mObject = null;
-
-        public ItemModel(JSONObject object) {
-            mObject = object;
-        }
-
-        public String toString() {
-            try {
-                return mObject.getString("description");
-            } catch (JSONException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-    }
-
-    public class ItemVoice {
-
-        public JSONObject mObject = null;
-
-        public ItemVoice(JSONObject object) {
-            mObject = object;
-        }
-
-        public String toString() {
-            try {
-                return mObject.getString("name");
-            } catch (JSONException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-    }
-
-    public void addItemsOnSpinnerVoices() {
-
-        Spinner spinner = (Spinner) findViewById(R.id.spinnerVoices);
-
-        JSONObject obj = TextToSpeech.sharedInstance().getVoices();
-
-        if(obj == null)
-            return;
-        ItemVoice [] items = null;
-        try {
-            JSONArray voices = obj.getJSONArray("voices");
-            items = new ItemVoice[voices.length()];
-            for (int i = 0; i < voices.length(); ++i) {
-                items[i] = new ItemVoice(voices.getJSONObject(i));
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        ArrayAdapter spinnerArrayAdapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item, items);
-        spinner.setAdapter(spinnerArrayAdapter);
     }
 
     class MyTokenProvider implements TokenProvider {
@@ -528,24 +498,6 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             }
         }
     }
-	
-	/**
-	 * Initializing instance of SpeechToText and configuring the rest of parameters
-	 */
-	private void initSpeechRecognition() {
-		//STT
-		SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), false);
-        SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT,this.PASSWORD_STT);
-        //SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
-        SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
-        SpeechToText.sharedInstance().setDelegate(this);
-//		SpeechToText.sharedInstance().setTimeout(0); // Optional - set the duration for delaying connection closure in millisecond
-		//TTS
-		TextToSpeech.sharedInstance().initWithContext(this.getHost(TTS_URL), this.getApplicationContext());
-		TextToSpeech.sharedInstance().setCredentials(this.USERNAME_TTS,this.PASSWORD_TTS);
-        //TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(this.strTTSTokenFactoryURL));
-        TextToSpeech.sharedInstance().setVoice("en-US_MichaelVoice");
-	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -570,34 +522,14 @@ public class MainActivity extends Activity implements SpeechDelegate, SpeechReco
             mRecognizing = true;
             Spinner spinner = (Spinner) findViewById(R.id.spinnerModels);
             spinner.setEnabled(false);
-            ItemModel item = (ItemModel)spinner.getSelectedItem();
-            SpeechToText.sharedInstance().setModel(item.mObject.getString("name"));
+            //ItemModel item = (ItemModel)spinner.getSelectedItem();
+            //SpeechToText.sharedInstance().setModel(item.mObject.getString("name"));
+            SpeechToText.sharedInstance().setModel(getString(R.string.modelDefault));
             displayStatus("connecting to the STT service...");
             SpeechToText.sharedInstance().recognize();
             SpeechToText.sharedInstance().setRecorderDelegate(this);
-	}
+	    }
     }
-
-	/**
-	 * Display the faces results
-	 * 
-	 * @param result
-	 */
-	public void displayResult(final String result){
-		final Runnable runnableUi = new Runnable(){  
-	        @Override  
-	        public void run() {   
-	        	SpeechToText.sharedInstance().setTranscript(result);
-	        	textResult = (TextView) findViewById(R.id.textResult);
-	    		textResult.setText(result);
-	        }
-	    };
-		new Thread(){  
-            public void run(){    
-                handler.post(runnableUi);
-            }
-        }.start();
-	}
 
     /**
      * Display the status
