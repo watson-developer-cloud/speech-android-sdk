@@ -28,10 +28,7 @@ import android.util.Log;
 
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.IAudioConsumer;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.AudioCaptureThread;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.ChuckOggOpusEnc;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.ChuckRawEnc;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.ISpeechEncoder;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.ChuckWebSocketUploader;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.IChunkUploader;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
@@ -53,9 +50,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-/**Speech Recognition Class for SDK functions
+/**
+ * Speech Recognition Class for SDK functions
  * @author Viney Ugave (vaugave@us.ibm.com)
- *
  */
 public class SpeechToText {
     protected static final String TAG = "SpeechToText";
@@ -67,16 +64,12 @@ public class SpeechToText {
     private AudioCaptureThread audioCaptureThread = null;
 
     private IChunkUploader uploader = null;
-    private SpeechDelegate delegate = null;
+    private ISpeechDelegate delegate = null;
     private String username;
     private String password;
     private String model;
     private TokenProvider tokenProvider = null;
     private URI hostURL;
-
-    /** Audio encoder. */
-    private ISpeechEncoder encoder;
-
     /** UPLOADING TIIMEOUT  */
     private int UPLOADING_TIMEOUT = 5000; // default duration of closing connection
 
@@ -130,7 +123,6 @@ public class SpeechToText {
 
         @Override
         public void onAmplitude(double amplitude, double volume) {
-            //Logger.d(TAG, "####### volume=" + volume + ", amplitude="+amplitude);
             if(delegate != null){
                 delegate.onAmplitude(amplitude, volume);
             }
@@ -141,7 +133,6 @@ public class SpeechToText {
      * Start recording
      */
     private void startRecording() {
-        Logger.i(TAG, "-> startRecording");
         uploader.prepare();
         STTIAudioConsumer audioConsumer = new STTIAudioConsumer(uploader);
 
@@ -154,17 +145,8 @@ public class SpeechToText {
      */
     public void recognize() {
         Log.i(TAG, "recognize");
-        // Initiate Uploader, Encoder
-
         try {
             HashMap<String, String> header = new HashMap<String, String>();
-            if(sConfig.audioFormat.equals(SpeechConfiguration.AUDIO_FORMAT_DEFAULT)) {
-                encoder = new ChuckRawEnc();
-            }
-            else if(sConfig.audioFormat.equals(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS)){
-                encoder = new ChuckOggOpusEnc();
-            }
-
             header.put("Content-Type", sConfig.audioFormat);
 
             if(sConfig.isAuthNeeded) {
@@ -180,24 +162,29 @@ public class SpeechToText {
 
             String wsURL = getHostURL().toString() + "/v1/recognize" + (this.model != null ? ("?model=" + this.model) : "");
 
-            uploader = new ChuckWebSocketUploader(encoder, wsURL, header, sConfig);
+            uploader = new ChuckWebSocketUploader(wsURL, header, sConfig);
+            uploader.setTimeout(UPLOADING_TIMEOUT);
+            uploader.setDelegate(this.delegate);
+            this.startRecording();
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
-        uploader.setTimeout(UPLOADING_TIMEOUT); // default timeout
-        uploader.setDelegate(this.delegate);
-        startRecording();
+    }
+
+    public void stopRecording(){
+        if(audioCaptureThread != null)
+            audioCaptureThread.end();
     }
 
     /**
      * Stop recognition
      */
     public void stopRecognition() {
-        if(audioCaptureThread != null)
-            audioCaptureThread.end();
+        this.stopRecording();
 
-        if(uploader != null)
-            uploader.close();
+        if(uploader != null) {
+            uploader.stop();
+        }
     }
 
     /**
@@ -319,21 +306,14 @@ public class SpeechToText {
     /**
      * @return the delegate
      */
-    public SpeechDelegate getDelegate() {
+    public ISpeechDelegate getDelegate() {
         return delegate;
     }
     /**
-     * @param delegate the delegate to set
+     * @param val the delegate to set
      */
-    public void setDelegate(SpeechDelegate delegate) {
-        this.delegate = delegate;
-    }
-    /**
-     * Set the recorder delegate for the encoder
-     */
-    public void setRecorderDelegate(SpeechRecorderDelegate obj){
-        if(encoder != null)
-            encoder.setDelegate(obj);
+    public void setDelegate(ISpeechDelegate val) {
+        this.delegate = val;
     }
     /**
      * Set API credentials

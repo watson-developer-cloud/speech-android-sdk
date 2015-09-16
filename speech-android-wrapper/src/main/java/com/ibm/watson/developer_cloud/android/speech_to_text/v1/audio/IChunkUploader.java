@@ -19,13 +19,12 @@ package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 import javax.net.ssl.HttpsURLConnection;
 
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.QueryResult;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechDelegate;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
 
 /**
  * The uploader interface.
  */
 public interface IChunkUploader {
-
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /**
@@ -33,52 +32,40 @@ public interface IChunkUploader {
      *
      * @param buffer the buffer
      */
-    public int onHasData(byte[] buffer);
-
+    int onHasData(byte[] buffer);
     /**
      * Checks if uploader has been prepared.
      *
      * @return true, if uploader is prepared
      */
-    public boolean isUploadPrepared();
+    boolean isUploadPrepared();
     /**
-     * Get upload preparing error code
-     * @return error code
+     * Upload data
+     * @param data
      */
-    public int getUploadErrorCode();
+    void upload(byte[] data);
     /**
-     * Stop upload preparing thread.
+     * Stop uploading
      */
-    public void stopUploaderPrepareThread();
-
-    /**
-     * Get transcript from {@link HttpsURLConnection}.
-     *
-     * @param timeout timeout of getting data (in ms)
-     * @return {@link QueryResult}
-     */
-    public QueryResult getQueryResultByAudio(long timeout);
-
+    void stop();
     /**
      * Start thread to construct an upload http connection to back end server.
      */
-    public void prepare();
+    void prepare();
     /**
      * Set timeout value in second
      *
      * @param timeout
      */
-    public void setTimeout(int timeout);
-
+    void setTimeout(long timeout);
     /**
      * Set Delegate
      *
      * @param delegate
      */
-    public void setDelegate(SpeechDelegate delegate);
-
+    void setDelegate(ISpeechDelegate delegate);
     /**
-     * Close upload http connection.
+     * Close connection.
      */
-    public void close();
+    void close();
 }

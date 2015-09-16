@@ -17,24 +17,24 @@
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.QueryResult;
 
-public interface SpeechDelegate {
-	public final static int MESSAGE = 0;
-	public final static int ERROR = -1;
-	public final static int CLOSE = -2;
-	public final static int OPEN = 1;
-    public final static int WAIT = 2;
+public interface ISpeechDelegate {
+	int MESSAGE = 0;
+	int ERROR = -1;
+	int CLOSE = -2;
+	int OPEN = 1;
+    int WAIT = 2;
 
     /**
      * Receive message with status code
      * @param code
      * @param result
      */
-	public void onMessage(int code, QueryResult result);
+	void onMessage(int code, QueryResult result);
 
     /**
      * Recieve the data of amplitude and volume
      * @param amplitude
      * @param volume
      */
-    public void onAmplitude(double amplitude, double volume);
+    void onAmplitude(double amplitude, double volume);
 }

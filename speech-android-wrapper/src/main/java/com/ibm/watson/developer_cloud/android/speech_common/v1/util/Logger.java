@@ -23,25 +23,33 @@ import android.util.Log;
  *
  */
 public class Logger {
-	private static boolean DEBUG = true;
-	
-	public static void i(String tag, String msg) {
+	private static boolean DEBUG;
+
+    static {
+        DEBUG = true;
+    }
+
+    public static int i(String tag, String msg) {
 		if (DEBUG)
-			Log.i(tag, msg);
+			return Log.i(tag, msg);
+        return 0;
 	}
 	
-	public static void d(String tag, String msg) {
+	public static int d(String tag, String msg) {
 		if (DEBUG)
-			Log.d(tag, msg);
+			return Log.d(tag, msg);
+        return 0;
 	}
 	
-	public static void e(String tag, String msg) {
+	public static int e(String tag, String msg) {
 		if (DEBUG)
-			Log.e(tag, msg);
+			return Log.e(tag, msg);
+        return 0;
 	}
 	
-	public static void w(String tag, String msg) {
+	public static int w(String tag, String msg) {
 		if (DEBUG)
-			Log.w(tag, msg);
+			return Log.w(tag, msg);
+        return 0;
 	}
 }

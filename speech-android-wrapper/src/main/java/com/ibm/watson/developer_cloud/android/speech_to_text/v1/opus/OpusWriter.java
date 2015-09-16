@@ -20,16 +20,16 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import org.xiph.speex.AudioFileWriter;
-import org.xiph.speex.OggCrc;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.AudioFileWriter;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.IChunkUploader;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.OggCrc;
 
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.ChuckWebSocketUploader;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
 
 public class OpusWriter extends AudioFileWriter {
     private String TAG = this.getClass().getSimpleName();
-    private ChuckWebSocketUploader client;
+    private IChunkUploader uploader;
     /** Number of packets in an Ogg page (must be less than 255) */
     public static final int PACKETS_PER_OGG_PAGE = 50;
     /** Defines the sampling rate of the audio input. */
@@ -60,10 +60,10 @@ public class OpusWriter extends AudioFileWriter {
 
     /**
      * Setting up the OggOpus Writer
-     * @param client
+     * @param uploader
      */
-    public OpusWriter(ChuckWebSocketUploader client){
-        this.client = client;
+    public OpusWriter(IChunkUploader uploader){
+        this.uploader = uploader;
         if (streamSerialNumber == 0)
             streamSerialNumber = new Random().nextInt();
         dataBuffer         = new byte[65565];
@@ -73,14 +73,13 @@ public class OpusWriter extends AudioFileWriter {
         pageCount          = 0;
         packetCount        = 0;
         granulepos         = 0;
-        sampleRate         = 16000;
+        this.sampleRate    = SpeechConfiguration.SAMPLE_RATE;
         this.frameSize     = SpeechConfiguration.FRAME_SIZE;
     }
     @Override
     public void close() throws IOException {
-        Logger.d(TAG, "Opus Writer Closing...");
         flush(true);
-        this.client.stop();
+        this.uploader.stop();
     }
 
     @Override
@@ -91,31 +90,36 @@ public class OpusWriter extends AudioFileWriter {
 
     @Override
     public void writeHeader(String comment) {
-        Logger.d(TAG, "Opus Writer Headering...");
-
         byte[] header;
         byte[] data;
-        int chksum;
+        int chkSum;
 
         /* writes the OGG header page */
         header = buildOggPageHeader(2, 0, streamSerialNumber, pageCount++, 1, new byte[] {19});
         data = buildOpusHeader(sampleRate);
-        chksum = OggCrc.checksum(0, header, 0, header.length);
-        chksum = OggCrc.checksum(chksum, data, 0, data.length);
-        writeInt(header, 22, chksum);
+        chkSum = OggCrc.checksum(0, header, 0, header.length);
+        chkSum = OggCrc.checksum(chkSum, data, 0, data.length);
+        writeInt(header, 22, chkSum);
         this.write(header);
         this.write(data);
 
         /* Writes the OGG comment page */
         header = buildOggPageHeader(0, 0, streamSerialNumber, pageCount++, 1, new byte[]{(byte) (comment.length() + 8)});
         data = buildOpusComment(comment);
-        chksum = OggCrc.checksum(0, header, 0, header.length);
-        chksum = OggCrc.checksum(chksum, data, 0, data.length);
-        writeInt(header, 22, chksum);
+        chkSum = OggCrc.checksum(0, header, 0, header.length);
+        chkSum = OggCrc.checksum(chkSum, data, 0, data.length);
+        writeInt(header, 22, chkSum);
         this.write(header);
         this.write(data);
     }
 
+    /**
+     * Write data packet
+     * @param data audio data
+     * @param offset the offset from which to start reading the data.
+     * @param len the length of data to read.
+     * @throws IOException
+     */
     @Override
     public void writePacket(byte[] data, int offset, int len)
             throws IOException {
@@ -160,7 +164,7 @@ public class OpusWriter extends AudioFileWriter {
      * @param data
      */
     public void write(byte[] data){
-        this.client.upload(data);
+        this.uploader.upload(data);
     }
 
     /**
@@ -173,6 +177,6 @@ public class OpusWriter extends AudioFileWriter {
         byte[] tmp = new byte[count];
         System.arraycopy(data, offset, tmp, 0, count);
 
-        this.client.upload(tmp);
+        this.uploader.upload(tmp);
     }
 }

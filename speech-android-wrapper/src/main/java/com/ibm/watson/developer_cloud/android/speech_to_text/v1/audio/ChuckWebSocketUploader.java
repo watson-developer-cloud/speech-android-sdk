@@ -26,7 +26,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -44,7 +43,7 @@ import android.util.Log;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.QueryResult;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechDelegate;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
 
 public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUploader {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
@@ -56,25 +55,31 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     private Thread initStreamToServerThread;
 
     private boolean uploadPrepared = false;
-    private int uploadErrorCode = 0;
     private long timeout = 0;
 
-    private SpeechDelegate delegate = null;
+    /** STT delegate */
+    private ISpeechDelegate delegate = null;
+    /** Recorder delegate */
     private SpeechConfiguration sConfig = null;
 
     /**
      * Create an uploader which supports streaming.
      *
-     * @param encoder the encoder
      * @param serverURL LMC server, delivery to back end server
      * @throws URISyntaxException
      */
-    public ChuckWebSocketUploader(ISpeechEncoder encoder, String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
+    public ChuckWebSocketUploader(String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
         super(new URI(serverURL), new Draft_17(), header);
         Logger.i(TAG, "### New ChuckWebSocketUploader ### " + serverURL);
         Logger.d(TAG, serverURL);
-        this.encoder = encoder; // for WebSocket only
         this.sConfig = config;
+
+        if(sConfig.audioFormat.equals(SpeechConfiguration.AUDIO_FORMAT_DEFAULT)) {
+            this.encoder = new ChuckRawEnc();
+        }
+        else if(sConfig.audioFormat.equals(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS)){
+            this.encoder = new ChuckOggOpusEnc();
+        }
 
         if(serverURL.toLowerCase().startsWith("wss") || serverURL.toLowerCase().startsWith("https"))
             this.sConfig.isSSL = true;
@@ -96,22 +101,20 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
             public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException{ }
         }};
         SSLContext sslContext = null;
-        sslContext = SSLContext.getInstance( "TLS" );
+        sslContext = SSLContext.getInstance("TLS");
         sslContext.init(null, certs, new java.security.SecureRandom());
         this.setWebSocketFactory(new DefaultSSLWebSocketClientFactory(sslContext));
     }
     /**
-     * 1. Initialize websocket connection to chuck </br>
+     * 1. Initialize WebSocket connection to chuck </br>
      * 2. Init an encoder and writer
      *
-     * @throws IOException Signals that an I/O exception has occurred.
-     * @throws InterruptedException
      * @throws Exception
      */
     private void initStreamAudioToServer() throws Exception{
         Logger.i(TAG, "********** Connecting... **********");
         //lifted up for initializing writer, using isRunning to control the flow
-        this.encoder.initEncoderWithWebSocketClient(this);
+        this.encoder.initEncoderWithUploader(this);
 
         if(this.sConfig.isSSL)
             this.trustServer();
@@ -134,7 +137,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
      */
     private void sendMessage(int code){
         if(delegate != null){
-            delegate.onMessage(code, this.fetchTranscript(this.timeout));
+            delegate.onMessage(code, new QueryResult(this.getTranscript()));
         }
     }
     @Override
@@ -144,20 +147,20 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         if (this.isUploadPrepared()) {
             try {
                 uploadedAudioSize = encoder.encodeAndWrite(buffer);
+                // TODO: Capturing data
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         else {
             try {
-                Logger.e(TAG, "### WAITING FOR ESTABLISHING CONNECTION ###");
+                Logger.w(TAG, "### WAITING FOR ESTABLISHING CONNECTION ###");
                 initStreamToServerThread.join();
             }
             catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        //Logger.e(TAG, "onHasData: " + buffer.length + " " + (needEncode? "true" : "false") + "outputData: " + uploadedAudioSize);
         return uploadedAudioSize;
     }
 
@@ -166,59 +169,14 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         return this.uploadPrepared;
     }
 
-    @Override
-    public int getUploadErrorCode() {
-        return this.uploadErrorCode;
-    }
-
-    @Override
     public void stopUploaderPrepareThread() {
         if (initStreamToServerThread != null) {
             initStreamToServerThread.interrupt();
         }
     }
-
-    @Override
-    public QueryResult getQueryResultByAudio(long t) {
-        t = this.timeout;
-        if(timeout > 0){
-            try {
-                new Thread(){
-                    public void run(){
-                        try {
-                            Logger.e(TAG, "Wait for "+timeout+" ms...");
-                            Thread.sleep(timeout);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        finally{
-                            encoder.close();
-                        }
-                    }
-                }.start();
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        else{
-            encoder.close();
-        }
-        return fetchTranscript(t);
-    }
-
     /**
-     * Fetch transcript from {@link HttpsURLConnection}.
-     *
-     * @param timeout timeout of getting {@link QueryResult} (in ms)
-     * @return the query result
-     * {@link QueryResult} </br>
-     * null if {@link IOException}
+     * Prepare connection
      */
-    private QueryResult fetchTranscript(long timeout) {
-        return new QueryResult(this.getTranscript());
-    }
-
     @Override
     public void prepare() {
         this.uploadPrepared = false;
@@ -239,11 +197,8 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
                         throw e1;
                     }
                 } catch (Exception e) {
-                    Logger.e(TAG, "Connection failed: " + (e == null ? "NULL EXCEPTION" : e.getMessage()));
-                    if (e.getMessage() == null || e.getMessage().contains("Connection closed by peer") ||  e.getMessage().contains("reset by peer") || e.getMessage().contains("Connection failed")) {
-                        uploadErrorCode = -1;
-                    }
                     e.printStackTrace();
+                    Logger.e(TAG, "Connection failed: " + (e == null ? "NULL EXCEPTION" : e.getMessage()));
                     uploadPrepared = false;
                     close();
                 }
@@ -290,9 +245,22 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         }
     }
 
+    /**
+     * Stop by sending out zero byte of data
+     */
     public void stop(){
         byte[] stopData = new byte[0];
         this.upload(stopData);
+
+        if(this.timeout > 0){
+            Logger.w(TAG, "Timeout for closing connection: " + this.timeout + " ms");
+            try {
+                Thread.sleep(this.timeout);
+                this.close();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -304,25 +272,20 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     public void onClose(int code, String reason, boolean remote) {
         Logger.i(TAG, "********** Closed **********");
         // Send the last part of messages to the delegate
-        this.sendMessage(SpeechDelegate.CLOSE);
+        this.sendMessage(ISpeechDelegate.CLOSE);
         this.uploadPrepared = false;
         Logger.d(TAG, "### Code: " + code + " reason: " + reason + " remote: " + remote);
     }
 
     @Override
     public void onError(Exception ex) {
-        Logger.e(TAG, "********** Error **********");
-        Logger.e(TAG, "Error:"+ex.getMessage());
-        this.transcript = ex.getLocalizedMessage();
+        Logger.w(TAG, "********** Error **********");
+        Logger.e(TAG, ex.getMessage());
         // Send the error message to the delegate
         this.uploadPrepared = false;
-        this.sendMessage(SpeechDelegate.ERROR);
+        this.sendMessage(ISpeechDelegate.ERROR);
     }
-    /**
-     *	0: Final transcription
-     *	1: Partial transcription
-     *	2: Stable transcription
-     */
+
     @Override
     public void onMessage(String message) {
         Log.d(TAG + ":onMessage", message);
@@ -336,7 +299,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         }
         else{
             this.transcript = parsedData;
-            this.sendMessage(SpeechDelegate.MESSAGE);
+            this.sendMessage(ISpeechDelegate.MESSAGE);
         }
     }
 
@@ -344,7 +307,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     public void onOpen(ServerHandshake arg0) {
         Logger.i(TAG, "********** WS connection opened Successfully **********");
         this.uploadPrepared = true;
-        this.sendMessage(SpeechDelegate.OPEN);
+        this.sendMessage(ISpeechDelegate.OPEN);
     }
 
     private void sendSpeechHeader() {
@@ -371,7 +334,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
      * @param data
      * @return
      */
-    String parseMessage(String data){
+    private String parseMessage(String data){
         String result="";
 
         try {
@@ -420,14 +383,13 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         }
         return result;
     }
-
     /**
      * Set timeout
      *
      * @param timeout
      */
     @Override
-    public void setTimeout(int timeout) {
+    public void setTimeout(long timeout) {
         this.timeout = timeout;
     }
 
@@ -436,7 +398,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
      *
      * @param delegate
      */
-    public void setDelegate(SpeechDelegate delegate) {
+    public void setDelegate(ISpeechDelegate delegate) {
         this.delegate = delegate;
     }
 }

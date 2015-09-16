@@ -53,9 +53,8 @@ import android.widget.TextView;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.QueryResult;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechDelegate;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechToText;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechRecorderDelegate;
 import com.ibm.watson.developer_cloud.android.text_to_speech.v1.TextToSpeech;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.TokenProvider;
 
@@ -83,7 +82,7 @@ public class MainActivity extends Activity {
     FragmentTabSTT fragmentTabSTT = new FragmentTabSTT();
     FragmentTabTTS fragmentTabTTS = new FragmentTabTTS();
 
-    public static class FragmentTabSTT extends Fragment implements SpeechDelegate, SpeechRecorderDelegate {
+    public static class FragmentTabSTT extends Fragment implements ISpeechDelegate {
 
         // staging
         //private static String USERNAME_STT = "c9122908-2741-4610-93b9-f33a731ba920";
@@ -94,7 +93,7 @@ public class MainActivity extends Activity {
 
         private static String strSTTTokenFactoryURL = "http://speech-to-text-demo.mybluemix.net/token";
 
-        //private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
+//        private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
         private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
 
         private enum ConnectionState {
@@ -138,7 +137,6 @@ public class MainActivity extends Activity {
 
                         displayStatus("connecting to the STT service...");
                         SpeechToText.sharedInstance().recognize();
-                        SpeechToText.sharedInstance().setRecorderDelegate(FragmentTabSTT.this);
                     }
                     else if (mState == ConnectionState.CONNECTED) {
                         Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
@@ -169,16 +167,16 @@ public class MainActivity extends Activity {
         private void initSTT() {
 
             // Configuration
-            //SpeechConfiguration sConfig = new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS);
+//            SpeechConfiguration sConfig = new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS);
             SpeechConfiguration sConfig = new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_DEFAULT);
 
             // STT
             SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), getActivity().getApplicationContext(), sConfig);
             SpeechToText.sharedInstance().setCredentials(this.USERNAME_STT, this.PASSWORD_STT);
-            SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider (this.strSTTTokenFactoryURL));
+            SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
             SpeechToText.sharedInstance().setModel(getString(R.string.modelDefault));
             SpeechToText.sharedInstance().setDelegate(this);
-            //		SpeechToText.sharedInstance().setTimeout(0); // Optional - set the duration for delaying connection closure in millisecond
+//            SpeechToText.sharedInstance().setTimeout(0); // Optional - set the duration for delaying connection closure in millisecond
         }
 
         protected void setText() {
@@ -330,24 +328,26 @@ public class MainActivity extends Activity {
         @Override
         public void onMessage(int code, QueryResult result) {
             switch(code){
-                case SpeechDelegate.OPEN:
+                case ISpeechDelegate.OPEN:
                     Logger.i(TAG, "################ receivedMessage.Open, code: " + code + " result: " + result.getTranscript());
                     displayStatus("successfully connected to the STT service");
                     setButtonLabel(R.id.buttonRecord, "stop recording");
                     mState = ConnectionState.CONNECTED;
                     break;
-                case SpeechDelegate.CLOSE:
+                case ISpeechDelegate.CLOSE:
                     Logger.i(TAG, "################ receivedMessage.Close, code: " + code + " result: " + result.getTranscript());
                     displayStatus("connection closed");
                     setButtonLabel(R.id.buttonRecord, "start recording");
                     mState = ConnectionState.IDLE;
+                    // Make sure the recorder stops
+                    SpeechToText.sharedInstance().stopRecording();
                     break;
-                case SpeechDelegate.ERROR:
+                case ISpeechDelegate.ERROR:
                     Logger.e(TAG, result.getTranscript());
                     displayResult(result.getTranscript());
                     mState = ConnectionState.IDLE;
                     break;
-                case SpeechDelegate.MESSAGE:
+                case ISpeechDelegate.MESSAGE:
                     displayResult(result.getTranscript());
                     break;
             }
@@ -363,14 +363,6 @@ public class MainActivity extends Activity {
         public void onAmplitude(double amplitude, double volume) {
 //        Logger.e(TAG, "### amplitude="+amplitude+", volume="+volume+" ###");
         }
-
-        /**
-         * Delegate function, when the recording happens, the raw data will be passed to this method for processing
-         *
-         * @param rawAudioData
-         */
-        @Override
-        public void onRecording(byte[] rawAudioData) {}
     }
 
     public static class FragmentTabTTS extends Fragment {

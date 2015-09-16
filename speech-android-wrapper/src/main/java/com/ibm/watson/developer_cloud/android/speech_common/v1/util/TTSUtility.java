@@ -35,7 +35,7 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
-import org.xiph.speex.PcmWaveWriter;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.PcmWaveWriter;
 
 import java.io.File;
 
@@ -102,7 +102,7 @@ public class TTSUtility extends Application {
 	 * Text to speech
 	 * @param arguments
 	 */
-	public void tts(String[] arguments) {
+	public void synthesize(String[] arguments) {
 		Log.i(TAG, "Start requesting TTS... ("+this.codec+")");
 		try {
 			parseParams(arguments);

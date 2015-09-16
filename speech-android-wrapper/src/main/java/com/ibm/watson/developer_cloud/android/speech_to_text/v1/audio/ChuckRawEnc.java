@@ -14,53 +14,38 @@
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
 import java.io.IOException;
-import java.io.OutputStream;
-
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechRecorderDelegate;
 
 /**
- * Non-encode
+ * Raw data encoder
  */
 public class ChuckRawEnc implements ISpeechEncoder {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
-    /** The Constant TAG. */
-    private static final String TAG = ChuckRawEnc.class.getName();
-    /** Output stream */
-    private OutputStream out;
+    /** Data writer */
     private ChuckRawWriter writer = null;
-
-    private SpeechRecorderDelegate delegate = null;
     /**
      * Constructor.
      */
     public ChuckRawEnc() {}
-
-    /* (non-Javadoc)
-     * @see com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.SpeechEncoder#initEncodeAndWriteHeader(java.io.OutputStream)
-     */
-    public void initEncodeAndWriteHeader(OutputStream out){}
     /**
-     * For WebsocketClient
-     * @param client
+     * For WebSocketClient
+     * @param uploader
      * @throws java.io.IOException
      */
-    public void initEncoderWithWebSocketClient(ChuckWebSocketUploader client) throws IOException{
-        writer = new ChuckRawWriter(client);
+    public void initEncoderWithUploader(IChunkUploader uploader) throws IOException{
+        this.writer = new ChuckRawWriter(uploader);
     }
-
+    /**
+     * On encode begin
+     */
     @Override
     public void onStart() {}
-
     /* (non-Javadoc)
      * @see com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.SpeechEncoder#encodeAndWrite(byte[])
      */
     @Override
     public int encodeAndWrite(byte[] b) throws IOException {
-
         writer.writePacket(b, 0, b.length);
-        if(this.delegate != null)
-            this.delegate.onRecording(b);
         return b.length;
     }
     /* (non-Javadoc)
@@ -69,20 +54,10 @@ public class ChuckRawEnc implements ISpeechEncoder {
     public void close() {
         if(this.writer != null){
             try {
-                writer.close();
+                this.writer.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-    }
-
-    @Override
-    public byte[] encode(byte[] b) {
-        return b;
-    }
-
-    @Override
-    public void setDelegate(SpeechRecorderDelegate obj) {
-        this.delegate = obj;
     }
 }

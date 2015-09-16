@@ -57,7 +57,7 @@
 
  ********************************************************************/
 
-package org.xiph.speex;
+package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
 /**
  * Calculates the CRC checksum for Ogg packets.

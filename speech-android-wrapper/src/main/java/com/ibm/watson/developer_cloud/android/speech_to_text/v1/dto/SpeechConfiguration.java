@@ -24,13 +24,14 @@ public class SpeechConfiguration {
     public static final String AUDIO_FORMAT_DEFAULT = "audio/l16;rate=16000";
     // OggOpus format
     public static final String AUDIO_FORMAT_OGGOPUS = "audio/ogg;codecs=opus";
+    // Audio channels
+    public static final int AUDIO_CHANNELS = 1;
     // Frame size
     public static final int FRAME_SIZE = 160;
     // Sample rate
     public static final int SAMPLE_RATE = 16000;
     // Timeout
     public int inactivityTimeout = 600;
-
     // Data format
     public String audioFormat = AUDIO_FORMAT_DEFAULT;
     // Authentication flag

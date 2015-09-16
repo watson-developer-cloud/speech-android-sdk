@@ -18,11 +18,8 @@ package com.ibm.watson.developer_cloud.android.speech_common.v1.util;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.security.KeyManagementException;
@@ -39,10 +36,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.apache.http.util.ByteArrayBuffer;
-import org.xiph.speex.PcmWaveWriter;
-
-import android.content.Context;
-import android.os.Environment;
 
 /**
  * Speech Utility.
@@ -52,7 +45,6 @@ import android.os.Environment;
 public class SpeechUtility {
 	// Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
 	public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
-	private static final String TAG = SpeechUtility.class.getName();
 
 	/**
 	 * <p>Get data from input stream.</p>
@@ -91,16 +83,6 @@ public class SpeechUtility {
 		}
         return new byte[0];
 	}
-
-	 /**
- 	 * Gets the spx file path.
- 	 *
- 	 * @param pcmFilePath the pcm file path
- 	 * @return the spx file path
- 	 */
- 	public static String getSpxFilePath(String pcmFilePath) {
-		 return pcmFilePath==null ? "": pcmFilePath.replace("pcm", "spx");
-    }
 
 	/**
 	 * Pass untrusted certificate.
@@ -166,52 +148,5 @@ public class SpeechUtility {
 		ByteBuffer.wrap(bytes, startPos, byteNumber).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shorts);
 
 		return shorts;
-	}
-	/**
-	 * Get directory to save data on external/internal storage.
-	 * @param context application context
-	 * @return directory
-	 */
-	public static String getBaseDir(Context context) {
-		String baseDir = "";
-		if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-			baseDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
-		} else {
-			baseDir = "/data/data/" + context.getPackageName() + "/";
-		}
-
-		return baseDir;
-	}
-	
-	public static boolean saveWavFile(byte[] d, String filePath) {
-		PcmWaveWriter wR = new PcmWaveWriter(8000, 1);
-		String fileName = filePath + "a.wav";
-		try {
-			wR.open(fileName);
-			wR.writeHeader("by jspeex");
-			wR.writePacket(d, 0, d.length);
-			wR.close();
-			Logger.i(TAG, "save file OK");
-            return true;
-		} catch (IOException e) {
-			Logger.d(TAG, "save file FAIL");
-			e.printStackTrace();
-		}
-        return false;
-	}
-
-	public static boolean saveRawFile(byte[] d, String filePath) {
-		Logger.e(TAG, "saveRawFile: " + filePath);
-		try {
-			OutputStream os = new FileOutputStream(filePath);
-			os.write(d);
-			os.close();
-            return true;
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-        return false;
 	}
 }

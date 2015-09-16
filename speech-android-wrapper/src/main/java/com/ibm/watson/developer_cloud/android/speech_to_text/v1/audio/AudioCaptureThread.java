@@ -50,7 +50,6 @@ public class AudioCaptureThread extends Thread {
     // once the thread is started it runs nonstop until it is stopped from the outside
     @Override
     public void run() {
-        Log.i(TAG, "thread started");
         AudioRecord recorder = null;
 
         try {
@@ -81,7 +80,6 @@ public class AudioCaptureThread extends Thread {
                 bufferBytes.asShortBuffer().put(buffer,0,r);
                 byte[] bytes = bufferBytes.array();
                 int length = bytes.length;
-                //Log.i(TAG, "Writing new data to buffer: " + length + " bytes (samplingRate: " + mSamplingRate + ")");
                 mIAudioConsumer.consume(bytes);
             }
         }
@@ -90,24 +88,24 @@ public class AudioCaptureThread extends Thread {
         }
         // release resources
         finally {
-            recorder.stop();
-            recorder.release();
+            if (recorder != null) {
+                recorder.stop();
+                recorder.release();
+            }
             mStopped = true;
         }
     }
 
     // this function is intended to be called from outside the thread in order to stop the thread
     public void end() {
-
         mStop = true;
         // waiting loop, it waits until the thread actually finishes
-        while(mStopped == false) {
+        while(!mStopped) {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         };
-        Log.i(TAG, "audio thread ended");
     }
 }

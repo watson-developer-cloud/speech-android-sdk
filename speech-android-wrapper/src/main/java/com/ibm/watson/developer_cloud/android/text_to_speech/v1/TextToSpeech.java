@@ -73,6 +73,10 @@ public class TextToSpeech {
         this.setHostURL(uri);
     }
 
+    /**
+     * Send request of TTS
+     * @param ttsString
+     */
     public void synthesize(String ttsString) {
         Log.i(TAG, "synthesize called: " + this.hostURL.toString() + "/v1/synthesize");
         String[] Arguments = { this.hostURL.toString()+"/v1/synthesize", this.username, this.password,
@@ -80,7 +84,7 @@ public class TextToSpeech {
         try {
             ttsUtility = new TTSUtility();
             ttsUtility.setCodec(TTSUtility.CODEC_WAV);
-            ttsUtility.tts(Arguments);
+            ttsUtility.synthesize(Arguments);
         }
         catch (Exception e) {
             e.printStackTrace();
