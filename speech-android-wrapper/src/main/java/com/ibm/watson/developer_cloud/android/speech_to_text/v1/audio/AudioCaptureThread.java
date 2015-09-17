@@ -61,8 +61,9 @@ public class AudioCaptureThread extends Thread {
 
             recorder = new AudioRecord(AudioSource.MIC, mSamplingRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, iN);
             recorder.startRecording();
-
+            Log.w(TAG, "recording started!");
             while(!mStop) {
+
                 int r = recorder.read(buffer,0,buffer.length);
                 long v = 0;
                 for (int i = 0; i < r; i++) {
@@ -93,6 +94,7 @@ public class AudioCaptureThread extends Thread {
                 recorder.release();
             }
             mStopped = true;
+            Log.w(TAG, "recording stopped!");
         }
     }
 

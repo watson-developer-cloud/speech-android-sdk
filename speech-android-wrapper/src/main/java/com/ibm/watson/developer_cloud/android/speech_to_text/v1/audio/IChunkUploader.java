@@ -18,7 +18,7 @@ package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.QueryResult;
+
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
 
 /**
@@ -52,12 +52,7 @@ public interface IChunkUploader {
      * Start thread to construct an upload http connection to back end server.
      */
     void prepare();
-    /**
-     * Set timeout value in second
-     *
-     * @param timeout
-     */
-    void setTimeout(long timeout);
+
     /**
      * Set Delegate
      *

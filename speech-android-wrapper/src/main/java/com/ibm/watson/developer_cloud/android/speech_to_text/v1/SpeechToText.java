@@ -55,14 +55,12 @@ import java.io.InputStreamReader;
  * @author Viney Ugave (vaugave@us.ibm.com)
  */
 public class SpeechToText {
+
     protected static final String TAG = "SpeechToText";
-
-    private String transcript;
-
+    //private String transcript;
     private Context appCtx;
     private SpeechConfiguration sConfig;
     private AudioCaptureThread audioCaptureThread = null;
-
     private IChunkUploader uploader = null;
     private ISpeechDelegate delegate = null;
     private String username;
@@ -71,13 +69,12 @@ public class SpeechToText {
     private TokenProvider tokenProvider = null;
     private URI hostURL;
     /** UPLOADING TIIMEOUT  */
-    private int UPLOADING_TIMEOUT = 5000; // default duration of closing connection
+    //private int UPLOADING_TIMEOUT = 5000; // default duration of closing connection
 
     /**
      * Constructor
      */
     public SpeechToText() {
-        this.setTimeout(0);
         this.sConfig = null;
     }
 
@@ -163,7 +160,6 @@ public class SpeechToText {
             String wsURL = getHostURL().toString() + "/v1/recognize" + (this.model != null ? ("?model=" + this.model) : "");
 
             uploader = new ChuckWebSocketUploader(wsURL, header, sConfig);
-            uploader.setTimeout(UPLOADING_TIMEOUT);
             uploader.setDelegate(this.delegate);
             this.startRecording();
         } catch (URISyntaxException e) {
@@ -171,6 +167,9 @@ public class SpeechToText {
         }
     }
 
+    /**
+     * Stop audio recording
+     */
     public void stopRecording(){
         if(audioCaptureThread != null)
             audioCaptureThread.end();
@@ -181,9 +180,9 @@ public class SpeechToText {
      */
     public void stopRecognition() {
         this.stopRecording();
-
         if(uploader != null) {
             uploader.stop();
+            uploader.close();
         }
     }
 
@@ -265,32 +264,7 @@ public class SpeechToText {
         }
         return object;
     }
-    /**
-     * Change default timeout
-     *
-     * @param timeout
-     */
-    public void setTimeout(int timeout){
-        this.UPLOADING_TIMEOUT = timeout;
-    }
-    /**
-     * @return the appCtx
-     */
-    public Context getAppCtx() { return appCtx; }
-    /**
-     * @param appCtx the appCtx to set
-     */
-    public void setAppCtx(Context appCtx) { this.appCtx = appCtx; }
-    /**
-     * @return the transcript
-     */
-    public String getTranscript() { return transcript; }
-    /**
-     * @param transcript the transcript to set
-     */
-    public void setTranscript(String transcript) {
-        this.transcript = transcript;
-    }
+
     /**
      * @return the hostURL
      */

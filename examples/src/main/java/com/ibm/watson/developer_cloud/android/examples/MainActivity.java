@@ -51,7 +51,6 @@ import android.widget.TextView;
 
 // IBM Watson SDK
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.QueryResult;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechToText;
@@ -96,6 +95,9 @@ public class MainActivity extends Activity {
 //        private static String STT_URL = "wss://stream-s.watsonplatform.net/speech-to-text/api";
         private static String STT_URL = "wss://stream.watsonplatform.net/speech-to-text/api";
 
+        // session recognition results
+        private static String mRecognitionResults = "";
+
         private enum ConnectionState {
             IDLE, CONNECTING, CONNECTED
         }
@@ -112,14 +114,19 @@ public class MainActivity extends Activity {
 
             mView = inflater.inflate(R.layout.tab_stt, container, false);
             mContext = getActivity().getApplicationContext();
+            mHandler = new Handler();
 
             this.initSTT();
+            setText();
 
             if (jsonModels == null) {
                 jsonModels = new STTCommands().doInBackground();
+                if (jsonModels == null) {
+                    displayResult("Please, check internet connection.");
+                    return mView;
+                }
             }
             addItemsOnSpinnerModels();
-            setText();
 
             Button buttonRecord = (Button)mView.findViewById(R.id.buttonRecord);
             buttonRecord.setOnClickListener(new View.OnClickListener() {
@@ -129,27 +136,27 @@ public class MainActivity extends Activity {
 
                     if (mState == ConnectionState.IDLE) {
                         mState = ConnectionState.CONNECTING;
+                        Log.d(TAG, "onClickRecord: IDLE -> CONNECTING");
                         Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
                         spinner.setEnabled(false);
+                        mRecognitionResults = "";
+                        displayResult(mRecognitionResults);
                         ItemModel item = (ItemModel)spinner.getSelectedItem();
                         SpeechToText.sharedInstance().setModel(item.getModelName());
-
-
                         displayStatus("connecting to the STT service...");
                         SpeechToText.sharedInstance().recognize();
                     }
                     else if (mState == ConnectionState.CONNECTED) {
+                        mState = ConnectionState.IDLE;
+                        Log.d(TAG, "onClickRecord: CONNECTED -> IDLE");
                         Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
                         spinner.setEnabled(true);
                         SpeechToText.sharedInstance().stopRecognition();
                     }
-
-                    Log.d(TAG, "onClickRecord");
-                    //backward_img.setBackgroundColor(Color.BLUE);
                 }
             });
 
-            mHandler = new Handler();
+
 
             return mView;
         }
@@ -239,6 +246,7 @@ public class MainActivity extends Activity {
             ItemModel [] items = null;
             try {
                 JSONArray models = obj.getJSONArray("models");
+
                 // count the number of Broadband models (narrowband models will be ignored since they are for telephony data)
                 Vector<Integer> v = new Vector<>();
                 for (int i = 0; i < models.length(); ++i) {
@@ -270,7 +278,6 @@ public class MainActivity extends Activity {
             final Runnable runnableUi = new Runnable(){
                 @Override
                 public void run() {
-                    SpeechToText.sharedInstance().setTranscript(result);
                     TextView textResult = (TextView)mView.findViewById(R.id.textResult);
                     textResult.setText(result);
                 }
@@ -283,11 +290,10 @@ public class MainActivity extends Activity {
             }.start();
         }
 
-        public void displayStatus(final String status){
+        public void displayStatus(final String status) {
             final Runnable runnableUi = new Runnable(){
                 @Override
                 public void run() {
-                    SpeechToText.sharedInstance().setTranscript(status);
                     TextView textResult = (TextView)mView.findViewById(R.id.sttStatus);
                     textResult.setText(status);
                 }
@@ -319,49 +325,72 @@ public class MainActivity extends Activity {
 
         // delegages ----------------------------------------------
 
-        /**
-         * Delegate function, receive messages from the Speech SDK
-         *
-         * @param code
-         * @param result
-         */
-        @Override
-        public void onMessage(int code, QueryResult result) {
-            switch(code){
-                case ISpeechDelegate.OPEN:
-                    Logger.i(TAG, "################ receivedMessage.Open, code: " + code + " result: " + result.getTranscript());
-                    displayStatus("successfully connected to the STT service");
-                    setButtonLabel(R.id.buttonRecord, "stop recording");
-                    mState = ConnectionState.CONNECTED;
-                    break;
-                case ISpeechDelegate.CLOSE:
-                    Logger.i(TAG, "################ receivedMessage.Close, code: " + code + " result: " + result.getTranscript());
-                    displayStatus("connection closed");
-                    setButtonLabel(R.id.buttonRecord, "start recording");
-                    mState = ConnectionState.IDLE;
-                    // Make sure the recorder stops
-                    SpeechToText.sharedInstance().stopRecording();
-                    break;
-                case ISpeechDelegate.ERROR:
-                    Logger.e(TAG, result.getTranscript());
-                    displayResult(result.getTranscript());
-                    mState = ConnectionState.IDLE;
-                    break;
-                case ISpeechDelegate.MESSAGE:
-                    displayResult(result.getTranscript());
-                    break;
+        public void onOpen() {
+            Logger.i(TAG, "################ receivedMessage.Open");
+            displayStatus("successfully connected to the STT service");
+            setButtonLabel(R.id.buttonRecord, "stop recording");
+            mState = ConnectionState.CONNECTED;
+        }
+
+        public void onError(String error) {
+
+            Logger.e(TAG, error);
+            displayResult(error);
+            mState = ConnectionState.IDLE;
+        }
+
+        public void onClose(int code, String reason, boolean remote) {
+            Logger.i(TAG, "################ receivedMessage.Close, code: " + code + " reason: " + reason);
+            displayStatus("connection closed");
+            setButtonLabel(R.id.buttonRecord, "start recording");
+            mState = ConnectionState.IDLE;
+        }
+
+        public void onMessage(String message) {
+
+            Log.d(TAG, "message coming: " + message);
+
+            try {
+                JSONObject jObj = new JSONObject(message);
+                // state message
+                if(jObj.has("state")) {
+                    Log.d(TAG, "Status message: " + jObj.getString("state"));
+                }
+                // results message
+                else if (jObj.has("results")) {
+                    //if has result
+                    Log.d(TAG, "Results message: ");
+                    JSONArray jArr = jObj.getJSONArray("results");
+                    for (int i=0; i < jArr.length(); i++) {
+                        JSONObject obj = jArr.getJSONObject(i);
+                        JSONArray jArr1 = obj.getJSONArray("alternatives");
+                        String str = jArr1.getJSONObject(0).getString("transcript");
+                        String strFormatted = Character.toUpperCase(str.charAt(0)) + str.substring(1);
+                        if (obj.getString("final").equals("true")) {
+                            mRecognitionResults += strFormatted.substring(0,strFormatted.length()-1) + ". ";
+                            displayResult(mRecognitionResults);
+                        } else {
+                            displayResult(mRecognitionResults + strFormatted);
+                        }
+                        break;
+                    }
+                } else {
+                    displayResult("unexpected data coming from stt server: \n" + message);
+                }
+
+            } catch (JSONException e) {
+                Log.e(TAG, "Error parsing JSON");
+                e.printStackTrace();
             }
         }
 
         /**
-         * Delegate function, receive amplitude and volume
-         *
+         * Receive the data of amplitude and volume
          * @param amplitude
          * @param volume
          */
-        @Override
         public void onAmplitude(double amplitude, double volume) {
-//        Logger.e(TAG, "### amplitude="+amplitude+", volume="+volume+" ###");
+            //Logger.e(TAG, "amplitude=" + amplitude + ", volume=" + volume);
         }
     }
 
@@ -388,12 +417,15 @@ public class MainActivity extends Activity {
             mContext = getActivity().getApplicationContext();
 
             initTTS();
+            setText();
 
             if (jsonVoices == null) {
                 jsonVoices = new TTSCommands().doInBackground();
+                if (jsonVoices == null) {
+                    return mView;
+                }
             }
             addItemsOnSpinnerVoices();
-            setText();
             updatePrompt(getString(R.string.voiceDefault));
 
             Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerVoices);

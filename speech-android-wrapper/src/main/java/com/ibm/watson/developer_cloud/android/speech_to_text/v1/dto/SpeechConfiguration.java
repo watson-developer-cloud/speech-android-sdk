@@ -20,6 +20,7 @@ package com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto;
  * Created by mihui on 9/2/15.
  */
 public class SpeechConfiguration {
+
     // PCM format
     public static final String AUDIO_FORMAT_DEFAULT = "audio/l16;rate=16000";
     // OggOpus format

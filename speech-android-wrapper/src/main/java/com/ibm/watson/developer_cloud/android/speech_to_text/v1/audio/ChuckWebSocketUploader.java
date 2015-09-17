@@ -40,7 +40,6 @@ import org.json.JSONObject;
 
 import android.util.Log;
 
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.QueryResult;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
@@ -51,11 +50,9 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     private static final String TAG = ChuckWebSocketUploader.class.getName();
 
     private ISpeechEncoder encoder = null;
-    private String transcript = "";
     private Thread initStreamToServerThread;
 
     private boolean uploadPrepared = false;
-    private long timeout = 0;
 
     /** STT delegate */
     private ISpeechDelegate delegate = null;
@@ -130,16 +127,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         Logger.i(TAG, "********** Connected **********");
         this.sendSpeechHeader();
     }
-    /**
-     * Send message to the delegate
-     *
-     * @param code
-     */
-    private void sendMessage(int code){
-        if(delegate != null){
-            delegate.onMessage(code, new QueryResult(this.getTranscript()));
-        }
-    }
+
     @Override
     public int onHasData(byte[] buffer) {
         int uploadedAudioSize = 0;
@@ -209,15 +197,6 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     }
 
     /**
-     * Get transcription
-     *
-     * @return String
-     */
-    public String getTranscript(){
-        return this.transcript == null ? "" : this.transcript;
-    }
-
-    /**
      * Write string into socket
      *
      * @param message
@@ -227,7 +206,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
             this.send(message);
         }
         catch(NotYetConnectedException ex){
-            this.transcript = ex.getLocalizedMessage();
+            Logger.e(TAG, ex.getLocalizedMessage());
         }
     }
 
@@ -241,7 +220,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
             this.send(data);
         }
         catch(NotYetConnectedException ex){
-            this.transcript = ex.getLocalizedMessage();
+            Logger.e(TAG, ex.getLocalizedMessage());
         }
     }
 
@@ -251,30 +230,22 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     public void stop(){
         byte[] stopData = new byte[0];
         this.upload(stopData);
-
-        if(this.timeout > 0){
-            Logger.w(TAG, "Timeout for closing connection: " + this.timeout + " ms");
-            try {
-                Thread.sleep(this.timeout);
-                this.close();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     @Override
     public void close() {
+        Logger.w(TAG, "closing the websocket");
         super.close();
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
         Logger.i(TAG, "********** Closed **********");
-        // Send the last part of messages to the delegate
-        this.sendMessage(ISpeechDelegate.CLOSE);
         this.uploadPrepared = false;
         Logger.d(TAG, "### Code: " + code + " reason: " + reason + " remote: " + remote);
+        if (delegate != null){
+            delegate.onClose(code, reason, remote);
+        }
     }
 
     @Override
@@ -283,23 +254,18 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         Logger.e(TAG, ex.getMessage());
         // Send the error message to the delegate
         this.uploadPrepared = false;
-        this.sendMessage(ISpeechDelegate.ERROR);
+        //this.sendMessage(ISpeechDelegate.ERROR);
+        if (delegate != null){
+            delegate.onError(ex.getMessage());
+        }
     }
 
     @Override
     public void onMessage(String message) {
-        Log.d(TAG + ":onMessage", message);
-        String parsedData = parseMessage(message);
-        // Send instant message to the delegate
-        if (parsedData.equals("JSONerror")) {
-            Log.d(TAG, "Has JSON error so not sending the result");
-        }
-        else if(parsedData.equals("")){
-            Log.d(TAG, "Empty transcription, ignoring...");
-        }
-        else{
-            this.transcript = parsedData;
-            this.sendMessage(ISpeechDelegate.MESSAGE);
+
+        Log.d(TAG + "onMessage", message);
+        if (delegate != null){
+            delegate.onMessage(message);
         }
     }
 
@@ -307,10 +273,13 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
     public void onOpen(ServerHandshake arg0) {
         Logger.i(TAG, "********** WS connection opened Successfully **********");
         this.uploadPrepared = true;
-        this.sendMessage(ISpeechDelegate.OPEN);
+        if (delegate != null){
+            delegate.onOpen();
+        }
     }
 
     private void sendSpeechHeader() {
+
         JSONObject obj = new JSONObject();
         try {
             obj.put("action", "start");
@@ -323,74 +292,8 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         }
         String startHeader = obj.toString();
         this.upload(startHeader);
-
         this.encoder.onStart();
-
         Logger.w(TAG, "Sending init message: " + startHeader);
-    }
-
-    /**
-     * Parse the JSON from the WS connection
-     * @param data
-     * @return
-     */
-    private String parseMessage(String data){
-        String result="";
-
-        try {
-            JSONObject jObj = new JSONObject(data);
-
-            if(jObj.has("state")){
-                //if has status
-                Log.d(TAG, "Found JSON status: "+ jObj.getString("state"));
-            }
-            else if(jObj.has("results")){
-                //if has result
-                Log.d(TAG, "Found JSON results ");
-
-                JSONArray jArr = jObj.getJSONArray("results");
-                for (int i=0; i < jArr.length(); i++) {
-                    JSONObject obj = jArr.getJSONObject(i);
-                    //check if final
-                    if(obj.getString("final").equals("true")){
-                        //get transcript
-                        JSONArray jArr1 = obj.getJSONArray("alternatives");
-                        for (int j=0; j < jArr1.length(); j++) {
-                            JSONObject obj1 = jArr1.getJSONObject(j);
-                            result=obj1.getString("transcript");
-                        }
-                    }else{
-                        //get transcript
-                        JSONArray jArr1 = obj.getJSONArray("alternatives");
-                        for (int j=0; j < jArr1.length(); j++) {
-                            JSONObject obj1 = jArr1.getJSONObject(j);
-                            result=obj1.getString("transcript");
-                        }
-                    }
-                }
-
-            }else if(jObj.has("name")){
-                result="JSONerror";
-
-            }else{
-                result="Unexpected response from the server. Cannot parse JSON : "+"\n"+data;
-            }
-
-        } catch (JSONException e) {
-            Log.e(TAG, "Error parsing JSON");
-            result="JSONerror";
-            e.printStackTrace();
-        }
-        return result;
-    }
-    /**
-     * Set timeout
-     *
-     * @param timeout
-     */
-    @Override
-    public void setTimeout(long timeout) {
-        this.timeout = timeout;
     }
 
     /**

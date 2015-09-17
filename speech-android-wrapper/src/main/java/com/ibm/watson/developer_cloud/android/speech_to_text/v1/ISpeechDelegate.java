@@ -15,26 +15,31 @@
  **/
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.QueryResult;
 
 public interface ISpeechDelegate {
-	int MESSAGE = 0;
-	int ERROR = -1;
-	int CLOSE = -2;
-	int OPEN = 1;
-    int WAIT = 2;
 
     /**
-     * Receive message with status code
-     * @param code
-     * @param result
+     * called once the connection with the STT service has been established
      */
-	void onMessage(int code, QueryResult result);
+    void onOpen();
 
     /**
-     * Recieve the data of amplitude and volume
-     * @param amplitude
-     * @param volume
+     * called if there is an error using the STT service
+     */
+    void onError(String error);
+
+    /**
+     * called once the connection with the STT service has been terminated
+     */
+    void onClose(int code, String reason, boolean remote);
+
+    /**
+     * called every time a data message comes from the STT service
+     */
+    void onMessage(String message);
+
+    /**
+     * Receive the data of amplitude and volume
      */
     void onAmplitude(double amplitude, double volume);
 }
