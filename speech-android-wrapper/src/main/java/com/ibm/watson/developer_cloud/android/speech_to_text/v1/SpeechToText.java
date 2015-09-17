@@ -29,7 +29,7 @@ import android.util.Log;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.IAudioConsumer;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.AudioCaptureThread;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.ChuckWebSocketUploader;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.WebSocketUploader;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.IChunkUploader;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.TokenProvider;
@@ -159,7 +159,7 @@ public class SpeechToText {
 
             String wsURL = getHostURL().toString() + "/v1/recognize" + (this.model != null ? ("?model=" + this.model) : "");
 
-            uploader = new ChuckWebSocketUploader(wsURL, header, sConfig);
+            uploader = new WebSocketUploader(wsURL, header, sConfig);
             uploader.setDelegate(this.delegate);
             this.startRecording();
         } catch (URISyntaxException e) {

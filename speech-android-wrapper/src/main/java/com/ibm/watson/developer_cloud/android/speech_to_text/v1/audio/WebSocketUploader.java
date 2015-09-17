@@ -34,7 +34,6 @@ import org.java_websocket.client.DefaultSSLWebSocketClientFactory;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_17;
 import org.java_websocket.handshake.ServerHandshake;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -44,10 +43,10 @@ import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfig
 import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
 
-public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUploader {
+public class WebSocketUploader extends WebSocketClient implements IChunkUploader {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
-    private static final String TAG = ChuckWebSocketUploader.class.getName();
+    private static final String TAG = WebSocketUploader.class.getName();
 
     private ISpeechEncoder encoder = null;
     private Thread initStreamToServerThread;
@@ -65,17 +64,17 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
      * @param serverURL LMC server, delivery to back end server
      * @throws URISyntaxException
      */
-    public ChuckWebSocketUploader(String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
+    public WebSocketUploader(String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
         super(new URI(serverURL), new Draft_17(), header);
-        Logger.i(TAG, "### New ChuckWebSocketUploader ### " + serverURL);
+        Logger.i(TAG, "### New WebSocketUploader ### " + serverURL);
         Logger.d(TAG, serverURL);
         this.sConfig = config;
 
         if(sConfig.audioFormat.equals(SpeechConfiguration.AUDIO_FORMAT_DEFAULT)) {
-            this.encoder = new ChuckRawEnc();
+            this.encoder = new RawEnc();
         }
         else if(sConfig.audioFormat.equals(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS)){
-            this.encoder = new ChuckOggOpusEnc();
+            this.encoder = new OggOpusEnc();
         }
 
         if(serverURL.toLowerCase().startsWith("wss") || serverURL.toLowerCase().startsWith("https"))
@@ -103,7 +102,7 @@ public class ChuckWebSocketUploader extends WebSocketClient implements IChunkUpl
         this.setWebSocketFactory(new DefaultSSLWebSocketClientFactory(sslContext));
     }
     /**
-     * 1. Initialize WebSocket connection to chuck </br>
+     * 1. Initialize WebSocket connection </br>
      * 2. Init an encoder and writer
      *
      * @throws Exception

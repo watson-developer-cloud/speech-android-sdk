@@ -24,7 +24,7 @@ import java.io.IOException;
  * @author Viney
  *
  */
-public class ChuckRawWriter extends AudioFileWriter{
+public class RawWriter extends AudioFileWriter{
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     private IChunkUploader uploader;
@@ -32,7 +32,7 @@ public class ChuckRawWriter extends AudioFileWriter{
     /**
      * Construct with WebSocketClient
      */
-    public ChuckRawWriter(IChunkUploader uploader) {
+    public RawWriter(IChunkUploader uploader) {
         this.uploader = uploader;
     }
 

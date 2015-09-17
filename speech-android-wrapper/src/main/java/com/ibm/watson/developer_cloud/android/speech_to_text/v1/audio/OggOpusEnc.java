@@ -30,7 +30,7 @@ import java.nio.ShortBuffer;
 /**
  * Ogg Opus Encoder
  */
-public class ChuckOggOpusEnc extends OpusWriter implements ISpeechEncoder {
+public class OggOpusEnc extends OpusWriter implements ISpeechEncoder {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /** Data writer */
@@ -40,7 +40,7 @@ public class ChuckOggOpusEnc extends OpusWriter implements ISpeechEncoder {
     /**
      * Constructor
      */
-    public ChuckOggOpusEnc() {}
+    public OggOpusEnc() {}
     /**
      * For WebSocketClient
      * @param uploader

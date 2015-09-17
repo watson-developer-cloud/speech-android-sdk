@@ -73,10 +73,6 @@ public class MainActivity extends Activity {
 
 	TextView textTTS;
 
-	// Main UI Thread Handler
-	private Handler handler = null;
-    private boolean mRecognizing = false;
-
     ActionBar.Tab tabSTT, tabTTS;
     FragmentTabSTT fragmentTabSTT = new FragmentTabSTT();
     FragmentTabTTS fragmentTabTTS = new FragmentTabTTS();
@@ -144,7 +140,16 @@ public class MainActivity extends Activity {
                         ItemModel item = (ItemModel)spinner.getSelectedItem();
                         SpeechToText.sharedInstance().setModel(item.getModelName());
                         displayStatus("connecting to the STT service...");
-                        SpeechToText.sharedInstance().recognize();
+                        // start recognition
+                        new AsyncTask<Void, Void, Void>(){
+                            @Override
+                            protected Void doInBackground(Void... none) {
+                                SpeechToText.sharedInstance().recognize();
+                                return null;
+                            }
+                        }.execute();
+                        setButtonLabel(R.id.buttonRecord, "Connecting...");
+                        setButtonState(true);
                     }
                     else if (mState == ConnectionState.CONNECTED) {
                         mState = ConnectionState.IDLE;
@@ -152,13 +157,19 @@ public class MainActivity extends Activity {
                         Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
                         spinner.setEnabled(true);
                         SpeechToText.sharedInstance().stopRecognition();
+                        setButtonState(false);
                     }
                 }
             });
 
-
-
             return mView;
+        }
+
+        private String getModelSelected() {
+
+            Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
+            ItemModel item = (ItemModel)spinner.getSelectedItem();
+            return item.getModelName();
         }
 
         public URI getHost(String url){
@@ -183,7 +194,6 @@ public class MainActivity extends Activity {
             SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
             SpeechToText.sharedInstance().setModel(getString(R.string.modelDefault));
             SpeechToText.sharedInstance().setDelegate(this);
-//            SpeechToText.sharedInstance().setTimeout(0); // Optional - set the duration for delaying connection closure in millisecond
         }
 
         protected void setText() {
@@ -323,12 +333,32 @@ public class MainActivity extends Activity {
             }.start();
         }
 
+        /**
+         * Change the button's drawable
+         */
+        public void setButtonState(final boolean bRecording) {
+
+            final Runnable runnableUi = new Runnable(){
+                @Override
+                public void run() {
+                    int iDrawable = bRecording ? R.drawable.button_record_stop : R.drawable.button_record_start;
+                    Button btnRecord = (Button)mView.findViewById(R.id.buttonRecord);
+                    btnRecord.setBackground(getResources().getDrawable(iDrawable));
+                }
+            };
+            new Thread(){
+                public void run(){
+                    mHandler.post(runnableUi);
+                }
+            }.start();
+        }
+
         // delegages ----------------------------------------------
 
         public void onOpen() {
             Logger.i(TAG, "################ receivedMessage.Open");
             displayStatus("successfully connected to the STT service");
-            setButtonLabel(R.id.buttonRecord, "stop recording");
+            setButtonLabel(R.id.buttonRecord, "Stop recording");
             mState = ConnectionState.CONNECTED;
         }
 
@@ -342,7 +372,7 @@ public class MainActivity extends Activity {
         public void onClose(int code, String reason, boolean remote) {
             Logger.i(TAG, "################ receivedMessage.Close, code: " + code + " reason: " + reason);
             displayStatus("connection closed");
-            setButtonLabel(R.id.buttonRecord, "start recording");
+            setButtonLabel(R.id.buttonRecord, "Record");
             mState = ConnectionState.IDLE;
         }
 
@@ -365,9 +395,15 @@ public class MainActivity extends Activity {
                         JSONObject obj = jArr.getJSONObject(i);
                         JSONArray jArr1 = obj.getJSONArray("alternatives");
                         String str = jArr1.getJSONObject(0).getString("transcript");
+                        // remove whitespaces if the language requires it
+                        String model = this.getModelSelected();
+                        if (model.startsWith("ja-JP") || model.startsWith("zh-CN")) {
+                            str = str.replaceAll("\\s+","");
+                        }
                         String strFormatted = Character.toUpperCase(str.charAt(0)) + str.substring(1);
                         if (obj.getString("final").equals("true")) {
-                            mRecognitionResults += strFormatted.substring(0,strFormatted.length()-1) + ". ";
+                            String stopMarker = (model.startsWith("ja-JP") || model.startsWith("zh-CN")) ? "。" : ". ";
+                            mRecognitionResults += strFormatted.substring(0,strFormatted.length()-1) + stopMarker;
                             displayResult(mRecognitionResults);
                         } else {
                             displayResult(mRecognitionResults + strFormatted);
@@ -578,8 +614,8 @@ public class MainActivity extends Activity {
     }
 
     public class MyTabListener implements ActionBar.TabListener {
-        Fragment fragment;
 
+        Fragment fragment;
         public MyTabListener(Fragment fragment) {
             this.fragment = fragment;
         }
@@ -627,10 +663,6 @@ public class MainActivity extends Activity {
 				
 		//setContentView(R.layout.activity_main);
         setContentView(R.layout.activity_tab_text);
-
-		handler = new Handler();
-
-        ////////////////////////////////////////
 
         ActionBar actionBar = getActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);

@@ -16,9 +16,6 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
-import javax.net.ssl.HttpsURLConnection;
-
-
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
 
 /**

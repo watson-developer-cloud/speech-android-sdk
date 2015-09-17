@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-<!-- UNSELECTED TAB STATE -->
+<!-- unselected tab -->
 <item android:state_selected="false" android:state_pressed="false">
     <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-        <!-- Bottom indicator color for the UNSELECTED tab state -->
+        <!-- bottom indicator color for the unselected tab -->
         <item android:top="-5dp" android:left="-5dp" android:right="-5dp">
             <shape android:shape="rectangle">
-                <stroke android:color="#65acee" android:width="2dp"/>
+                <stroke android:color="#325c80" android:width="2dp"/>
             </shape>
         </item>
     </layer-list>
 </item>
-<!-- SELECTED TAB STATE -->
+<!-- selected tab -->
 <item android:state_selected="true" android:state_pressed="false">
     <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-        <!-- Tab background color for the SELECTED tab state -->
+        <!-- background color for the selected tab -->
         <item>
             <shape>
-                <solid android:color="#cef9ff"/>
+                <solid android:color="#325c80"/>
             </shape>
         </item>
-        <!-- Bottom indicator color for the SELECTED tab state -->
+        <!-- bottom indicator color for the selected tab -->
         <item android:top="-5dp" android:left="-5dp" android:right="-5dp">
             <shape android:shape="rectangle">
-                <stroke android:color="#5beea6" android:width="2dp"/>
+                <stroke android:color="#325c80" android:width="2dp"/>
             </shape>
         </item>
     </layer-list>

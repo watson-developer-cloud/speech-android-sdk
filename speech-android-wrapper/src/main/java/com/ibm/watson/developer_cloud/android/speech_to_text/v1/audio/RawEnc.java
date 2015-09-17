@@ -18,22 +18,22 @@ import java.io.IOException;
 /**
  * Raw data encoder
  */
-public class ChuckRawEnc implements ISpeechEncoder {
+public class RawEnc implements ISpeechEncoder {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /** Data writer */
-    private ChuckRawWriter writer = null;
+    private RawWriter writer = null;
     /**
      * Constructor.
      */
-    public ChuckRawEnc() {}
+    public RawEnc() {}
     /**
      * For WebSocketClient
      * @param uploader
      * @throws java.io.IOException
      */
     public void initEncoderWithUploader(IChunkUploader uploader) throws IOException{
-        this.writer = new ChuckRawWriter(uploader);
+        this.writer = new RawWriter(uploader);
     }
     /**
      * On encode begin

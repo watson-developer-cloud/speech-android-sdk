@@ -20,7 +20,6 @@
     </style>
 
     <style name="MyTheme.ActionBar.TabText" parent="android:style/Widget.Holo.ActionBar.TabText">
-        <!-- This is a PURPLE text color when selected and a WHITE color otherwise -->
         <item name="android:textColor">@drawable/tab_text</item>
     </style>
 
