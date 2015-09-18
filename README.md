@@ -1,7 +1,7 @@
 Watson Speech Android SDK
 =====================
 
-The Watson Speech SDK for the Android platform enables an easy and lightweight interaction with the Bluemix Watson Speech To Text and Text To Speech services. The SDK includes support for recording and streaming audio in real time while receving a trasncript of the audio as you speak. This project includs an example application that showcases the interaction with both the STT and TTS Watson services in the cloud.
+The Watson Speech SDK for the Android platform enables an easy and lightweight interaction with the Bluemix Watson Speech To Text and Text To Speech services. The SDK includes support for recording and streaming audio in real time to the STT service while receving a transcript of the audio as you speak. This project includs an example application that showcases the interaction with both the STT and TTS Watson services in the cloud.
 
 The current version of the sdk uses a minSdkVersion of 9, while the example application uses a minSdkVersion of 16.
 
