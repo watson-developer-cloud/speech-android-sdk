@@ -13,6 +13,11 @@
     <string name="modelDefault">en-US_BroadbandModel</string>
     <string name="voiceDefault">en-US_MichaelVoice</string>
 
+    <!-- default credentials -->
+    <string name="defaultPassword">&lt;username&gt;</string>
+    <string name="defaultUsername">&lt;password&gt;</string>
+    <string name="defaultTokenFactory">&lt;token-factory-url&gt;</string>
+
     <!-- TTS default prompts -->
     <string name="ttsEnglishPrompt">Conscious of its spiritual and moral heritage, the Union is founded on the indivisible, universal values of human dignity, freedom, equality and solidarity; it is based on the principles of democracy and the rule of law. It places the individual at the heart of its activities, by establishing the citizenship of the Union and by creating an area of freedom, security and justice.</string>
     <string name="ttsSpanishPrompt">Consciente de su patrimonio espiritual y moral, la Unión está fundada sobre los valores indivisibles y universales de la dignidad humana, la libertad, la igualdad y la solidaridad, y se basa en los principios de la democracia y el Estado de Derecho. Al instituir la ciudadanía de la Unión y crear un espacio de libertad, seguridad y justicia, sitúa a la persona en el centro de su actuación.</string>

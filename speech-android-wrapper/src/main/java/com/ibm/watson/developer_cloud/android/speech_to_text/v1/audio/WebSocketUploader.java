@@ -107,7 +107,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      *
      * @throws Exception
      */
-    private void initStreamAudioToServer() throws Exception{
+    private void initStreamAudioToServer() throws Exception {
         Log.d(TAG, "Connecting...");
         //lifted up for initializing writer, using isRunning to control the flow
         this.encoder.initEncoderWithUploader(this);
@@ -118,7 +118,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         boolean rc;
         rc = this.connectBlocking();
 
-        if(!rc){
+        if (!rc) {
             Log.e(TAG, "Connection failed!");
             this.uploadPrepared = false;
             throw new Exception("Connection failed!");
@@ -134,6 +134,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         if (this.isUploadPrepared()) {
             try {
                 uploadedAudioSize = encoder.encodeAndWrite(buffer);
+                Log.d(TAG, "onHasData: " + uploadedAudioSize + " " + buffer.length);
                 // TODO: Capturing data
             } catch (IOException e) {
                 e.printStackTrace();

@@ -52,12 +52,12 @@ public class AudioCaptureThread extends Thread {
         AudioRecord recorder = null;
 
         try {
-            // initialize the recorder
-            int iN = AudioRecord.getMinBufferSize(mSamplingRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
+            int iN = Math.max(mSamplingRate/2,AudioRecord.getMinBufferSize(mSamplingRate,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT));
             short[] buffer = new short[iN]; // ASR latency depends on the length of this buffer, a short buffer is good for latency
             // because the ASR will process the speech sooner, however it will introduce some network overhead because each packet comes
             // with a fixed amount of protocol-data), also I have noticed that some servers cannot handle too many small packages
 
+            // initialize the recorder (buffer size will be at least 1/4th of a second)
             recorder = new AudioRecord(AudioSource.MIC, mSamplingRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, iN);
             recorder.startRecording();
             Log.d(TAG, "recording started!");
