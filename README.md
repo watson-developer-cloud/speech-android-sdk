@@ -1,9 +1,9 @@
 Watson Speech Android SDK
 =====================
 
-An SDK for Android mobile applications enabling use of the Bluemix Watson Speech To Text and Text To Speech APIs from [Watson Developer Cloud][wdc]
+The Watson Speech SDK for the Android platform enables an easy and lightweight interaction with the Bluemix Watson Speech To Text and Text To Speech services. The SDK includes support for recording and streaming audio in real time while receving a trasncript of the audio as you speak. This project includs an example application that showcases the interaction with both the STT and TTS Watson services in the cloud.
 
-The SDK include support for recording and streaming audio and receiving a transcript of the audio in response.
+The current version of the sdk uses a minSdkVersion of 9, while the example application uses a minSdkVersion of 16.
 
 
 Table of Contents
@@ -131,8 +131,8 @@ Start Audio Transcription
 
 If you implemented SpeechRecorderDelegate, and needs to process the audio data which is recorded, you can use set the delegate.
 ```
-SpeechToText.sharedInstance().recognize();
-SpeechToText.sharedInstance().setRecorderDelegate(this);
+   SpeechToText.sharedInstance().recognize();
+   SpeechToText.sharedInstance().setRecorderDelegate(this);
 ```
 
 **Delegate methods to receive messages from the sdk**
