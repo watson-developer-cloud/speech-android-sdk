@@ -1,18 +1,18 @@
  /**
- * Copyright IBM Corporation 2015
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **/
+  * © Copyright IBM Corporation 2015
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  **/
 
 package com.ibm.watson.developer_cloud.android.examples;
 
@@ -51,7 +51,6 @@ import android.widget.TextView;
 
 // IBM Watson SDK
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
-import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechToText;
 import com.ibm.watson.developer_cloud.android.text_to_speech.v1.TextToSpeech;
@@ -99,7 +98,6 @@ public class MainActivity extends Activity {
         }
 
         ConnectionState mState = ConnectionState.IDLE;
-
         public View mView = null;
         public Context mContext = null;
         public JSONObject jsonModels = null;
@@ -132,7 +130,7 @@ public class MainActivity extends Activity {
 
                     if (mState == ConnectionState.IDLE) {
                         mState = ConnectionState.CONNECTING;
-                        Logger.d(TAG, "onClickRecord: IDLE -> CONNECTING");
+                        Log.d(TAG, "onClickRecord: IDLE -> CONNECTING");
                         Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
                         spinner.setEnabled(false);
                         mRecognitionResults = "";
@@ -153,7 +151,7 @@ public class MainActivity extends Activity {
                     }
                     else if (mState == ConnectionState.CONNECTED) {
                         mState = ConnectionState.IDLE;
-                        Logger.d(TAG, "onClickRecord: CONNECTED -> IDLE");
+                        Log.d(TAG, "onClickRecord: CONNECTED -> IDLE");
                         Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
                         spinner.setEnabled(true);
                         SpeechToText.sharedInstance().stopRecognition();
@@ -356,7 +354,7 @@ public class MainActivity extends Activity {
         // delegages ----------------------------------------------
 
         public void onOpen() {
-            Logger.i(TAG, "onOpen");
+            Log.d(TAG, "onOpen");
             displayStatus("successfully connected to the STT service");
             setButtonLabel(R.id.buttonRecord, "Stop recording");
             mState = ConnectionState.CONNECTED;
@@ -364,13 +362,13 @@ public class MainActivity extends Activity {
 
         public void onError(String error) {
 
-            Logger.e(TAG, error);
+            Log.e(TAG, error);
             displayResult(error);
             mState = ConnectionState.IDLE;
         }
 
         public void onClose(int code, String reason, boolean remote) {
-            Logger.i(TAG, "onClose, code: " + code + " reason: " + reason);
+            Log.d(TAG, "onClose, code: " + code + " reason: " + reason);
             displayStatus("connection closed");
             setButtonLabel(R.id.buttonRecord, "Record");
             mState = ConnectionState.IDLE;
@@ -378,17 +376,17 @@ public class MainActivity extends Activity {
 
         public void onMessage(String message) {
 
-            Logger.d(TAG, "onMessage, message: " + message);
+            Log.d(TAG, "onMessage, message: " + message);
             try {
                 JSONObject jObj = new JSONObject(message);
                 // state message
                 if(jObj.has("state")) {
-                    Logger.d(TAG, "Status message: " + jObj.getString("state"));
+                    Log.d(TAG, "Status message: " + jObj.getString("state"));
                 }
                 // results message
                 else if (jObj.has("results")) {
                     //if has result
-                    Logger.d(TAG, "Results message: ");
+                    Log.d(TAG, "Results message: ");
                     JSONArray jArr = jObj.getJSONArray("results");
                     for (int i=0; i < jArr.length(); i++) {
                         JSONObject obj = jArr.getJSONObject(i);
@@ -414,16 +412,11 @@ public class MainActivity extends Activity {
                 }
 
             } catch (JSONException e) {
-                Logger.e(TAG, "Error parsing JSON");
+                Log.e(TAG, "Error parsing JSON");
                 e.printStackTrace();
             }
         }
 
-        /**
-         * Receive the data of amplitude and volume
-         * @param amplitude
-         * @param volume
-         */
         public void onAmplitude(double amplitude, double volume) {
             //Logger.e(TAG, "amplitude=" + amplitude + ", volume=" + volume);
         }
@@ -447,7 +440,7 @@ public class MainActivity extends Activity {
 
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            Logger.d(TAG, "onCreateTTS");
+            Log.d(TAG, "onCreateTTS");
             mView = inflater.inflate(R.layout.tab_tts, container, false);
             mContext = getActivity().getApplicationContext();
 
@@ -468,7 +461,7 @@ public class MainActivity extends Activity {
                 @Override
                 public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
 
-                    Logger.d(TAG, "setOnItemSelectedListener");
+                    Log.d(TAG, "setOnItemSelectedListener");
                     final Runnable runnableUi = new Runnable() {
                         @Override
                         public void run() {
@@ -508,7 +501,7 @@ public class MainActivity extends Activity {
             TextToSpeech.sharedInstance().initWithContext(this.getHost(TTS_URL));
             TextToSpeech.sharedInstance().setCredentials(this.USERNAME_TTS, this.PASSWORD_TTS);
             TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(this.strTTSTokenFactoryURL));
-            TextToSpeech.sharedInstance().setVoice("en-US_MichaelVoice");
+            TextToSpeech.sharedInstance().setVoice(getString(R.string.voiceDefault));
         }
 
         protected void setText() {
@@ -688,7 +681,7 @@ public class MainActivity extends Activity {
 
         public String getToken() {
 
-            Logger.d(TAG, "attempting to get a token from: " + m_strTokenFactoryURL);
+            Log.d(TAG, "attempting to get a token from: " + m_strTokenFactoryURL);
             try {
                 // DISCLAIMER: the application developer should implement an authentication mechanism from the mobile app to the
                 // server side app so the token factory in the server only provides tokens to authenticated clients
@@ -699,7 +692,7 @@ public class MainActivity extends Activity {
                 StringWriter writer = new StringWriter();
                 IOUtils.copy(is, writer, "UTF-8");
                 String strToken = writer.toString();
-                Logger.d(TAG, strToken);
+                Log.d(TAG, strToken);
                 return strToken;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -722,12 +715,12 @@ public class MainActivity extends Activity {
 	public void playTTS(View view) throws JSONException {
 
         TextToSpeech.sharedInstance().setVoice(fragmentTabTTS.getSelectedVoice());
-        Logger.i(TAG, fragmentTabTTS.getSelectedVoice());
+        Log.d(TAG, fragmentTabTTS.getSelectedVoice());
 
 		//Get text from text box
 		textTTS = (TextView)fragmentTabTTS.mView.findViewById(R.id.prompt);
 		String ttsText=textTTS.getText().toString();
-		Logger.i(TAG, ttsText);
+		Log.d(TAG, ttsText);
 		InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 		imm.hideSoftInputFromWindow(textTTS.getWindowToken(),
 				InputMethodManager.HIDE_NOT_ALWAYS);

@@ -1,5 +1,5 @@
 /**
- * Copyright IBM Corporation 2015
+ * © Copyright IBM Corporation 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.ibm.watson.developer_cloud.android.text_to_speech.v1;
 import android.util.Log;
 
 import com.ibm.watson.developer_cloud.android.speech_common.v1.TokenProvider;
-import com.ibm.watson.developer_cloud.android.speech_common.v1.util.TTSUtility;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -78,7 +77,7 @@ public class TextToSpeech {
      * @param ttsString
      */
     public void synthesize(String ttsString) {
-        Log.i(TAG, "synthesize called: " + this.hostURL.toString() + "/v1/synthesize");
+        Log.d(TAG, "synthesize called: " + this.hostURL.toString() + "/v1/synthesize");
         String[] Arguments = { this.hostURL.toString()+"/v1/synthesize", this.username, this.password,
                 this.voice, ttsString, this.tokenProvider == null ? null : this.tokenProvider.getToken()};
         try {

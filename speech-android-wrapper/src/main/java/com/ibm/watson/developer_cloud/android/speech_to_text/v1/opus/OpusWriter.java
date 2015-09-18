@@ -1,5 +1,5 @@
 /**
- * Copyright IBM Corporation 2015
+ * © Copyright IBM Corporation 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.IChunkUplo
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.OggCrc;
 
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
-import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
 
 public class OpusWriter extends AudioFileWriter {
     private String TAG = this.getClass().getSimpleName();

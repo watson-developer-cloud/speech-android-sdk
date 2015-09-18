@@ -37,6 +37,8 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
+import android.util.Log;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -60,9 +62,10 @@ import java.io.RandomAccessFile;
  * @author Marc Gimpel, Wimba S.A. (mgimpel@horizonwimba.com)
  * @version $Revision: 1.2 $
  */
-public class PcmWaveWriter
-  extends AudioFileWriter
-{
+public class PcmWaveWriter extends AudioFileWriter {
+
+    private static final String TAG = "PcmWaveWriter";
+
     /** Wave type code of PCM */
     public static final short WAVE_FORMAT_PCM = (short) 0x01;
     private RandomAccessFile raf;
@@ -226,7 +229,7 @@ public class PcmWaveWriter
             outputStream.write(data);
 
         } catch (IOException e) {
-            System.out.println("Error writing data to wav buffer");
+            Log.e(TAG, "Error writing data to wav buffer");
             e.printStackTrace();
         }
         return outputStream.toByteArray();
@@ -302,11 +305,11 @@ public class PcmWaveWriter
             raf.write(data);
             raf.close();
         } catch (IOException e) {
-            System.out.println("Error writing data to wav file");
+            Log.e(TAG, "Error writing data to wav file");
             e.printStackTrace();
         }
 
-        System.out.println("wrote Wav File");
+        Log.e(TAG, "wrote Wav File");
     }
 
     /**

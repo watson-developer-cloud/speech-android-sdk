@@ -1,5 +1,5 @@
 /**
- * Copyright IBM Corporation 2015
+ * © Copyright IBM Corporation 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  **/
 
-package com.ibm.watson.developer_cloud.android.speech_common.v1.util;
+package com.ibm.watson.developer_cloud.android.text_to_speech.v1;
 
 import android.app.Application;
 import android.media.AudioFormat;
@@ -66,10 +66,8 @@ public class TTSUtility extends Application {
 	private String codec;
 	private int sampleRate;
 	private String server;
-	
 	private AudioTrack audioTrack;
 
-	//private static final int MIN_FRAME_COUNT = 600;
 
 	public TTSUtility(){
 		this.codec = CODEC_WAV;
@@ -150,7 +148,7 @@ public class TTSUtility extends Application {
 	}
 
     /**
-	 * Post text data to iTrans server and get returned audio data
+	 * Post text data to the server and get returned audio data
 	 * @param server iTrans server
 	 * @param username
 	 * @param password
@@ -177,7 +175,6 @@ public class TTSUtility extends Application {
             Log.d(TAG, "using basic authentication");
             httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(username, password), "UTF-8", false));
         }
-        //httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(username, password), "UTF-8", false));
         HttpResponse executed = httpClient.execute(httpGet);
 
 		return executed;

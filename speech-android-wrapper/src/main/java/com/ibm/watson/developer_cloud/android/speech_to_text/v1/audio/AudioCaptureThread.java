@@ -1,5 +1,5 @@
 /**
- * Copyright IBM Corporation 2015
+ * © Copyright IBM Corporation 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,7 @@ import java.nio.ByteOrder;
  *
  */
 public class AudioCaptureThread extends Thread {
-    // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
-    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
+
     private static final String TAG = "AudioCaptureThread";
     private boolean mStop = false;
     private boolean mStopped = false;
@@ -61,7 +60,7 @@ public class AudioCaptureThread extends Thread {
 
             recorder = new AudioRecord(AudioSource.MIC, mSamplingRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, iN);
             recorder.startRecording();
-            Log.w(TAG, "recording started!");
+            Log.d(TAG, "recording started!");
             while(!mStop) {
 
                 int r = recorder.read(buffer,0,buffer.length);
@@ -85,7 +84,7 @@ public class AudioCaptureThread extends Thread {
             }
         }
         catch(Throwable x) {
-            Log.w(TAG, "Error reading voice audio", x);
+            Log.e(TAG, "Error reading voice audio", x);
         }
         // release resources
         finally {
@@ -94,7 +93,7 @@ public class AudioCaptureThread extends Thread {
                 recorder.release();
             }
             mStopped = true;
-            Log.w(TAG, "recording stopped!");
+            Log.d(TAG, "recording stopped!");
         }
     }
 

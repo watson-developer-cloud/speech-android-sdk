@@ -1,5 +1,5 @@
 /**
- * Copyright IBM Corporation 2015
+ * © Copyright IBM Corporation 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.AudioCaptu
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.WebSocketUploader;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.IChunkUploader;
-import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.TokenProvider;
 
 // HTTP library
@@ -141,7 +140,7 @@ public class SpeechToText {
      * Start recording audio
      */
     public void recognize() {
-        Log.i(TAG, "recognize");
+        Log.d(TAG, "recognize");
         try {
             HashMap<String, String> header = new HashMap<String, String>();
             header.put("Content-Type", sConfig.audioFormat);
@@ -149,11 +148,11 @@ public class SpeechToText {
             if(sConfig.isAuthNeeded) {
                 if (this.tokenProvider != null) {
                     header.put("X-Watson-Authorization-Token", this.tokenProvider.getToken());
-                    Logger.e(TAG, "ws connecting with token based authentication");
+                    Log.d(TAG, "ws connecting with token based authentication");
                 } else {
                     String auth = "Basic " + Base64.encodeBytes((this.username + ":" + this.password).getBytes(Charset.forName("UTF-8")));
                     header.put("Authorization", auth);
-                    Logger.e(TAG, "ws connecting with Basic Authentication");
+                    Log.d(TAG, "ws connecting with Basic Authentication");
                 }
             }
 

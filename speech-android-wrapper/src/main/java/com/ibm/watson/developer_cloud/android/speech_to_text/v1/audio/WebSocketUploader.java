@@ -1,5 +1,5 @@
 /**
- * Copyright IBM Corporation 2015
+ * © Copyright IBM Corporation 2015
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  **/
+
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
@@ -40,7 +41,6 @@ import org.json.JSONObject;
 import android.util.Log;
 
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
-import com.ibm.watson.developer_cloud.android.speech_common.v1.util.Logger;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
 
 public class WebSocketUploader extends WebSocketClient implements IChunkUploader {
@@ -66,8 +66,8 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      */
     public WebSocketUploader(String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
         super(new URI(serverURL), new Draft_17(), header);
-        Logger.i(TAG, "### New WebSocketUploader ### " + serverURL);
-        Logger.d(TAG, serverURL);
+        Log.d(TAG, "### New WebSocketUploader ### " + serverURL);
+        Log.d(TAG, serverURL);
         this.sConfig = config;
 
         if(sConfig.audioFormat.equals(SpeechConfiguration.AUDIO_FORMAT_DEFAULT)) {
@@ -108,7 +108,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      * @throws Exception
      */
     private void initStreamAudioToServer() throws Exception{
-        Logger.i(TAG, "********** Connecting... **********");
+        Log.d(TAG, "********** Connecting... **********");
         //lifted up for initializing writer, using isRunning to control the flow
         this.encoder.initEncoderWithUploader(this);
 
@@ -119,11 +119,11 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         rc = this.connectBlocking();
 
         if(!rc){
-            Logger.e(TAG, "********** Connection failed! **********");
+            Log.e(TAG, "********** Connection failed! **********");
             this.uploadPrepared = false;
             throw new Exception("Connection failed.");
         }
-        Logger.i(TAG, "********** Connected **********");
+        Log.d(TAG, "********** Connected **********");
         this.sendSpeechHeader();
     }
 
@@ -141,7 +141,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         }
         else {
             try {
-                Logger.w(TAG, "### WAITING FOR ESTABLISHING CONNECTION ###");
+                Log.w(TAG, "### WAITING FOR ESTABLISHING CONNECTION ###");
                 initStreamToServerThread.join();
             }
             catch (InterruptedException e) {
@@ -172,20 +172,20 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
                 try {
                     try {
                         initStreamAudioToServer();
-                        Logger.i(TAG, "### WebSocket Connection established");
+                        Log.i(TAG, "### WebSocket Connection established");
                     } catch (IOException e1) {
-                        Logger.e(TAG, "### IOException: "+e1.getMessage());
+                        Log.e(TAG, "### IOException: " + e1.getMessage());
                         throw e1;
                     } catch (InterruptedException e1) {
-                        Logger.e(TAG, "### InterruptedException:"+e1.getMessage());
+                        Log.e(TAG, "### InterruptedException:" + e1.getMessage());
                         throw e1;
                     } catch (Exception e1) {
-                        Logger.e(TAG, "### Exception: "+e1.getMessage());
+                        Log.e(TAG, "### Exception: " + e1.getMessage());
                         throw e1;
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    Logger.e(TAG, "Connection failed: " + (e == null ? "NULL EXCEPTION" : e.getMessage()));
+                    Log.e(TAG, "Connection failed: " + (e == null ? "NULL EXCEPTION" : e.getMessage()));
                     uploadPrepared = false;
                     close();
                 }
@@ -205,7 +205,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
             this.send(message);
         }
         catch(NotYetConnectedException ex){
-            Logger.e(TAG, ex.getLocalizedMessage());
+            Log.e(TAG, ex.getLocalizedMessage());
         }
     }
 
@@ -219,7 +219,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
             this.send(data);
         }
         catch(NotYetConnectedException ex){
-            Logger.e(TAG, ex.getLocalizedMessage());
+            Log.e(TAG, ex.getLocalizedMessage());
         }
     }
 
@@ -233,15 +233,15 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
     @Override
     public void close() {
-        Logger.w(TAG, "closing the websocket");
+        Log.d(TAG, "closing the websocket");
         super.close();
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        Logger.i(TAG, "********** Closed **********");
+        Log.d(TAG, "********** Closed **********");
         this.uploadPrepared = false;
-        Logger.d(TAG, "### Code: " + code + " reason: " + reason + " remote: " + remote);
+        Log.d(TAG, "### Code: " + code + " reason: " + reason + " remote: " + remote);
         if (delegate != null){
             delegate.onClose(code, reason, remote);
         }
@@ -249,8 +249,8 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
     @Override
     public void onError(Exception ex) {
-        Logger.w(TAG, "********** Error **********");
-        Logger.e(TAG, ex.getMessage());
+        Log.e(TAG, "********** Error **********");
+        Log.e(TAG, ex.getMessage());
         // Send the error message to the delegate
         this.uploadPrepared = false;
         //this.sendMessage(ISpeechDelegate.ERROR);
@@ -270,7 +270,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
     @Override
     public void onOpen(ServerHandshake arg0) {
-        Logger.i(TAG, "********** WS connection opened Successfully **********");
+        Log.d(TAG, "********** WS connection opened Successfully **********");
         this.uploadPrepared = true;
         if (delegate != null){
             delegate.onOpen();
@@ -292,7 +292,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         String startHeader = obj.toString();
         this.upload(startHeader);
         this.encoder.onStart();
-        Logger.w(TAG, "Sending init message: " + startHeader);
+        Log.d(TAG, "Sending init message: " + startHeader);
     }
 
     /**
