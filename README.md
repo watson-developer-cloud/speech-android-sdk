@@ -1,9 +1,9 @@
 Watson Speech Android SDK
 =====================
 
-The Watson Speech SDK for the Android platform enables an easy and lightweight interaction with the Bluemix Watson Speech To Text and Text To Speech services. The SDK includes support for recording and streaming audio in real time to the STT service while receving a transcript of the audio as you speak. This project includs an example application that showcases the interaction with both the STT and TTS Watson services in the cloud.
+The Watson Speech SDK for the Android platform enables an easy and lightweight interaction with the Bluemix Watson Speech-To-Text (STT) and Text-To-Speech (TTS) services. The SDK includes support for recording and streaming audio in real time to the STT service while receiving a transcript of the audio as you speak. This project includes an example application that showcases the interaction with both the STT and TTS Watson services in the cloud.
 
-The current version of the sdk uses a minSdkVersion of 9, while the example application uses a minSdkVersion of 16.
+The current version of the SDK uses a minSdkVersion of 9, while the example application uses a minSdkVersion of 16.
 
 
 Table of Contents
@@ -54,7 +54,7 @@ Speech To Text
 Implement the SpeechDelegate and SpeechRecorderDelegate in the MainActivity
 --------------------------------------------------------------------------
 
-These delgates implement the callbacks when a response from the server is recieved or when the recorder is sending back the auidio data. SpeechRecorderDelegate is optional.
+These delegates implement the callbacks when a response from the server is received or when the recorder is sending back the audio data. SpeechRecorderDelegate is optional.
 
 ```
    public class MainActivity extends Activity implements SpeechDelegate{}
@@ -164,7 +164,7 @@ End Audio Transcription
 
 Receive speech power levels during the recognize
 ------------------------------
-The amplitude is calculated from the audio data buffer, and the volume (in dB) is calculated base on it.
+The amplitude is calculated from the audio data buffer, and the volume (in dB) is calculated based on it.
 
 ```
     @Override

@@ -66,7 +66,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      */
     public WebSocketUploader(String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
         super(new URI(serverURL), new Draft_17(), header);
-        Log.d(TAG, "### New WebSocketUploader ### " + serverURL);
+        Log.d(TAG, "New WebSocketUploader: " + serverURL);
         Log.d(TAG, serverURL);
         this.sConfig = config;
 
@@ -108,7 +108,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      * @throws Exception
      */
     private void initStreamAudioToServer() throws Exception{
-        Log.d(TAG, "********** Connecting... **********");
+        Log.d(TAG, "Connecting...");
         //lifted up for initializing writer, using isRunning to control the flow
         this.encoder.initEncoderWithUploader(this);
 
@@ -119,11 +119,11 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         rc = this.connectBlocking();
 
         if(!rc){
-            Log.e(TAG, "********** Connection failed! **********");
+            Log.e(TAG, "Connection failed!");
             this.uploadPrepared = false;
-            throw new Exception("Connection failed.");
+            throw new Exception("Connection failed!");
         }
-        Log.d(TAG, "********** Connected **********");
+        Log.d(TAG, "Connected");
         this.sendSpeechHeader();
     }
 
@@ -141,7 +141,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         }
         else {
             try {
-                Log.w(TAG, "### WAITING FOR ESTABLISHING CONNECTION ###");
+                Log.w(TAG, "waiting for establishing the connection");
                 initStreamToServerThread.join();
             }
             catch (InterruptedException e) {
@@ -172,20 +172,20 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
                 try {
                     try {
                         initStreamAudioToServer();
-                        Log.i(TAG, "### WebSocket Connection established");
+                        Log.d(TAG, "WebSocket Connection established");
                     } catch (IOException e1) {
-                        Log.e(TAG, "### IOException: " + e1.getMessage());
+                        Log.e(TAG, "IOException: " + e1.getMessage());
                         throw e1;
                     } catch (InterruptedException e1) {
-                        Log.e(TAG, "### InterruptedException:" + e1.getMessage());
+                        Log.e(TAG, "InterruptedException:" + e1.getMessage());
                         throw e1;
                     } catch (Exception e1) {
-                        Log.e(TAG, "### Exception: " + e1.getMessage());
+                        Log.e(TAG, "Exception: " + e1.getMessage());
                         throw e1;
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    Log.e(TAG, "Connection failed: " + (e == null ? "NULL EXCEPTION" : e.getMessage()));
+                    Log.e(TAG, "Connection failed: " + (e == null ? "null exception" : e.getMessage()));
                     uploadPrepared = false;
                     close();
                 }
@@ -239,7 +239,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        Log.d(TAG, "********** Closed **********");
+        Log.d(TAG, "WebSocket closed");
         this.uploadPrepared = false;
         Log.d(TAG, "### Code: " + code + " reason: " + reason + " remote: " + remote);
         if (delegate != null){
@@ -249,7 +249,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
     @Override
     public void onError(Exception ex) {
-        Log.e(TAG, "********** Error **********");
+        Log.e(TAG, "WebSocket error");
         Log.e(TAG, ex.getMessage());
         // Send the error message to the delegate
         this.uploadPrepared = false;
@@ -270,7 +270,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
     @Override
     public void onOpen(ServerHandshake arg0) {
-        Log.d(TAG, "********** WS connection opened Successfully **********");
+        Log.d(TAG, "WS connection opened successfully");
         this.uploadPrepared = true;
         if (delegate != null){
             delegate.onOpen();
