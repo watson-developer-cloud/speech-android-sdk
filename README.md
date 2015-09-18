@@ -135,25 +135,24 @@ SpeechToText.sharedInstance().recognize();
 SpeechToText.sharedInstance().setRecorderDelegate(this);
 ```
 
-**Delegate function to receive messages from the sdk**
+**Delegate methods to receive messages from the sdk**
 
 ```
-	@Override
-	public void onMessage(int code, QueryResult result) {
-		switch(code){
-			case SpeechDelegate.OPEN:
-				// The connection is established
-			break;
-			case SpeechDelegate.CLOSE:
-				// The connection is closed
-				break;
-			case SpeechDelegate.ERROR:
-				// Error
-				break;
-			case SpeechDelegate.MESSAGE:
-				displayResult(result.getStatusCode(), result.getTranscript()); // Instant results
-				break;
-	
+    public void onOpen() {
+        // the  connection to the STT service is successfully opened 
+    }
+
+    public void onError(String error) {
+    	// error interacting with the STT service
+    }
+
+    public void onClose(int code, String reason, boolean remote) {
+        // the connection with the STT service was just closed
+    }
+
+    public void onMessage(String message) {
+        // a message comes from the STT service with recognition results 
+    }	
 ```
 
 End Audio Transcription
@@ -168,7 +167,7 @@ Receive speech power levels during the recognize
 The amplitude is calculated from the audio data buffer, and the volume (in dB) is calculated base on it.
 
 ```
-   @Override
+    @Override
     public void onAmplitude(double amplitude, double volume) {
         // your code here
     }

@@ -132,7 +132,7 @@ public class MainActivity extends Activity {
 
                     if (mState == ConnectionState.IDLE) {
                         mState = ConnectionState.CONNECTING;
-                        Log.d(TAG, "onClickRecord: IDLE -> CONNECTING");
+                        Logger.d(TAG, "onClickRecord: IDLE -> CONNECTING");
                         Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
                         spinner.setEnabled(false);
                         mRecognitionResults = "";
@@ -153,7 +153,7 @@ public class MainActivity extends Activity {
                     }
                     else if (mState == ConnectionState.CONNECTED) {
                         mState = ConnectionState.IDLE;
-                        Log.d(TAG, "onClickRecord: CONNECTED -> IDLE");
+                        Logger.d(TAG, "onClickRecord: CONNECTED -> IDLE");
                         Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
                         spinner.setEnabled(true);
                         SpeechToText.sharedInstance().stopRecognition();
@@ -356,7 +356,7 @@ public class MainActivity extends Activity {
         // delegages ----------------------------------------------
 
         public void onOpen() {
-            Logger.i(TAG, "################ receivedMessage.Open");
+            Logger.i(TAG, "onOpen");
             displayStatus("successfully connected to the STT service");
             setButtonLabel(R.id.buttonRecord, "Stop recording");
             mState = ConnectionState.CONNECTED;
@@ -370,7 +370,7 @@ public class MainActivity extends Activity {
         }
 
         public void onClose(int code, String reason, boolean remote) {
-            Logger.i(TAG, "################ receivedMessage.Close, code: " + code + " reason: " + reason);
+            Logger.i(TAG, "onClose, code: " + code + " reason: " + reason);
             displayStatus("connection closed");
             setButtonLabel(R.id.buttonRecord, "Record");
             mState = ConnectionState.IDLE;
@@ -378,18 +378,17 @@ public class MainActivity extends Activity {
 
         public void onMessage(String message) {
 
-            Log.d(TAG, "message coming: " + message);
-
+            Logger.d(TAG, "onMessage, message: " + message);
             try {
                 JSONObject jObj = new JSONObject(message);
                 // state message
                 if(jObj.has("state")) {
-                    Log.d(TAG, "Status message: " + jObj.getString("state"));
+                    Logger.d(TAG, "Status message: " + jObj.getString("state"));
                 }
                 // results message
                 else if (jObj.has("results")) {
                     //if has result
-                    Log.d(TAG, "Results message: ");
+                    Logger.d(TAG, "Results message: ");
                     JSONArray jArr = jObj.getJSONArray("results");
                     for (int i=0; i < jArr.length(); i++) {
                         JSONObject obj = jArr.getJSONObject(i);
@@ -415,7 +414,7 @@ public class MainActivity extends Activity {
                 }
 
             } catch (JSONException e) {
-                Log.e(TAG, "Error parsing JSON");
+                Logger.e(TAG, "Error parsing JSON");
                 e.printStackTrace();
             }
         }
@@ -448,7 +447,7 @@ public class MainActivity extends Activity {
 
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            Log.d(TAG, "onCreateTTS");
+            Logger.d(TAG, "onCreateTTS");
             mView = inflater.inflate(R.layout.tab_tts, container, false);
             mContext = getActivity().getApplicationContext();
 
@@ -469,7 +468,7 @@ public class MainActivity extends Activity {
                 @Override
                 public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
 
-                    Log.d(TAG, "setOnItemSelectedListener");
+                    Logger.d(TAG, "setOnItemSelectedListener");
                     final Runnable runnableUi = new Runnable() {
                         @Override
                         public void run() {
@@ -689,7 +688,7 @@ public class MainActivity extends Activity {
 
         public String getToken() {
 
-            Log.d(TAG, "attempting to get a token from: " + m_strTokenFactoryURL);
+            Logger.d(TAG, "attempting to get a token from: " + m_strTokenFactoryURL);
             try {
                 // DISCLAIMER: the application developer should implement an authentication mechanism from the mobile app to the
                 // server side app so the token factory in the server only provides tokens to authenticated clients
@@ -700,7 +699,7 @@ public class MainActivity extends Activity {
                 StringWriter writer = new StringWriter();
                 IOUtils.copy(is, writer, "UTF-8");
                 String strToken = writer.toString();
-                Log.d(TAG, strToken);
+                Logger.d(TAG, strToken);
                 return strToken;
             } catch (IOException e) {
                 e.printStackTrace();
