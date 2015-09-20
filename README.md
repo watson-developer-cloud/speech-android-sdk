@@ -31,7 +31,7 @@ Installation
 
 **Using the library**
 
-1. Download the [watsonsdk.aar.zip](https://git.hursley.ibm.com/w3bluemix/WatsonAndroidSpeechSDK/blob/master/speech-android-wrapper/build/outputs/aar/watsonsdk.aar.zip) and unzip it somewhere convenient
+1. Download the [watsonsdk.aar.zip](https://github.com/watson-developer-cloud/speech-android-sdk/releases/download/watsonsdk.aar.zip/watsonsdk.aar.zip) and unzip it somewhere convenient
 2. Once unzipped drag the watsonsdk.aar file into your Android Studio project view under the libs folder.
 3. Go to build.gradle file of your app, then set the dependencies as below:
 ```
