@@ -100,7 +100,7 @@ public class MainActivity extends Activity {
 
             setText();
             if (initSTT() == false) {
-                displayResult("Error: no authentication method available, please enter your authentication information");
+                displayResult("Error: no authentication credentials/token available, please enter your authentication information");
                 return mView;
             }
 
@@ -176,8 +176,11 @@ public class MainActivity extends Activity {
         private boolean initSTT() {
 
             // DISCLAIMER: please enter your credentials or token factory in the lines below
-            String username = getString(R.string.defaultUsername);
-            String password = getString(R.string.defaultPassword);
+            //String username = getString(R.string.defaultUsername);
+            //String password = getString(R.string.defaultPassword);
+            String username = "67158fa8-a9fb-4380-8368-d3f883da44fc";
+            String password = "KOWFDbj9cG0B";
+
             String tokenFactoryURL = getString(R.string.defaultTokenFactory);
             String serviceURL = "wss://stream.watsonplatform.net/speech-to-text/api";
 
@@ -447,8 +450,8 @@ public class MainActivity extends Activity {
 
             setText();
             if (initTTS() == false) {
-                TextView viewPrompt = (TextView)mView.findViewById(R.id.prompt);
-                viewPrompt.setText("Error: no authentication method available, please enter your authentication information");
+                TextView viewPrompt = (TextView) mView.findViewById(R.id.prompt);
+                viewPrompt.setText("Error: no authentication credentials or token available, please enter your authentication information");
                 return mView;
             }
 
@@ -461,7 +464,7 @@ public class MainActivity extends Activity {
             addItemsOnSpinnerVoices();
             updatePrompt(getString(R.string.voiceDefault));
 
-            Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerVoices);
+            Spinner spinner = (Spinner) mView.findViewById(R.id.spinnerVoices);
             spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
@@ -473,8 +476,8 @@ public class MainActivity extends Activity {
                             FragmentTabTTS.this.updatePrompt(FragmentTabTTS.this.getSelectedVoice());
                         }
                     };
-                    new Thread(){
-                        public void run(){
+                    new Thread() {
+                        public void run() {
                             mHandler.post(runnableUi);
                         }
                     }.start();
@@ -487,7 +490,6 @@ public class MainActivity extends Activity {
             });
 
             mHandler = new Handler();
-
             return mView;
         }
 
