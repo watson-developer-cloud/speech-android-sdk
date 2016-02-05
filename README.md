@@ -12,6 +12,8 @@ Table of Contents
 
     * [Installation](#installation)
 
+    * [Getting Credentials](#getting-credentials)
+
     * [Speech To Text](#speech-to-text)
         * [Implement the delegates](#implement-the-speechdelegate-and-speechrecorderdelegate-in-the-mainactivity)
     	* [Instantiate the SpeechToText instance](#instantiate-the-speechtotext-instance)
@@ -25,6 +27,7 @@ Table of Contents
     	* [Instantiate the TextToSpeech instance](#instantiate-the-texttospeech-instance)
     	* [List supported voices](#get-a-list-of-voices-supported-by-the-service)
     	* [Generate and play audio](#generate-and-play-audio)
+
 
 Installation
 ------------
@@ -47,6 +50,13 @@ Installation
     }
 ```
 4. Clean and run the Android Studio project
+
+
+Getting credentials
+--------------------
+
+Follow instructions at http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/doc/getting_started/gs-credentials.shtml to get service credentials.
+
 
 Speech To Text
 ===============
