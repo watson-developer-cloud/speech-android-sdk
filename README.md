@@ -37,6 +37,7 @@ Installation
 1. Download the [speech-android-wrapper.aar](https://github.com/watson-developer-cloud/speech-android-sdk/releases/download/watsonsdk.aar/speech-android-wrapper.aar)
 2. Once unzipped drag the watsonsdk.aar file into your Android Studio project view under the libs folder.
 3. Go to build.gradle file of your app, then set the dependencies as below:
+
 ```
     dependencies {
         compile fileTree(dir: 'libs', include: ['*.jar'])
@@ -49,13 +50,15 @@ Installation
         }
     }
 ```
+
 4. Clean and run the Android Studio project
 
 
 Getting credentials
 --------------------
 
-Follow instructions at http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/doc/getting_started/gs-credentials.shtml to get service credentials.
+1. Create an account on [Bluemix](https://console.ng.bluemix.net) if you have not already.
+2. Follow instructions at http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/doc/getting_started/gs-credentials.shtml to get service credentials.
 
 
 Speech To Text
