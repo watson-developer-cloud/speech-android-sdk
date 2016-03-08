@@ -65,7 +65,7 @@ Getting credentials
 A Quick Start Guide
 --------------------
 
-To started, you can also take a look at a [quick start guide](https://github.com/watson-developer-cloud/speech-android-sdk/issues/7#event-581256426) created by [@KeyOnTech](https://github.com/KeyOnTech).
+To started, you can also take a look at a [quick start guide](https://github.com/watson-developer-cloud/speech-android-sdk/issues/7#issue-130902950) created by [@KeyOnTech](https://github.com/KeyOnTech).
 
 Speech To Text
 ===============
