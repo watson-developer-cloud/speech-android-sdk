@@ -13,6 +13,8 @@ Table of Contents
     * [Installation](#installation)
 
     * [Getting Credentials](#getting-credentials)
+    
+    * [A Quick Start Guide](#a-quick-start-guide)
 
     * [Speech To Text](#speech-to-text)
         * [Implement the delegates](#implement-the-speechdelegate-and-speechrecorderdelegate-in-the-mainactivity)
@@ -60,6 +62,10 @@ Getting credentials
 1. Create an account on [Bluemix](https://console.ng.bluemix.net) if you have not already.
 2. Follow instructions at http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/doc/getting_started/gs-credentials.shtml to get service credentials.
 
+A Quick Start Guide
+--------------------
+
+To started, you can also take a look at a [quick start guide](https://github.com/watson-developer-cloud/speech-android-sdk/issues/7#event-581256426) created by [@KeyOnTech](https://github.com/KeyOnTech).
 
 Speech To Text
 ===============
