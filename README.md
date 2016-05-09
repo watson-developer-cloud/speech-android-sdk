@@ -43,7 +43,7 @@ Installation
 ```
     dependencies {
         compile fileTree(dir: 'libs', include: ['*.jar'])
-        compile (name:'watsonsdk',ext:'aar')
+        compile (name:'speech-android-wrapper',ext:'aar')
         compile 'com.android.support:appcompat-v7:22.0.0'
     }
     repositories{
