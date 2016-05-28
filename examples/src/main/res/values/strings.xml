@@ -13,9 +13,18 @@
     <string name="modelDefault">en-US_BroadbandModel</string>
     <string name="voiceDefault">en-US_MichaelVoice</string>
 
-    <!-- default credentials -->
-    <string name="defaultPassword">&lt;username&gt;</string>
-    <string name="defaultUsername">&lt;password&gt;</string>
+    <!-- STT credentials -->
+    <string name="STTUsername">&lt;username&gt;</string>
+    <string name="STTPassword">&lt;password&gt;</string>
+
+    <!-- TTS credentials -->
+    <string name="TTSUsername">&lt;username&gt;</string>
+    <string name="TTSPassword">&lt;password&gt;</string>
+
+    <!-- for credentials validation only -->
+    <string name="defaultUsername">&lt;username&gt;</string>
+    <string name="defaultPassword">&lt;password&gt;</string>
+
     <string name="defaultTokenFactory">&lt;token-factory-url&gt;</string>
 
     <!-- TTS default prompts -->

@@ -40,6 +40,8 @@ public class SpeechConfiguration {
     public boolean isAuthNeeded = true;
     // SSL flag, this would be detected automatically
     public boolean isSSL = true;
+    // Default timeout duration for a connection
+    public int connectionTimeout = 30000;
     /**
      * Instantiate default configuration
      */
