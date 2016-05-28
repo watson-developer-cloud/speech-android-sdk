@@ -28,10 +28,10 @@ import java.security.cert.X509Certificate;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.java_websocket.client.DefaultSSLWebSocketClientFactory;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_17;
 import org.java_websocket.handshake.ServerHandshake;
@@ -65,7 +65,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      * @throws URISyntaxException
      */
     public WebSocketUploader(String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
-        super(new URI(serverURL), new Draft_17(), header);
+        super(new URI(serverURL), new Draft_17(), header, config.connectionTimeout);
         Log.d(TAG, "New WebSocketUploader: " + serverURL);
         Log.d(TAG, serverURL);
         this.sConfig = config;
@@ -87,19 +87,20 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      * @throws KeyManagementException
      * @throws NoSuchAlgorithmException
      */
-    private void trustServer() throws KeyManagementException, NoSuchAlgorithmException {
+    private void trustServer() throws KeyManagementException, NoSuchAlgorithmException, IOException {
         // Create a trust manager that does not validate certificate chains
         TrustManager[] certs = new TrustManager[]{ new X509TrustManager() {
             public java.security.cert.X509Certificate[] getAcceptedIssuers() {
                 return new java.security.cert.X509Certificate[]{};
             }
             public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
-            public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException{ }
+            public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
         }};
         SSLContext sslContext = null;
         sslContext = SSLContext.getInstance("TLS");
         sslContext.init(null, certs, new java.security.SecureRandom());
-        this.setWebSocketFactory(new DefaultSSLWebSocketClientFactory(sslContext));
+        SSLSocketFactory factory = sslContext.getSocketFactory();
+        this.setSocket(factory.createSocket());
     }
     /**
      * 1. Initialize WebSocket connection </br>
@@ -118,13 +119,16 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         boolean rc;
         rc = this.connectBlocking();
 
-        if (!rc) {
+        if (rc) {
+            Log.d(TAG, "Connected");
+            this.sendSpeechHeader();
+        }
+        else{
             Log.e(TAG, "Connection failed!");
             this.uploadPrepared = false;
             throw new Exception("Connection failed!");
         }
-        Log.d(TAG, "Connected");
-        this.sendSpeechHeader();
+
     }
 
     @Override
@@ -251,7 +255,8 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     @Override
     public void onError(Exception ex) {
         Log.e(TAG, "WebSocket error");
-        Log.e(TAG, ex.getMessage());
+        if(ex != null)
+            Log.e(TAG, ex.getMessage());
         // Send the error message to the delegate
         this.uploadPrepared = false;
         //this.sendMessage(ISpeechDelegate.ERROR);
