@@ -246,6 +246,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     public void onClose(int code, String reason, boolean remote) {
         Log.d(TAG, "WebSocket closed");
         this.uploadPrepared = false;
+
         Log.d(TAG, "### Code: " + code + " reason: " + reason + " remote: " + remote);
         if (delegate != null){
             delegate.onClose(code, reason, remote);
@@ -255,13 +256,14 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     @Override
     public void onError(Exception ex) {
         Log.e(TAG, "WebSocket error");
+        String errorMessage = "";
         if(ex != null)
-            Log.e(TAG, ex.getMessage());
+            errorMessage = ex.getMessage();
         // Send the error message to the delegate
         this.uploadPrepared = false;
         //this.sendMessage(ISpeechDelegate.ERROR);
         if (delegate != null){
-            delegate.onError(ex.getMessage());
+            delegate.onError(errorMessage);
         }
     }
 
