@@ -16,6 +16,7 @@
 
 package com.ibm.watson.developer_cloud.android.text_to_speech.v1;
 
+import android.content.Context;
 import android.util.Log;
 
 import com.ibm.watson.developer_cloud.android.speech_common.v1.TokenProvider;
@@ -44,14 +45,16 @@ public class TextToSpeech {
     protected static final String TAG = "TextToSpeech";
 
     private TTSUtility ttsUtility;
+    private Context appContext = null;
     private String username;
     private String password;
     private URI hostURL;
     private TokenProvider tokenProvider = null;
-    private String voice;
+    private String voice = "";
+    private String codec = TTSUtility.CODEC_WAV;
 
-    /**Speech Recognition Shared Instance
-     *
+    /**
+     * Speech Recognition Shared Instance
      */
     private static TextToSpeech _instance = null;
 
@@ -68,7 +71,15 @@ public class TextToSpeech {
      * Init the shared instance with the context
      * @param uri
      */
-    public void initWithContext(URI uri){
+    public void initWithContext(URI uri, Context context){
+        this.setHostURL(uri);
+        this.appContext = context;
+    }
+    /**
+     * Init the shared instance with the context
+     * @param uri
+     */
+    public void initWithURI(URI uri){
         this.setHostURL(uri);
     }
 
@@ -81,8 +92,8 @@ public class TextToSpeech {
         String[] Arguments = { this.hostURL.toString()+"/v1/synthesize", this.username, this.password,
                 this.voice, ttsString, this.tokenProvider == null ? null : this.tokenProvider.getToken()};
         try {
-            ttsUtility = new TTSUtility();
-            ttsUtility.setCodec(TTSUtility.CODEC_WAV);
+            ttsUtility = new TTSUtility(this.appContext);
+            ttsUtility.setCodec(codec);
             ttsUtility.synthesize(Arguments);
         }
         catch (Exception e) {
@@ -158,5 +169,24 @@ public class TextToSpeech {
      */
     public void setVoice(String voice) {
         this.voice = voice;
+    }
+
+    /**
+     * Get TTS voice
+     * @return String
+     */
+    public String getVoice(){
+        return this.voice;
+    }
+
+    /**
+     * Set codec
+     *
+     * @param codec
+     * @param context
+     */
+    public void setCodec(String codec, Context context){
+        this.codec = codec;
+        this.appContext = context;
     }
 }

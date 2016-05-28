@@ -53,6 +53,7 @@ import android.widget.TextView;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechToText;
+import com.ibm.watson.developer_cloud.android.text_to_speech.v1.TTSUtility;
 import com.ibm.watson.developer_cloud.android.text_to_speech.v1.TextToSpeech;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.TokenProvider;
 
@@ -510,7 +511,7 @@ public class MainActivity extends Activity {
             String tokenFactoryURL = getString(R.string.defaultTokenFactory);
             String serviceURL = "https://stream.watsonplatform.net/text-to-speech/api";
 
-            TextToSpeech.sharedInstance().initWithContext(this.getHost(serviceURL));
+            TextToSpeech.sharedInstance().initWithURI(this.getHost(serviceURL));
 
             // token factory is the preferred authentication method (service credentials are not distributed in the client app)
             if (tokenFactoryURL.equals(getString(R.string.defaultTokenFactory)) == false) {
@@ -749,6 +750,9 @@ public class MainActivity extends Activity {
 		InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 		imm.hideSoftInputFromWindow(textTTS.getWindowToken(),
 				InputMethodManager.HIDE_NOT_ALWAYS);
+
+        // Enable OggOpus feature by enabling the code line below
+//        TextToSpeech.sharedInstance().setCodec(TTSUtility.CODEC_OPUS, this.getApplicationContext());
 
 		//Call the sdk function
 		TextToSpeech.sharedInstance().synthesize(ttsText);

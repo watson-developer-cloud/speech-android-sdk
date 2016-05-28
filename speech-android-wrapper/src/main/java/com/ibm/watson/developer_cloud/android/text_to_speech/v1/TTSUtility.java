@@ -17,6 +17,7 @@
 package com.ibm.watson.developer_cloud.android.text_to_speech.v1;
 
 import android.app.Application;
+import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -49,7 +50,7 @@ import java.io.RandomAccessFile;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TTSUtility extends Application {
+public class TTSUtility {
 	private static final String TAG = TTSUtility.class.getName();
 
 	public static final String CODEC_WAV = "audio/wav";
@@ -68,14 +69,19 @@ public class TTSUtility extends Application {
 	private String server;
 	private AudioTrack audioTrack;
 
+    private Context appContext = null;
 
-	public TTSUtility(){
-		this.codec = CODEC_WAV;
+    public TTSUtility(){
+        this.codec = CODEC_WAV;
         // By default, the sample rate would be detected by the SDK if the value is set to zero
         // However, the metadata is not reliable, need to decode at the maximum sample rate
         this.sampleRate = 48000;
-	}
+    }
 
+    public TTSUtility(Context context){
+        this();
+        this.appContext = context;
+    }
     /**
      * Set codec
      * @param codec
@@ -189,7 +195,7 @@ public class TTSUtility extends Application {
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             baseDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
         } else {
-            baseDir = "/data/data/" + getApplicationContext().getPackageName() + "/";
+            baseDir = "/data/data/" + this.appContext.getPackageName() + "/";
         }
 
         return baseDir;
@@ -233,10 +239,12 @@ public class TTSUtility extends Application {
 	}
 
     private byte[] analyzeOpusData(InputStream is) {
-        String inFilePath = getBaseDir()+"Watson.opus";
-        String outFilePath = getBaseDir()+"Watson.pcm";
+        String inFilePath = getBaseDir()+"watson.opus";
+        String outFilePath = getBaseDir()+"watson.pcm";
+
         File inFile = new File(inFilePath);
         File outFile = new File(outFilePath);
+
         outFile.deleteOnExit();
         inFile.deleteOnExit();
 
