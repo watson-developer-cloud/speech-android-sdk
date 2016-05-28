@@ -176,8 +176,8 @@ public class MainActivity extends Activity {
         private boolean initSTT() {
 
             // DISCLAIMER: please enter your credentials or token factory in the lines below
-            String username = getString(R.string.defaultUsername);
-            String password = getString(R.string.defaultPassword);
+            String username = getString(R.string.STTUsername);
+            String password = getString(R.string.STTPassword);
 
             String tokenFactoryURL = getString(R.string.defaultTokenFactory);
             String serviceURL = "wss://stream.watsonplatform.net/speech-to-text/api";
@@ -412,6 +412,7 @@ public class MainActivity extends Activity {
                         if (obj.getString("final").equals("true")) {
                             String stopMarker = (model.startsWith("ja-JP") || model.startsWith("zh-CN")) ? "。" : ". ";
                             mRecognitionResults += strFormatted.substring(0,strFormatted.length()-1) + stopMarker;
+
                             displayResult(mRecognitionResults);
                         } else {
                             displayResult(mRecognitionResults + strFormatted);
@@ -504,8 +505,8 @@ public class MainActivity extends Activity {
 
             // DISCLAIMER: please enter your credentials or token factory in the lines below
 
-            String username = getString(R.string.defaultUsername);
-            String password = getString(R.string.defaultPassword);
+            String username = getString(R.string.TTSUsername);
+            String password = getString(R.string.TTSPassword);
             String tokenFactoryURL = getString(R.string.defaultTokenFactory);
             String serviceURL = "https://stream.watsonplatform.net/text-to-speech/api";
 
