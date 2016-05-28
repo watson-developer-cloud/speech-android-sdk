@@ -70,26 +70,26 @@ To get started, you can also take a look at a [quick start guide](https://github
 Speech To Text
 ===============
 
-Implement the SpeechDelegate and SpeechRecorderDelegate in the MainActivity
+Implement the ISpeechDelegate and SpeechRecorderDelegate in the MainActivity
 --------------------------------------------------------------------------
 
 These delegates implement the callbacks when a response from the server is received or when the recorder is sending back the audio data. SpeechRecorderDelegate is optional.
 
 ```
-   public class MainActivity extends Activity implements SpeechDelegate{}
+   public class MainActivity extends Activity implements ISpeechDelegate{}
 ```
 
 Or with SpeechRecorderDelegate
 
 ```
-   public class MainActivity extends Activity implements SpeechDelegate, SpeechRecorderDelegate{}
+   public class MainActivity extends Activity implements ISpeechDelegate, SpeechRecorderDelegate{}
 ```
 
 Instantiate the SpeechToText instance
 -------------------------------------
 
 ```
-   SpeechToText.sharedInstance().initWithContext(this.getHost(), this.getApplicationContext(), new SpeechConfiguration());
+   SpeechToText.sharedInstance().initWithContext(new URI("wss://stream.watsonplatform.net/speech-to-text/api"), this.getApplicationContext(), new SpeechConfiguration());
 ```
 
 **Enabling audio compression**
