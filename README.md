@@ -200,7 +200,7 @@ Instantiate the TextToSpeech instance
 ------------------------------
 
 ```
-   TextToSpeech.sharedInstance().initWithContext(this.getHost(TTS_URL));
+   TextToSpeech.sharedInstance().initWithURI(this.getHost(TTS_URL));
 ```
 
 **Set the Credentials**
@@ -219,7 +219,7 @@ Get a list of voices supported by the service
 ------------------------------
 
 ```
-   TextToSpeech.sharedInstance().voices();
+   TextToSpeech.sharedInstance().getVoices();
 ```
 
 Pick the voice to be used 
