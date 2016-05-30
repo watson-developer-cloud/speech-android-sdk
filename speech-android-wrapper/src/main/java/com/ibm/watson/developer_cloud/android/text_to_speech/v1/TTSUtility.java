@@ -68,6 +68,9 @@ public class TTSUtility {
 	private int sampleRate;
 	private String server;
 	private AudioTrack audioTrack;
+    private String customizationId = null;
+
+    private ITextToSpeechDelegate delegate = null;
 
     private Context appContext = null;
 
@@ -90,10 +93,14 @@ public class TTSUtility {
 		this.codec = codec;
 	}
 
+    public void setDelegate(ITextToSpeechDelegate val){
+        this.delegate = val;
+    }
+
     /**
      * Stop player
      */
-	private void stopTtsPlayer() {
+	public void stopTtsPlayer() {
         if (audioTrack != null && audioTrack.getState() != AudioTrack.STATE_UNINITIALIZED ) {
             // IMPORTANT: NOT use stop()
             // For an immediate stop, use pause(), followed by flush() to discard audio data that hasn't been played back yet.
@@ -114,12 +121,15 @@ public class TTSUtility {
 			e.printStackTrace();
 		}
 
-        if(this.codec == CODEC_WAV){
+        if(this.codec.equals(CODEC_WAV)){
             this.sampleRate = CODEC_WAV_SAMPLE_RATE;
         }
         else{
             this.sampleRate = CODEC_OPUS_SAMPLE_RATE;
         }
+
+        if(this.delegate != null)
+            this.delegate.onTTSStart();
 
 		TTSThread thread = new TTSThread();
 		thread.setName("TTSThread");
@@ -127,7 +137,7 @@ public class TTSUtility {
 	}
 
     private void initPlayer(){
-        stopTtsPlayer();
+        this.stopTtsPlayer();
         // IMPORTANT: minimum required buffer size for the successful creation of an AudioTrack instance in streaming mode.
         int bufferSize = AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
 
@@ -141,6 +151,9 @@ public class TTSUtility {
             if (audioTrack != null)
                 audioTrack.play();
         }
+
+        if(this.delegate != null)
+            this.delegate.onTTSWillPlay();
     }
 
 	private void parseParams(String[] arguments){
@@ -151,6 +164,7 @@ public class TTSUtility {
         this.voice = arguments[i++];
 		this.content = arguments[i++];
         this.token = arguments[i++];
+        this.customizationId = arguments[i++];
 	}
 
     /**
@@ -162,7 +176,7 @@ public class TTSUtility {
 	 * @return {@link HttpResponse}
 	 * @throws Exception
 	 */
-	public static HttpResponse createPost(String server, String username, String password, String token, String content, String voice, String codec) throws Exception {
+	public static HttpResponse createPost(String server, String username, String password, String token, String content, String voice, String codec, String customizationId) throws Exception {
         String url = server;
 
         //HTTP GET Client
@@ -172,7 +186,12 @@ public class TTSUtility {
         params.add(new BasicNameValuePair("text", content));
         params.add(new BasicNameValuePair("voice", voice));
         params.add(new BasicNameValuePair("accept", codec));
-        HttpGet httpGet = new HttpGet(url+"?"+ URLEncodedUtils.format(params, "utf-8"));
+        if(customizationId != null){
+            params.add(new BasicNameValuePair("customization_id", customizationId));
+        }
+        String requestUrl = url+"?"+ URLEncodedUtils.format(params, "utf-8");
+        Log.e(TAG, requestUrl);
+        HttpGet httpGet = new HttpGet(requestUrl);
         // use token based authentication if possible, otherwise Basic Authentication will be used
         if (token != null) {
             Log.d(TAG, "using token based authentication");
@@ -201,7 +220,7 @@ public class TTSUtility {
         return baseDir;
     }
 
-	/**
+    /**
 	 * Thread to post text data to iTrans server and play returned audio data 
 	 * @author chienlk
 	 *
@@ -213,27 +232,39 @@ public class TTSUtility {
 			
 			HttpResponse post;
 			try {
-				post = createPost(server, username, password, token, content, voice, codec);
-		        InputStream is = post.getEntity().getContent();
+				post = createPost(server, username, password, token, content, voice, codec, customizationId);
+                int statusCode = post.getStatusLine().getStatusCode();
+                if(statusCode == 200) {
+                    InputStream is = post.getEntity().getContent();
 
-				byte[] data = null;
-				if(codec == CODEC_WAV) {
-					data = analyzeWavData(is);
-				}
-				else if(codec == CODEC_OPUS){
-					data = analyzeOpusData(is);
-				}
-                initPlayer();
-                audioTrack.write(data, 0, data.length);
-                is.close();
-
+                    byte[] data = null;
+                    if (codec == CODEC_WAV) {
+                        data = analyzeWavData(is);
+                    } else if (codec == CODEC_OPUS) {
+                        data = analyzeOpusData(is);
+                    }
+                    initPlayer();
+                    audioTrack.write(data, 0, data.length);
+                    is.close();
+                }
+                else{
+                    if(delegate != null){
+                        delegate.onTTSError(statusCode);
+                    }
+                }
 			} catch (Exception e) {
 				e.printStackTrace();
+                if(delegate != null){
+                    delegate.onTTSError(0);
+                }
 			} finally {
                 Log.i(TAG, "Stopping audioTrack...");
 				if (audioTrack != null && audioTrack.getState() != AudioTrack.STATE_UNINITIALIZED) {
 					audioTrack.release();
 				}
+                if(delegate != null) {
+                    delegate.onTTSStopped();
+                }
 			}
 		}
 	}

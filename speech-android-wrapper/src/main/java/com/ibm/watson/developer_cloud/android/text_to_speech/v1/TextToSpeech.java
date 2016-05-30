@@ -20,6 +20,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.ibm.watson.developer_cloud.android.speech_common.v1.TokenProvider;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDelegate;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -52,6 +53,7 @@ public class TextToSpeech {
     private TokenProvider tokenProvider = null;
     private String voice = "";
     private String codec = TTSUtility.CODEC_WAV;
+    private ITextToSpeechDelegate delegate = null;
 
     /**
      * Speech Recognition Shared Instance
@@ -88,17 +90,41 @@ public class TextToSpeech {
      * @param ttsString
      */
     public void synthesize(String ttsString) {
+        this.synthesize(ttsString, null);
+    }
+
+    /**
+     * Send request of TTS
+     * @param ttsString
+     */
+    public void synthesize(String ttsString, String customizationId) {
         Log.d(TAG, "synthesize called: " + this.hostURL.toString() + "/v1/synthesize");
-        String[] Arguments = { this.hostURL.toString()+"/v1/synthesize", this.username, this.password,
-                this.voice, ttsString, this.tokenProvider == null ? null : this.tokenProvider.getToken()};
+        String[] Arguments = {
+                this.hostURL.toString()+"/v1/synthesize",
+                this.username,
+                this.password,
+                this.voice,
+                ttsString,
+                this.tokenProvider == null ? null : this.tokenProvider.getToken(),
+                customizationId
+        };
         try {
             ttsUtility = new TTSUtility(this.appContext);
             ttsUtility.setCodec(codec);
+            ttsUtility.setDelegate(this.delegate);
             ttsUtility.synthesize(Arguments);
         }
         catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void stopAudio(){
+        ttsUtility.stopTtsPlayer();
+    }
+
+    public void setDelegate(ITextToSpeechDelegate val){
+        this.delegate = val;
     }
 
     private void buildAuthenticationHeader(HttpGet httpGet) {
