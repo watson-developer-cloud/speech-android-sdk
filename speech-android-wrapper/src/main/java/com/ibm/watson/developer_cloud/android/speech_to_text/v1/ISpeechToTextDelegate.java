@@ -16,7 +16,7 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1;
 
-public interface ISpeechDelegate {
+public interface ISpeechToTextDelegate {
 
     /**
      * called once the connection with the STT service has been established
