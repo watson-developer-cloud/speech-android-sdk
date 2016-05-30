@@ -41,7 +41,7 @@ import org.json.JSONObject;
 import android.util.Log;
 
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDelegate;
 
 public class WebSocketUploader extends WebSocketClient implements IChunkUploader {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
@@ -54,7 +54,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     private boolean uploadPrepared = false;
 
     /** STT delegate */
-    private ISpeechDelegate delegate = null;
+    private ISpeechToTextDelegate delegate = null;
     /** Recorder delegate */
     private SpeechConfiguration sConfig = null;
 
@@ -138,7 +138,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         if (this.isUploadPrepared()) {
             try {
                 uploadedAudioSize = encoder.encodeAndWrite(buffer);
-                Log.d(TAG, "onHasData: " + uploadedAudioSize + " " + buffer.length);
+//                Log.d(TAG, "onHasData: " + uploadedAudioSize + " " + buffer.length);
                 // TODO: Capturing data
             } catch (IOException e) {
                 e.printStackTrace();
@@ -308,7 +308,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      *
      * @param delegate
      */
-    public void setDelegate(ISpeechDelegate delegate) {
+    public void setDelegate(ISpeechToTextDelegate delegate) {
         this.delegate = delegate;
     }
 }

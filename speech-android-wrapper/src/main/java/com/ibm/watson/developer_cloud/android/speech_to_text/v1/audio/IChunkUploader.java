@@ -16,7 +16,7 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDelegate;
 
 /**
  * The uploader interface.
@@ -55,7 +55,7 @@ public interface IChunkUploader {
      *
      * @param delegate
      */
-    void setDelegate(ISpeechDelegate delegate);
+    void setDelegate(ISpeechToTextDelegate delegate);
     /**
      * Close connection.
      */
