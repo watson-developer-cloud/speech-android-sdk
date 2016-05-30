@@ -61,14 +61,13 @@ public class SpeechToText {
     private SpeechConfiguration sConfig;
     private AudioCaptureThread audioCaptureThread = null;
     private IChunkUploader uploader = null;
-    private ISpeechDelegate delegate = null;
+    private ISpeechToTextDelegate delegate = null;
     private String username;
     private String password;
     private String model;
     private TokenProvider tokenProvider = null;
     private URI hostURL;
-    /** UPLOADING TIIMEOUT  */
-    //private int UPLOADING_TIMEOUT = 5000; // default duration of closing connection
+    private boolean isNewRecordingAllowed = false;
 
     /**
      * Constructor
@@ -101,6 +100,7 @@ public class SpeechToText {
         this.setHostURL(uri);
         this.appCtx = ctx;
         this.sConfig = sc;
+        this.isNewRecordingAllowed = true;
     }
 
     /**
@@ -129,7 +129,8 @@ public class SpeechToText {
      * Start recording
      */
     private void startRecording() {
-        uploader.prepare();
+        this.uploader.prepare();
+
         STTIAudioConsumer audioConsumer = new STTIAudioConsumer(uploader);
 
         audioCaptureThread = new AudioCaptureThread(SpeechConfiguration.SAMPLE_RATE, audioConsumer);
@@ -141,28 +142,36 @@ public class SpeechToText {
      */
     public void recognize() {
         Log.d(TAG, "recognize");
-        try {
-            HashMap<String, String> header = new HashMap<String, String>();
-            header.put("Content-Type", sConfig.audioFormat);
+        if(isNewRecordingAllowed) {
+            try {
+                HashMap<String, String> header = new HashMap<String, String>();
+                header.put("Content-Type", sConfig.audioFormat);
 
-            if(sConfig.isAuthNeeded) {
-                if (this.tokenProvider != null) {
-                    header.put("X-Watson-Authorization-Token", this.tokenProvider.getToken());
-                    Log.d(TAG, "ws connecting with token based authentication");
-                } else {
-                    String auth = "Basic " + Base64.encodeBytes((this.username + ":" + this.password).getBytes(Charset.forName("UTF-8")));
-                    header.put("Authorization", auth);
-                    Log.d(TAG, "ws connecting with Basic Authentication");
+                if (sConfig.isAuthNeeded) {
+                    if (this.tokenProvider != null) {
+                        header.put("X-Watson-Authorization-Token", this.tokenProvider.getToken());
+                        Log.d(TAG, "ws connecting with token based authentication");
+                    } else {
+                        String auth = "Basic " + Base64.encodeBytes((this.username + ":" + this.password).getBytes(Charset.forName("UTF-8")));
+                        header.put("Authorization", auth);
+                        Log.d(TAG, "ws connecting with Basic Authentication");
+                    }
                 }
+
+                String wsURL = getHostURL().toString() + "/v1/recognize" + (this.model != null ? ("?model=" + this.model) : "");
+
+                this.uploader = new WebSocketUploader(wsURL, header, sConfig);
+                this.uploader.setDelegate(this.delegate);
+                this.startRecording();
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
             }
-
-            String wsURL = getHostURL().toString() + "/v1/recognize" + (this.model != null ? ("?model=" + this.model) : "");
-
-            uploader = new WebSocketUploader(wsURL, header, sConfig);
-            uploader.setDelegate(this.delegate);
-            this.startRecording();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+            this.isNewRecordingAllowed = false;
+        }
+        else{
+            // A voice query is already in progress
+            if(this.delegate != null)
+                this.delegate.onError("A voice query is already in progress");
         }
     }
 
@@ -172,6 +181,25 @@ public class SpeechToText {
     public void stopRecording(){
         if(audioCaptureThread != null)
             audioCaptureThread.end();
+
+        this.isNewRecordingAllowed = true;
+    }
+
+    /**
+     *
+     */
+    public void disConnect() {
+        if(this.uploader != null)
+            this.uploader.close();
+    }
+
+    /**
+     * Send out end of stream data
+     */
+    protected void endTransmission() {
+        if(this.uploader != null) {
+            this.uploader.stop();
+        }
     }
 
     /**
@@ -179,10 +207,17 @@ public class SpeechToText {
      */
     public void stopRecognition() {
         this.stopRecording();
-        if(uploader != null) {
-            uploader.stop();
-            uploader.close();
-        }
+        this.endTransmission();
+        this.disConnect();
+    }
+
+    /**
+     * End recognition, but does not close connection
+     * Wait for closure signal
+     */
+    public void endRecognition() {
+        this.stopRecording();
+        this.endTransmission();
     }
 
     /**
@@ -279,13 +314,13 @@ public class SpeechToText {
     /**
      * @return the delegate
      */
-    public ISpeechDelegate getDelegate() {
+    public ISpeechToTextDelegate getDelegate() {
         return delegate;
     }
     /**
      * @param val the delegate to set
      */
-    public void setDelegate(ISpeechDelegate val) {
+    public void setDelegate(ISpeechToTextDelegate val) {
         this.delegate = val;
     }
     /**
@@ -305,6 +340,14 @@ public class SpeechToText {
      */
     public void setModel(String model) {
         this.model = model;
+    }
+
+    /**
+     * Get STT model
+     * @return
+     */
+    public String getModel(){
+        return this.model;
     }
 }
 
