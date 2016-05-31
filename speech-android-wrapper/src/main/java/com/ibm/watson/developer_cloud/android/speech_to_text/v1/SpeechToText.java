@@ -196,7 +196,7 @@ public class SpeechToText {
     /**
      * Send out end of stream data
      */
-    protected void endTransmission() {
+    public void endTransmission() {
         if(this.uploader != null) {
             this.uploader.stop();
         }

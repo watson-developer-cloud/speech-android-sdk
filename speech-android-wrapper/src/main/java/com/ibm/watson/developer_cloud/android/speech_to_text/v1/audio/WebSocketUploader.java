@@ -25,6 +25,9 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
@@ -45,18 +48,22 @@ import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDel
 
 public class WebSocketUploader extends WebSocketClient implements IChunkUploader {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
-    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2016";
     private static final String TAG = WebSocketUploader.class.getName();
 
     private ISpeechEncoder encoder = null;
-    private Thread initStreamToServerThread;
-
-    private boolean uploadPrepared = false;
-
     /** STT delegate */
     private ISpeechToTextDelegate delegate = null;
     /** Recorder delegate */
     private SpeechConfiguration sConfig = null;
+    /** Audio buffer */
+    private LinkedList<byte[]> audioBuffer = null;
+    /** If the listening state ready for Audio  */
+    private boolean isReadyForAudio = false;
+    /** If the listening state ready for connection closure */
+    private boolean isReadyForClosure = false;
+    /** Connection status */
+    public boolean isConnected = false;
 
     /**
      * Create an uploader which supports streaming.
@@ -80,6 +87,12 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         if(serverURL.toLowerCase().startsWith("wss") || serverURL.toLowerCase().startsWith("https"))
             this.sConfig.isSSL = true;
         else this.sConfig.isSSL = false;
+
+        this.isConnected = false;
+        this.isReadyForAudio = false;
+        this.isReadyForClosure = false;
+
+        this.audioBuffer = new LinkedList<>();
     }
     /**
      * Trust server
@@ -116,88 +129,74 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         if(this.sConfig.isSSL)
             this.trustServer();
 
-        boolean rc;
-        rc = this.connectBlocking();
-
-        if (rc) {
-            Log.d(TAG, "Connected");
-            this.sendSpeechHeader();
-        }
-        else{
-            Log.e(TAG, "Connection failed!");
-            this.uploadPrepared = false;
-            throw new Exception("Connection failed!");
-        }
-
+        this.connect();
     }
 
     @Override
     public int onHasData(byte[] buffer) {
         int uploadedAudioSize = 0;
         // NOW, WE HAVE STATUS OF UPLOAD PREPARING, UPLOAD PREPARING OK
-        if (this.isUploadPrepared()) {
+        if (this.isConnected && this.isReadyForAudio) {
             try {
-                uploadedAudioSize = encoder.encodeAndWrite(buffer);
+                if(audioBuffer.size() > 0){
+                    Iterator<byte[]> iterator = audioBuffer.iterator();
+                    while (iterator.hasNext()) {
+                        uploadedAudioSize += encoder.encodeAndWrite(iterator.next());
+                    }
+                    audioBuffer.clear();
+                }
+                uploadedAudioSize += encoder.encodeAndWrite(buffer);
 //                Log.d(TAG, "onHasData: " + uploadedAudioSize + " " + buffer.length);
-                // TODO: Capturing data
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         else {
-            try {
-                Log.w(TAG, "waiting for establishing the connection");
-                initStreamToServerThread.join();
+            if(this.isConnected){
+                Log.w(TAG, "Buffering data and wait for 1st response");
             }
-            catch (InterruptedException e) {
-                e.printStackTrace();
+            else{
+                Log.w(TAG, "Buffering data and establishing connection");
             }
+            // buffer data
+            audioBuffer.add(buffer);
         }
         return uploadedAudioSize;
     }
 
     @Override
     public boolean isUploadPrepared() {
-        return this.uploadPrepared;
+        return this.isConnected;
     }
 
-    public void stopUploaderPrepareThread() {
-        if (initStreamToServerThread != null) {
-            initStreamToServerThread.interrupt();
-        }
-    }
     /**
      * Prepare connection
      */
     @Override
     public void prepare() {
-        this.uploadPrepared = false;
-        initStreamToServerThread = new Thread() {
-            public void run() {
-                try {
-                    try {
-                        initStreamAudioToServer();
-                        Log.d(TAG, "WebSocket Connection established");
-                    } catch (IOException e1) {
-                        Log.e(TAG, "IOException: " + e1.getMessage());
-                        throw e1;
-                    } catch (InterruptedException e1) {
-                        Log.e(TAG, "InterruptedException:" + e1.getMessage());
-                        throw e1;
-                    } catch (Exception e1) {
-                        Log.e(TAG, "Exception: " + e1.getMessage());
-                        throw e1;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Log.e(TAG, "Connection failed: " + (e == null ? "null exception" : e.getMessage()));
-                    uploadPrepared = false;
-                    close();
-                }
-            };
-        };
-        initStreamToServerThread.setName("initStreamToServerThread");
-        initStreamToServerThread.start();
+        this.isConnected = false;
+        this.isReadyForAudio = false;
+        this.isReadyForClosure = false;
+
+        try {
+            try {
+                initStreamAudioToServer();
+            } catch (IOException e1) {
+                Log.e(TAG, "IOException: " + e1.getMessage());
+                throw e1;
+            } catch (InterruptedException e1) {
+                Log.e(TAG, "InterruptedException:" + e1.getMessage());
+                throw e1;
+            } catch (Exception e1) {
+                Log.e(TAG, "Exception: " + e1.getMessage());
+                throw e1;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, "Connection failed: " + (e == null ? "null exception" : e.getMessage()));
+            isConnected = false;
+            this.close();
+        }
     }
 
     /**
@@ -232,20 +231,32 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      * Stop by sending out zero byte of data
      */
     public void stop(){
-        byte[] stopData = new byte[0];
-        this.upload(stopData);
+        if(this.isConnected && isReadyForAudio){
+            byte[] stopData = new byte[0];
+            this.upload(stopData);
+            this.isReadyForAudio = false;
+            this.isReadyForClosure = true;
+        }
     }
 
     @Override
     public void close() {
-        Log.d(TAG, "closing the websocket");
+        Log.d(TAG, "Closing the WebSocket");
+
+        this.isReadyForAudio = false;
+        this.isConnected = false;
+        this.isReadyForClosure = false;
+
         super.close();
     }
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
         Log.d(TAG, "WebSocket closed");
-        this.uploadPrepared = false;
+
+        this.isConnected = false;
+        this.isReadyForAudio = false;
+        this.isReadyForClosure = false;
 
         Log.d(TAG, "### Code: " + code + " reason: " + reason + " remote: " + remote);
         if (delegate != null){
@@ -259,9 +270,11 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         String errorMessage = "";
         if(ex != null)
             errorMessage = ex.getMessage();
-        // Send the error message to the delegate
-        this.uploadPrepared = false;
-        //this.sendMessage(ISpeechDelegate.ERROR);
+
+        this.isConnected = false;
+        this.isReadyForAudio = false;
+        this.isReadyForClosure = false;
+
         if (delegate != null){
             delegate.onError(errorMessage);
         }
@@ -269,25 +282,61 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
     @Override
     public void onMessage(String message) {
-
-        Log.d(TAG + "onMessage", message);
-        if (delegate != null){
-            delegate.onMessage(message);
+        try {
+            JSONObject jObj = new JSONObject(message);
+            // state message
+            if(jObj.has("state")) {
+                // monitor state to determine connection closure condition
+                String state = jObj.getString("state");
+                Log.d(TAG, "onMessage: State: " + state);
+                if(state.equals("listening") && this.isConnected && this.isReadyForClosure) {
+                    this.close();
+                }
+                else if(state.equals("listening")){
+                    this.isReadyForAudio = true;
+                    Log.i(TAG, "Start sending audio data");
+                }
+            }
+            // results message
+            if (jObj.has("results")) {
+                Log.d(TAG, "onMessage: Results message: ");
+                // if has result
+//                this.sendResults(jObj);
+                if (delegate != null){
+                    delegate.onMessage(message);
+                }
+            }
+            if (jObj.has("error")) {
+                String errorMessage = jObj.getString("error");
+                if (delegate != null){
+                    delegate.onError(errorMessage);
+                }
+                this.close(1000, errorMessage);
+            }
+        }
+        catch (JSONException e) {
+            // data error
+            Log.e(TAG, "onMessage: Error parsing JSON");
+            e.printStackTrace();
+            if (delegate != null){
+                delegate.onError(e.getMessage());
+            }
         }
     }
 
     @Override
     public void onOpen(ServerHandshake arg0) {
         Log.d(TAG, "WS connection opened successfully");
-        this.uploadPrepared = true;
+        this.isConnected = true;
         if (delegate != null){
             delegate.onOpen();
         }
+        this.sendSpeechHeader();
     }
 
     private void sendSpeechHeader() {
-
         JSONObject obj = new JSONObject();
+
         try {
             obj.put("action", "start");
             obj.put("content-type", this.sConfig.audioFormat);
@@ -299,8 +348,9 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         }
         String startHeader = obj.toString();
         this.upload(startHeader);
+
         this.encoder.onStart();
-        Log.d(TAG, "Sending init message: " + startHeader);
+        Log.d(TAG, "Sending header message: " + startHeader);
     }
 
     /**
