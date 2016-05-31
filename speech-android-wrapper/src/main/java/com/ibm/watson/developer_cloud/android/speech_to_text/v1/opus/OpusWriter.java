@@ -162,7 +162,7 @@ public class OpusWriter extends AudioFileWriter {
      * Write data into Socket
      * @param data
      */
-    public void write(byte[] data){
+    private void write(byte[] data){
         this.uploader.upload(data);
     }
 
@@ -172,7 +172,7 @@ public class OpusWriter extends AudioFileWriter {
      * @param offset
      * @param count
      */
-    public void write(byte[] data, int offset, int count){
+    private void write(byte[] data, int offset, int count){
         byte[] tmp = new byte[count];
         System.arraycopy(data, offset, tmp, 0, count);
 
