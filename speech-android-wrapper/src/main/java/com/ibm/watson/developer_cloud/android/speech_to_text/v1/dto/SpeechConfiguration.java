@@ -17,6 +17,8 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto;
 
+import org.json.JSONArray;
+
 /**
  * Created by mihui on 9/2/15.
  */
@@ -42,6 +44,10 @@ public class SpeechConfiguration {
     public boolean isSSL = true;
     // Default timeout duration for a connection
     public int connectionTimeout = 30000;
+
+    public double keywordsThreshold = 0.0;
+    // keyword list
+    public JSONArray keywords;
     /**
      * Instantiate default configuration
      */
