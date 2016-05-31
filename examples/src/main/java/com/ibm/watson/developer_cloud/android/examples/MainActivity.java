@@ -51,9 +51,9 @@ import android.widget.TextView;
 
 // IBM Watson SDK
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechDelegate;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDelegate;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechToText;
-import com.ibm.watson.developer_cloud.android.text_to_speech.v1.TTSUtility;
+import com.ibm.watson.developer_cloud.android.text_to_speech.v1.ITextToSpeechDelegate;
 import com.ibm.watson.developer_cloud.android.text_to_speech.v1.TextToSpeech;
 import com.ibm.watson.developer_cloud.android.speech_common.v1.TokenProvider;
 
@@ -77,7 +77,7 @@ public class MainActivity extends Activity {
     FragmentTabSTT fragmentTabSTT = new FragmentTabSTT();
     FragmentTabTTS fragmentTabTTS = new FragmentTabTTS();
 
-    public static class FragmentTabSTT extends Fragment implements ISpeechDelegate {
+    public static class FragmentTabSTT extends Fragment implements ISpeechToTextDelegate {
 
         // session recognition results
         private static String mRecognitionResults = "";
@@ -292,7 +292,7 @@ public class MainActivity extends Activity {
 		        spinner.setAdapter(spinnerArrayAdapter);
                 spinner.setSelection(iIndexDefault);
             }
-        }  
+        }
 
         public void displayResult(final String result) {
             final Runnable runnableUi = new Runnable(){
@@ -373,7 +373,6 @@ public class MainActivity extends Activity {
         }
 
         public void onError(String error) {
-
             Log.e(TAG, error);
             displayResult(error);
             mState = ConnectionState.IDLE;
@@ -387,47 +386,41 @@ public class MainActivity extends Activity {
         }
 
         public void onMessage(String message) {
-
-            Log.d(TAG, "onMessage, message: " + message);
             try {
-                JSONObject jObj = new JSONObject(message);
-                // state message
-                if(jObj.has("state")) {
-                    Log.d(TAG, "Status message: " + jObj.getString("state"));
-                }
-                // results message
-                else if (jObj.has("results")) {
-                    //if has result
-                    Log.d(TAG, "Results message: ");
-                    JSONArray jArr = jObj.getJSONArray("results");
-                    for (int i=0; i < jArr.length(); i++) {
-                        JSONObject obj = jArr.getJSONObject(i);
-                        JSONArray jArr1 = obj.getJSONArray("alternatives");
-                        String str = jArr1.getJSONObject(0).getString("transcript");
+                JSONObject resultObject = null;
+                resultObject = new JSONObject(message);
+                JSONArray resultList = resultObject.getJSONArray("results");
+                for (int i = 0; i < resultList.length(); i++) {
+                    JSONObject obj = resultList.getJSONObject(i);
+                    JSONArray alternativeList = obj.getJSONArray("alternatives");
+                    if(alternativeList.length() > 0) {
+                        String str = alternativeList.getJSONObject(0).getString("transcript");
                         // remove whitespaces if the language requires it
                         String model = this.getModelSelected();
                         if (model.startsWith("ja-JP") || model.startsWith("zh-CN")) {
-                            str = str.replaceAll("\\s+","");
+                            str = str.replaceAll("\\s+", "");
                         }
                         String strFormatted = Character.toUpperCase(str.charAt(0)) + str.substring(1);
-                        if (obj.getString("final").equals("true")) {
+                        boolean isFinal = obj.getString("final").equals("true");
+
+                        if (isFinal) {
                             String stopMarker = (model.startsWith("ja-JP") || model.startsWith("zh-CN")) ? "。" : ". ";
-                            mRecognitionResults += strFormatted.substring(0,strFormatted.length()-1) + stopMarker;
+                            mRecognitionResults += strFormatted.substring(0, strFormatted.length() - 1) + stopMarker;
 
                             displayResult(mRecognitionResults);
-                        } else {
+                            SpeechToText.sharedInstance().endRecognition();
+                        }
+                        else {
                             displayResult(mRecognitionResults + strFormatted);
                         }
-                        break;
                     }
-                } else {
-                    displayResult("unexpected data coming from stt server: \n" + message);
+//                break;
                 }
-
             } catch (JSONException e) {
-                Log.e(TAG, "Error parsing JSON");
+                // data error, and should be handled on SDK level
                 e.printStackTrace();
             }
+
         }
 
         public void onAmplitude(double amplitude, double volume) {
@@ -435,7 +428,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    public static class FragmentTabTTS extends Fragment {
+    public static class FragmentTabTTS extends Fragment implements ITextToSpeechDelegate {
 
         public View mView = null;
         public Context mContext = null;
@@ -527,6 +520,7 @@ public class MainActivity extends Activity {
 
             TextToSpeech.sharedInstance().setVoice(getString(R.string.voiceDefault));
 
+            TextToSpeech.sharedInstance().setDelegate(this);
             return true;
         }
 
@@ -550,6 +544,26 @@ public class MainActivity extends Activity {
             spannable2.setSpan(new CustomTypefaceSpan("", notosans), 0, strInstructions.length(), 0);
             viewInstructions.setText(spannable2);
             viewInstructions.setTextColor(0xFF121212);
+        }
+
+        @Override
+        public void onTTSStart() {
+            Log.d(TAG, "### onTTSStart ###");
+        }
+
+        @Override
+        public void onTTSWillPlay() {
+            Log.d(TAG, "### onTTSWillPlay ###");
+        }
+
+        @Override
+        public void onTTSStopped() {
+            Log.d(TAG, "### onTTSStopped ###");
+        }
+
+        @Override
+        public void onTTSError(int statusCode) {
+            Log.d(TAG, "### onTTSError: "+statusCode+" ###");
         }
 
         public class ItemVoice {
@@ -678,7 +692,7 @@ public class MainActivity extends Activity {
 					.permitAll().build();
 			StrictMode.setThreadPolicy(policy);
 		}
-				
+
 		//setContentView(R.layout.activity_main);
         setContentView(R.layout.activity_tab_text);
 
@@ -735,7 +749,7 @@ public class MainActivity extends Activity {
 
 	/**
 	 * Play TTS Audio data
-	 * 
+	 *
 	 * @param view
 	 */
 	public void playTTS(View view) throws JSONException {
