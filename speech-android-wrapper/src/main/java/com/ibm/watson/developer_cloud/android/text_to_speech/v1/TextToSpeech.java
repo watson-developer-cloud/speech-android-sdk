@@ -20,7 +20,6 @@ import android.content.Context;
 import android.util.Log;
 
 import com.ibm.watson.developer_cloud.android.speech_common.v1.TokenProvider;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDelegate;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -45,7 +44,7 @@ import java.net.URI;
 public class TextToSpeech {
     protected static final String TAG = "TextToSpeech";
 
-    private TTSUtility ttsUtility;
+    private TTSUtility ttsUtility = null;
     private Context appContext = null;
     private String username;
     private String password;
@@ -120,7 +119,8 @@ public class TextToSpeech {
     }
 
     public void stopAudio(){
-        ttsUtility.stopTtsPlayer();
+        if(ttsUtility != null)
+            ttsUtility.stopTtsPlayer();
     }
 
     public void setDelegate(ITextToSpeechDelegate val){
