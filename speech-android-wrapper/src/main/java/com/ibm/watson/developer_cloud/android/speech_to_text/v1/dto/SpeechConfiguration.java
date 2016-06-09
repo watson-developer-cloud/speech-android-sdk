@@ -42,6 +42,13 @@ public class SpeechConfiguration {
     public boolean isSSL = true;
     // Default timeout duration for a connection
     public int connectionTimeout = 30000;
+    // Interim results are intermediate hypotheses of a transcription that are likely to change before the service returns the final result. Interim results are useful for real-time transcription, for example, to obtain alternative transcriptions for a dictation application.
+    public boolean returnInterimResults = true;
+    // An integer value that tells the service to return the n-best alternative hypotheses
+    public int maxAlternatives = 1;
+    // Reports hypotheses for acoustically similar alternatives for words of the input audio
+    public float wordAlternativesThreshold = Float.NaN;
+
     /**
      * Instantiate default configuration
      */
