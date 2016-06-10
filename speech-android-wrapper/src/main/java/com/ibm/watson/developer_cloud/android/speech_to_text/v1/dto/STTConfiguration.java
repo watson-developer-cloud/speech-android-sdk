@@ -1,5 +1,5 @@
 /**
- * © Copyright IBM Corporation 2015
+ * © Copyright IBM Corporation 2016
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,19 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto;
 
+import com.ibm.watson.developer_cloud.android.speech_common.v1.AuthConfiguration;
+
 import org.json.JSONArray;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * Created by mihui on 9/2/15.
  */
-public class STTConfiguration {
-
+public class STTConfiguration extends AuthConfiguration {
+    public static final String WATSONSDK_DEFAULT_STT_API_ENDPOINT = "https://stream.watsonplatform.net/speech-to-text/api";
+    public static final String WATSONSDK_DEFAULT_STT_MODEL = "en-US_BroadbandModel";
     // PCM format
     public static final String AUDIO_FORMAT_DEFAULT = "audio/l16;rate=16000";
     // OggOpus format
@@ -40,7 +46,8 @@ public class STTConfiguration {
     public boolean continuous = false;
     // interim_results
     public boolean interimResults = true;
-
+    // language model
+    public String languageModel = WATSONSDK_DEFAULT_STT_MODEL;
     // Data format
     public String audioFormat = AUDIO_FORMAT_DEFAULT;
     // Authentication flag
@@ -50,13 +57,20 @@ public class STTConfiguration {
     // Default timeout duration for a connection
     public int connectionTimeout = 30000;
 
-    public double keywordsThreshold = 0.0;
+    // Keyword spotting
+    public double keywordsThreshold = -1;
+    // Maximum alternatives
+    public int maxAlternatives = 1;
+
     // keyword list
     public JSONArray keywords;
+
     /**
      * Instantiate default configuration
      */
-    public STTConfiguration(){}
+    public STTConfiguration(){
+        this.setAPIURL(WATSONSDK_DEFAULT_STT_API_ENDPOINT);
+    }
 
     /**
      * Constructing configuration by parameters
@@ -64,6 +78,7 @@ public class STTConfiguration {
      * @param audioFormat
      */
     public STTConfiguration(String audioFormat){
+        this();
         this.audioFormat = audioFormat;
     }
 
@@ -74,7 +89,29 @@ public class STTConfiguration {
      * @param isAuthNeeded
      */
     public STTConfiguration(String audioFormat, boolean isAuthNeeded){
-        this.audioFormat = audioFormat;
+        this(audioFormat);
         this.isAuthNeeded = isAuthNeeded;
+    }
+
+    /**
+     * Change API URL as well as the apiEndpoint
+     * @param val
+     */
+    public void setAPIURL(String val){
+        this.apiURL = val;
+        try {
+            this.apiEndpoint = new URI(this.apiURL);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public String getModelsURL() {
+        return this.apiURL + "/v1/models";
+    }
+
+    public String getModelsURL(String model) {
+        return this.getModelsURL() + "/" + model;
     }
 }
