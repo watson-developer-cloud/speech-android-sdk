@@ -24,7 +24,7 @@ import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.AudioFileW
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.IChunkUploader;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.OggCrc;
 
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.STTConfiguration;
 
 public class OpusWriter extends AudioFileWriter {
     private String TAG = this.getClass().getSimpleName();
@@ -72,8 +72,8 @@ public class OpusWriter extends AudioFileWriter {
         pageCount          = 0;
         packetCount        = 0;
         granulepos         = 0;
-        this.sampleRate    = SpeechConfiguration.SAMPLE_RATE;
-        this.frameSize     = SpeechConfiguration.FRAME_SIZE;
+        this.sampleRate    = STTConfiguration.SAMPLE_RATE;
+        this.frameSize     = STTConfiguration.FRAME_SIZE;
     }
     @Override
     public void close() throws IOException {
