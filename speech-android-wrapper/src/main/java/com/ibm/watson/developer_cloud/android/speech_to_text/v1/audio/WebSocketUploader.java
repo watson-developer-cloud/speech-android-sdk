@@ -25,7 +25,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -43,19 +42,19 @@ import org.json.JSONObject;
 
 import android.util.Log;
 
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.STTConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDelegate;
 
 public class WebSocketUploader extends WebSocketClient implements IChunkUploader {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2016";
-    private static final String TAG = WebSocketUploader.class.getName();
+    private static final String TAG = WebSocketUploader.class.getSimpleName();
 
     private ISpeechEncoder encoder = null;
     /** STT delegate */
     private ISpeechToTextDelegate delegate = null;
     /** Recorder delegate */
-    private SpeechConfiguration sConfig = null;
+    private STTConfiguration sConfig = null;
     /** Audio buffer */
     private LinkedList<byte[]> audioBuffer = null;
     /** If the listening state ready for Audio  */
@@ -71,16 +70,16 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      * @param serverURL LMC server, delivery to back end server
      * @throws URISyntaxException
      */
-    public WebSocketUploader(String serverURL, Map<String, String> header, SpeechConfiguration config) throws URISyntaxException {
+    public WebSocketUploader(String serverURL, Map<String, String> header, STTConfiguration config) throws URISyntaxException {
         super(new URI(serverURL), new Draft_17(), header, config.connectionTimeout);
         Log.d(TAG, "New WebSocketUploader: " + serverURL);
         Log.d(TAG, serverURL);
         this.sConfig = config;
 
-        if(sConfig.audioFormat.equals(SpeechConfiguration.AUDIO_FORMAT_DEFAULT)) {
+        if(sConfig.audioFormat.equals(STTConfiguration.AUDIO_FORMAT_DEFAULT)) {
             this.encoder = new RawEnc();
         }
-        else if(sConfig.audioFormat.equals(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS)){
+        else if(sConfig.audioFormat.equals(STTConfiguration.AUDIO_FORMAT_OGGOPUS)){
             this.encoder = new OggOpusEnc();
         }
 
@@ -146,7 +145,6 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
                     audioBuffer.clear();
                 }
                 uploadedAudioSize += encoder.encodeAndWrite(buffer);
-//                Log.d(TAG, "onHasData: " + uploadedAudioSize + " " + buffer.length);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -231,11 +229,13 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      * Stop by sending out zero byte of data
      */
     public void stop(){
+        byte[] stopData = new byte[0];
         if(this.isConnected && isReadyForAudio){
-            byte[] stopData = new byte[0];
             this.upload(stopData);
             this.isReadyForAudio = false;
-            this.isReadyForClosure = true;
+        }
+        else{
+            this.audioBuffer.add(stopData);
         }
     }
 
@@ -290,10 +290,15 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
                 String state = jObj.getString("state");
                 Log.d(TAG, "onMessage: State: " + state);
                 if(state.equals("listening") && this.isConnected && this.isReadyForClosure) {
-                    this.close();
+                    this.close(1000, "Closure data has been sent");
                 }
                 else if(state.equals("listening")){
                     this.isReadyForAudio = true;
+                    this.isReadyForClosure = true;
+
+                    if(this.delegate != null){
+                        this.delegate.onBegin();
+                    }
                     Log.i(TAG, "Start sending audio data");
                 }
             }
@@ -340,9 +345,14 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         try {
             obj.put("action", "start");
             obj.put("content-type", this.sConfig.audioFormat);
-            obj.put("interim_results", true);
-            obj.put("continuous", true);
+            obj.put("interim_results", this.sConfig.interimResults);
+            obj.put("continuous", this.sConfig.continuous);
             obj.put("inactivity_timeout", this.sConfig.inactivityTimeout);
+            obj.put("max_alternatives", this.sConfig.maxAlternatives);
+
+            if(this.sConfig.keywordsThreshold >= 0 && this.sConfig.keywordsThreshold <= 1)
+                obj.put("keywords_threshold", this.sConfig.keywordsThreshold);
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
