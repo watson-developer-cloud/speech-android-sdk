@@ -16,7 +16,7 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.STTConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.opus.JNAOpus;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.opus.OpusWriter;
 import com.sun.jna.ptr.PointerByReference;
@@ -51,8 +51,8 @@ public class OggOpusEnc extends OpusWriter implements ISpeechEncoder {
 
         IntBuffer error = IntBuffer.allocate(4);
         this.opusEncoder = JNAOpus.INSTANCE.opus_encoder_create(
-                SpeechConfiguration.SAMPLE_RATE,
-                SpeechConfiguration.AUDIO_CHANNELS,
+                STTConfiguration.SAMPLE_RATE,
+                STTConfiguration.AUDIO_CHANNELS,
                 JNAOpus.OPUS_APPLICATION_VOIP,
                 error);
     }
@@ -74,7 +74,7 @@ public class OggOpusEnc extends OpusWriter implements ISpeechEncoder {
         int uploadedAudioSize = 0;
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);
 
-        byte[] data = new byte[SpeechConfiguration.FRAME_SIZE*2];
+        byte[] data = new byte[STTConfiguration.FRAME_SIZE*2];
         int bufferSize, read;
 
         while((read = ios.read(data)) > 0){
@@ -91,7 +91,7 @@ public class OggOpusEnc extends OpusWriter implements ISpeechEncoder {
             shortBuffer.flip();
             ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
 
-            int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, SpeechConfiguration.FRAME_SIZE, opusBuffer, bufferSize);
+            int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, STTConfiguration.FRAME_SIZE, opusBuffer, bufferSize);
 
             opusBuffer.position(opus_encoded);
             opusBuffer.flip();
