@@ -16,22 +16,13 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.util.HashMap;
-
-import org.java_websocket.util.Base64;
-
-import android.content.Context;
-import android.util.Log;
-
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.FileCaptureThread;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.IAudioConsumer;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.AudioCaptureThread;
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.STTConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.WebSocketUploader;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.IChunkUploader;
-import com.ibm.watson.developer_cloud.android.speech_common.v1.TokenProvider;
+import com.ibm.watson.developer_cloud.android.speech_common.v1.ITokenProvider;
 
 // HTTP library
 import org.apache.http.HttpResponse;
@@ -48,6 +39,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.File;
+
+import org.java_websocket.util.Base64;
+
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+
+import android.util.Log;
 
 /**
  * Speech Recognition Class for SDK functions
@@ -56,24 +56,18 @@ import java.io.InputStreamReader;
 public class SpeechToText {
 
     protected static final String TAG = "SpeechToText";
-    //private String transcript;
-    private Context appCtx;
-    private SpeechConfiguration sConfig;
+    private STTConfiguration sConfig;
     private AudioCaptureThread audioCaptureThread = null;
     private IChunkUploader uploader = null;
     private ISpeechToTextDelegate delegate = null;
-    private String username;
-    private String password;
-    private String model;
-    private TokenProvider tokenProvider = null;
-    private URI hostURL;
+    private ITokenProvider tokenProvider = null;
     private boolean isNewRecordingAllowed = false;
 
     /**
      * Constructor
      */
     public SpeechToText() {
-        this.sConfig = null;
+
     }
 
     /**
@@ -91,16 +85,13 @@ public class SpeechToText {
     }
 
     /**
-     * Init the shared instance with the context
-     * @param uri
-     * @param ctx
-     * @param sc
+     * Init the shared instance with configurations
+     * @param config
      */
-    public void initWithContext(URI uri, Context ctx, SpeechConfiguration sc){
-        this.setHostURL(uri);
-        this.appCtx = ctx;
-        this.sConfig = sc;
-        this.isNewRecordingAllowed = true;
+    public void initWithConfig(STTConfiguration config){
+        SpeechToText.sharedInstance();
+        _instance.sConfig = config;
+        _instance.isNewRecordingAllowed = true;
     }
 
     /**
@@ -133,8 +124,53 @@ public class SpeechToText {
 
         STTIAudioConsumer audioConsumer = new STTIAudioConsumer(uploader);
 
-        audioCaptureThread = new AudioCaptureThread(SpeechConfiguration.SAMPLE_RATE, audioConsumer);
+        audioCaptureThread = new AudioCaptureThread(STTConfiguration.SAMPLE_RATE, audioConsumer);
         audioCaptureThread.start();
+    }
+
+    /**
+     * Start reading file
+     *
+     * @param file
+     * @return
+     */
+    private FileCaptureThread startReadingFile(File file) {
+        this.uploader.prepare();
+        STTIAudioConsumer audioConsumer = new STTIAudioConsumer(uploader);
+        return new FileCaptureThread(audioConsumer, file);
+    }
+
+    /**
+     * Recognize with a file
+     * @param file
+     * @return
+     */
+    public FileCaptureThread recognizeWithFile(File file){
+        Log.d(TAG, "recognize");
+        try {
+            HashMap<String, String> header = new HashMap<String, String>();
+            header.put("Content-Type", sConfig.audioFormat);
+
+            if (sConfig.isAuthNeeded) {
+                if (this.tokenProvider != null) {
+                    header.put("X-Watson-Authorization-Token", this.tokenProvider.getToken());
+                    Log.d(TAG, "ws connecting with token based authentication");
+                } else {
+                    String auth = "Basic " + Base64.encodeBytes((this.sConfig.basicAuthUsername + ":" + this.sConfig.basicAuthPassword).getBytes(Charset.forName("UTF-8")));
+                    header.put("Authorization", auth);
+                    Log.d(TAG, "ws connecting with Basic Authentication");
+                }
+            }
+
+            String wsURL = sConfig.apiURL.replace("https", "wss").replace("http", "ws") + "/v1/recognize" + (this.sConfig.languageModel != null ? ("?model=" + this.sConfig.languageModel) : "");
+
+            this.uploader = new WebSocketUploader(wsURL, header, sConfig);
+            this.uploader.setDelegate(this.delegate);
+            return this.startReadingFile(file);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -152,13 +188,13 @@ public class SpeechToText {
                         header.put("X-Watson-Authorization-Token", this.tokenProvider.getToken());
                         Log.d(TAG, "ws connecting with token based authentication");
                     } else {
-                        String auth = "Basic " + Base64.encodeBytes((this.username + ":" + this.password).getBytes(Charset.forName("UTF-8")));
+                        String auth = "Basic " + Base64.encodeBytes((this.sConfig.basicAuthUsername + ":" + this.sConfig.basicAuthPassword).getBytes(Charset.forName("UTF-8")));
                         header.put("Authorization", auth);
                         Log.d(TAG, "ws connecting with Basic Authentication");
                     }
                 }
 
-                String wsURL = getHostURL().toString() + "/v1/recognize" + (this.model != null ? ("?model=" + this.model) : "");
+                String wsURL = sConfig.apiURL.replace("https", "wss").replace("http", "ws") + "/v1/recognize" + (this.sConfig.languageModel != null ? ("?model=" + this.sConfig.languageModel) : "");
 
                 this.uploader = new WebSocketUploader(wsURL, header, sConfig);
                 this.uploader.setDelegate(this.delegate);
@@ -225,13 +261,16 @@ public class SpeechToText {
      * @param httpGet
      */
     private void buildAuthenticationHeader(HttpGet httpGet) {
-        // use token based authentication if possible, otherwise Basic Authentication will be used
-        if (this.tokenProvider != null) {
-            Log.d(TAG, "using token based authentication");
-            httpGet.setHeader("X-Watson-Authorization-Token",this.tokenProvider.getToken());
-        } else {
-            Log.d(TAG, "using basic authentication");
-            httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(this.username, this.password), "UTF-8",false));
+        if(sConfig.isAuthNeeded) {
+            // use token based authentication if possible, otherwise Basic Authentication will be used
+            if (this.tokenProvider != null) {
+                Log.d(TAG, "using token based authentication");
+                httpGet.setHeader("X-Watson-Authorization-Token", this.tokenProvider.getToken());
+            }
+            else {
+                Log.d(TAG, "using basic authentication");
+                httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(this.sConfig.basicAuthUsername, this.sConfig.basicAuthPassword), "UTF-8", false));
+            }
         }
     }
 
@@ -245,8 +284,8 @@ public class SpeechToText {
         try {
             Log.d(TAG, "starting getModels");
             HttpClient httpClient = new DefaultHttpClient();
-            String strHTTPURL = this.hostURL.toString().replace("wss","https").replace("ws", "http");
-            HttpGet httpGet = new HttpGet(strHTTPURL+"/v1/models");
+            String strHTTPURL = this.sConfig.getModelsURL();
+            HttpGet httpGet = new HttpGet(strHTTPURL);
             this.buildAuthenticationHeader(httpGet);
             httpGet.setHeader("accept","application/json");
             HttpResponse executed = httpClient.execute(httpGet);
@@ -277,8 +316,8 @@ public class SpeechToText {
 
         try {
             HttpClient httpClient = new DefaultHttpClient();
-            String strHTTPURL = this.hostURL.toString().replace("wss", "https").replace("ws", "http");
-            HttpGet httpGet = new HttpGet(strHTTPURL+"/v1/models/en-US_NarrowbandModel");
+            String strHTTPURL = this.sConfig.getModelsURL(strModel);
+            HttpGet httpGet = new HttpGet(strHTTPURL);
             this.buildAuthenticationHeader(httpGet);
             httpGet.setHeader("accept","application/json");
             HttpResponse executed = httpClient.execute(httpGet);
@@ -300,46 +339,47 @@ public class SpeechToText {
     }
 
     /**
-     * @return the hostURL
+     * Change API URL
+     *
+     * @param val the hostURL to set
      */
-    public URI getHostURL() {
-        return hostURL;
+    public void setAPIURL(String val) {
+        this.sConfig.setAPIURL(val);
     }
-    /**
-     * @param hostURL the hostURL to set
-     */
-    public void setHostURL(URI hostURL) {
-        this.hostURL = hostURL;
-    }
+
     /**
      * @return the delegate
      */
     public ISpeechToTextDelegate getDelegate() {
         return delegate;
     }
+
     /**
      * @param val the delegate to set
      */
     public void setDelegate(ISpeechToTextDelegate val) {
         this.delegate = val;
     }
+
     /**
      * Set API credentials
      * @param username
      */
     public void setCredentials(String username, String password) {
-        this.username = username;
-        this.password = password;
+        this.sConfig.basicAuthUsername = username;
+        this.sConfig.basicAuthPassword = password;
     }
+
     /**
      * Set token provider (for token based authentication)
      */
-    public void setTokenProvider(TokenProvider tokenProvider) { this.tokenProvider = tokenProvider; }
+    public void setTokenProvider(ITokenProvider tokenProvider) { this.tokenProvider = tokenProvider; }
+
     /**
      * Set STT model
      */
     public void setModel(String model) {
-        this.model = model;
+        this.sConfig.languageModel = model;
     }
 
     /**
@@ -347,7 +387,7 @@ public class SpeechToText {
      * @return
      */
     public String getModel(){
-        return this.model;
+        return this.sConfig.languageModel;
     }
 }
 
