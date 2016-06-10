@@ -19,6 +19,6 @@ package com.ibm.watson.developer_cloud.android.speech_common.v1;
 /**
  * Created by daniel bolanos on 8/19/15.
  */
-public interface TokenProvider {
+public interface ITokenProvider {
     public String getToken();
 }

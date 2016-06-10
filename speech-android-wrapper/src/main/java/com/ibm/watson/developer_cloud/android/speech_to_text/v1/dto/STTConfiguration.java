@@ -22,7 +22,7 @@ import org.json.JSONArray;
 /**
  * Created by mihui on 9/2/15.
  */
-public class SpeechConfiguration {
+public class STTConfiguration {
 
     // PCM format
     public static final String AUDIO_FORMAT_DEFAULT = "audio/l16;rate=16000";
@@ -36,6 +36,11 @@ public class SpeechConfiguration {
     public static final int SAMPLE_RATE = 16000;
     // Timeout
     public int inactivityTimeout = 600;
+    // continuous
+    public boolean continuous = false;
+    // interim_results
+    public boolean interimResults = true;
+
     // Data format
     public String audioFormat = AUDIO_FORMAT_DEFAULT;
     // Authentication flag
@@ -51,14 +56,14 @@ public class SpeechConfiguration {
     /**
      * Instantiate default configuration
      */
-    public SpeechConfiguration(){}
+    public STTConfiguration(){}
 
     /**
      * Constructing configuration by parameters
      *
      * @param audioFormat
      */
-    public SpeechConfiguration(String audioFormat){
+    public STTConfiguration(String audioFormat){
         this.audioFormat = audioFormat;
     }
 
@@ -68,7 +73,7 @@ public class SpeechConfiguration {
      * @param audioFormat
      * @param isAuthNeeded
      */
-    public SpeechConfiguration(String audioFormat, boolean isAuthNeeded){
+    public STTConfiguration(String audioFormat, boolean isAuthNeeded){
         this.audioFormat = audioFormat;
         this.isAuthNeeded = isAuthNeeded;
     }
