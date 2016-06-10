@@ -29,6 +29,11 @@ public interface ISpeechToTextDelegate {
     void onError(String error);
 
     /**
+     * only called after listening state is returned
+     */
+    void onBegin();
+
+    /**
      * called once the connection with the STT service has been terminated
      */
     void onClose(int code, String reason, boolean remote);
