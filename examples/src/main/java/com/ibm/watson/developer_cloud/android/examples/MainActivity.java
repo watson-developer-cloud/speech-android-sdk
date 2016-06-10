@@ -16,6 +16,7 @@
 
 package com.ibm.watson.developer_cloud.android.examples;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -50,12 +51,14 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 // IBM Watson SDK
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.SpeechConfiguration;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.FileCaptureThread;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.STTConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDelegate;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechToText;
 import com.ibm.watson.developer_cloud.android.text_to_speech.v1.ITextToSpeechDelegate;
 import com.ibm.watson.developer_cloud.android.text_to_speech.v1.TextToSpeech;
-import com.ibm.watson.developer_cloud.android.speech_common.v1.TokenProvider;
+import com.ibm.watson.developer_cloud.android.speech_common.v1.ITokenProvider;
+import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSConfiguration;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
@@ -91,6 +94,7 @@ public class MainActivity extends Activity {
         public Context mContext = null;
         public JSONObject jsonModels = null;
         private Handler mHandler = null;
+        private FileCaptureThread mFileCaptureThread = null;
 
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
@@ -136,7 +140,9 @@ public class MainActivity extends Activity {
                         new AsyncTask<Void, Void, Void>(){
                             @Override
                             protected Void doInBackground(Void... none) {
-                                SpeechToText.sharedInstance().recognize();
+                                 SpeechToText.sharedInstance().recognize();
+//                                File file = new File(getActivity().getExternalFilesDir(null), "sample.wav");
+//                                mFileCaptureThread = SpeechToText.sharedInstance().recognizeWithFile(file);
                                 return null;
                             }
                         }.execute();
@@ -164,43 +170,23 @@ public class MainActivity extends Activity {
             return item.getModelName();
         }
 
-        public URI getHost(String url){
-            try {
-                return new URI(url);
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
         // initialize the connection to the Watson STT service
         private boolean initSTT() {
-
             // DISCLAIMER: please enter your credentials or token factory in the lines below
-            String username = getString(R.string.STTUsername);
-            String password = getString(R.string.STTPassword);
+
+            STTConfiguration sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_OGGOPUS);
+//            STTConfiguration sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_DEFAULT);
+            sConfig.basicAuthUsername = getString(R.string.STTUsername);
+            sConfig.basicAuthPassword = getString(R.string.STTPassword);
+
+            SpeechToText.sharedInstance().initWithConfig(sConfig);
 
             String tokenFactoryURL = getString(R.string.defaultTokenFactory);
-            String serviceURL = "wss://stream.watsonplatform.net/speech-to-text/api";
-
-            SpeechConfiguration sConfig = new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS);
-            //SpeechConfiguration sConfig = new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_DEFAULT);
-
-            SpeechToText.sharedInstance().initWithContext(this.getHost(serviceURL), getActivity().getApplicationContext(), sConfig);
-
             // token factory is the preferred authentication method (service credentials are not distributed in the client app)
             if (tokenFactoryURL.equals(getString(R.string.defaultTokenFactory)) == false) {
                 SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(tokenFactoryURL));
             }
-            // Basic Authentication
-            else if (username.equals(getString(R.string.defaultUsername)) == false) {
-                SpeechToText.sharedInstance().setCredentials(username, password);
-            } else {
-                // no authentication method available
-                return false;
-            }
 
-            SpeechToText.sharedInstance().setModel(getString(R.string.modelDefault));
             SpeechToText.sharedInstance().setDelegate(this);
 
             return true;
@@ -278,7 +264,7 @@ public class MainActivity extends Activity {
                 int iItems = 0;
                 for (int i = 0; i < v.size() ; ++i) {
                     items[iItems] = new ItemModel(models.getJSONObject(v.elementAt(i)));
-                    if (models.getJSONObject(v.elementAt(i)).getString("name").equals(getString(R.string.modelDefault))) {
+                    if (models.getJSONObject(v.elementAt(i)).getString("name").equals(STTConfiguration.WATSONSDK_DEFAULT_STT_MODEL)) {
                         iIndexDefault = iItems;
                     }
                     ++iItems;
@@ -372,6 +358,13 @@ public class MainActivity extends Activity {
             mState = ConnectionState.CONNECTED;
         }
 
+        public void onBegin(){
+            if(mFileCaptureThread != null) {
+                mFileCaptureThread.start();
+//                SpeechToText.sharedInstance().endTransmission();
+            }
+        }
+
         public void onError(String error) {
             Log.e(TAG, error);
             displayResult(error);
@@ -455,7 +448,7 @@ public class MainActivity extends Activity {
                 }
             }
             addItemsOnSpinnerVoices();
-            updatePrompt(getString(R.string.voiceDefault));
+            updatePrompt(TTSConfiguration.WATSONSDK_DEFAULT_TTS_VOICE);
 
             Spinner spinner = (Spinner) mView.findViewById(R.id.spinnerVoices);
             spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -496,29 +489,20 @@ public class MainActivity extends Activity {
         }
 
         private boolean initTTS() {
-
             // DISCLAIMER: please enter your credentials or token factory in the lines below
 
-            String username = getString(R.string.TTSUsername);
-            String password = getString(R.string.TTSPassword);
+            TTSConfiguration tConfig = new TTSConfiguration();
+            tConfig.basicAuthUsername = getString(R.string.TTSUsername);
+            tConfig.basicAuthPassword = getString(R.string.TTSPassword);
+            tConfig.codec = TTSConfiguration.CODEC_OPUS;
+            tConfig.appContext = this.getActivity().getApplicationContext();
+            TextToSpeech.sharedInstance().initWithConfig(tConfig);
+
             String tokenFactoryURL = getString(R.string.defaultTokenFactory);
-            String serviceURL = "https://stream.watsonplatform.net/text-to-speech/api";
-
-            TextToSpeech.sharedInstance().initWithURI(this.getHost(serviceURL));
-
             // token factory is the preferred authentication method (service credentials are not distributed in the client app)
             if (tokenFactoryURL.equals(getString(R.string.defaultTokenFactory)) == false) {
                 TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(tokenFactoryURL));
             }
-            // Basic Authentication
-            else if (username.equals(getString(R.string.defaultUsername)) == false) {
-                TextToSpeech.sharedInstance().setCredentials(username, password);
-            } else {
-                // no authentication method available
-                return false;
-            }
-
-            TextToSpeech.sharedInstance().setVoice(getString(R.string.voiceDefault));
 
             TextToSpeech.sharedInstance().setDelegate(this);
             return true;
@@ -596,7 +580,7 @@ public class MainActivity extends Activity {
                 items = new ItemVoice[voices.length()];
                 for (int i = 0; i < voices.length(); ++i) {
                     items[i] = new ItemVoice(voices.getJSONObject(i));
-                    if (voices.getJSONObject(i).getString("name").equals(getString(R.string.voiceDefault))) {
+                    if (voices.getJSONObject(i).getString("name").equals(TTSConfiguration.WATSONSDK_DEFAULT_TTS_VOICE)) {
                         iIndexDefault = i;
                     }
                 }
@@ -711,7 +695,7 @@ public class MainActivity extends Activity {
         //actionBar.setStackedBackgroundDrawable(new ColorDrawable(Color.parseColor("#B5C0D0")));
 	}
 
-    static class MyTokenProvider implements TokenProvider {
+    static class MyTokenProvider implements ITokenProvider {
 
         String m_strTokenFactoryURL = null;
 
@@ -764,9 +748,6 @@ public class MainActivity extends Activity {
 		InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 		imm.hideSoftInputFromWindow(textTTS.getWindowToken(),
 				InputMethodManager.HIDE_NOT_ALWAYS);
-
-        // Enable OggOpus feature by enabling the code line below
-//        TextToSpeech.sharedInstance().setCodec(TTSUtility.CODEC_OPUS, this.getApplicationContext());
 
 		//Call the sdk function
 		TextToSpeech.sharedInstance().synthesize(ttsText);
