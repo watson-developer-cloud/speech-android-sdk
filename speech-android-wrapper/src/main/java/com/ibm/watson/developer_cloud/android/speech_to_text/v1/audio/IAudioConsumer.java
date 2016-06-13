@@ -23,6 +23,7 @@ public interface IAudioConsumer {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     // function that consumes the audio data
-    public void consume(byte [] data);
-    public void onAmplitude(double amplitude, double volume);
+    void consume(byte [] data);
+    void onAmplitude(double amplitude, double volume);
+    void end();
 }

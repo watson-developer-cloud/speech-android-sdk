@@ -16,12 +16,6 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder.AudioSource;
-import android.util.Log;
-
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -31,7 +25,7 @@ import java.nio.ByteOrder;
 
 /**
  * @author mihui mihui@cn.ibm.com
- * description: this thread captures audio from the phone's microphone, whenever the buffer
+ * description: this thread captures data from file stored on your device
  *
  */
 public class FileCaptureThread extends Thread {
@@ -49,7 +43,6 @@ public class FileCaptureThread extends Thread {
     @Override
     public void run() {
         int length = (int) this.mFile.length();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
         byte[] buffer = new byte[length];
         FileInputStream in = null;
         try {
@@ -73,12 +66,22 @@ public class FileCaptureThread extends Thread {
                     bufferBytes.put(buffer, 0, r);
                     byte[] bytes = bufferBytes.array();
                     mIAudioConsumer.consume(bytes);
+
+                    mIAudioConsumer.end();
                 }
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
         } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+    // this function is intended to be called from outside the thread in order to stop the thread
+    public void end() {
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }

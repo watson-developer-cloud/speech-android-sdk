@@ -58,6 +58,7 @@ public class SpeechToText {
     protected static final String TAG = "SpeechToText";
     private STTConfiguration sConfig;
     private AudioCaptureThread audioCaptureThread = null;
+    private FileCaptureThread fileCaptureThread = null;
     private IChunkUploader uploader = null;
     private ISpeechToTextDelegate delegate = null;
     private ITokenProvider tokenProvider = null;
@@ -114,6 +115,15 @@ public class SpeechToText {
                 delegate.onAmplitude(amplitude, volume);
             }
         }
+
+        @Override
+        public void end() {
+            Log.e(TAG, "STTIAudioConsumer.end()");
+            if(fileCaptureThread != null)
+                fileCaptureThread.end();
+
+//            mUploader.stop();
+        }
     }
 
     /**
@@ -134,10 +144,10 @@ public class SpeechToText {
      * @param file
      * @return
      */
-    private FileCaptureThread startReadingFile(File file) {
+    private void startReadingFile(File file) {
         this.uploader.prepare();
         STTIAudioConsumer audioConsumer = new STTIAudioConsumer(uploader);
-        return new FileCaptureThread(audioConsumer, file);
+        this.fileCaptureThread = new FileCaptureThread(audioConsumer, file);
     }
 
     /**
@@ -146,7 +156,7 @@ public class SpeechToText {
      * @return
      */
     public FileCaptureThread recognizeWithFile(File file){
-        Log.d(TAG, "recognize");
+        Log.d(TAG, "recognizeWithFile:" + isNewRecordingAllowed);
         try {
             HashMap<String, String> header = new HashMap<String, String>();
             header.put("Content-Type", sConfig.audioFormat);
@@ -166,7 +176,8 @@ public class SpeechToText {
 
             this.uploader = new WebSocketUploader(wsURL, header, sConfig);
             this.uploader.setDelegate(this.delegate);
-            return this.startReadingFile(file);
+            this.startReadingFile(file);
+            return this.fileCaptureThread;
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
