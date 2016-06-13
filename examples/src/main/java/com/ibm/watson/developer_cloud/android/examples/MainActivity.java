@@ -31,6 +31,7 @@ import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.style.AbsoluteSizeSpan;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.app.ActionBar;
 import android.app.Fragment;
@@ -140,7 +141,7 @@ public class MainActivity extends Activity {
                         new AsyncTask<Void, Void, Void>(){
                             @Override
                             protected Void doInBackground(Void... none) {
-                                 SpeechToText.sharedInstance().recognize();
+                                SpeechToText.sharedInstance().recognize();
 //                                File file = new File(getActivity().getExternalFilesDir(null), "sample.wav");
 //                                mFileCaptureThread = SpeechToText.sharedInstance().recognizeWithFile(file);
                                 return null;
@@ -361,14 +362,15 @@ public class MainActivity extends Activity {
         public void onBegin(){
             if(mFileCaptureThread != null) {
                 mFileCaptureThread.start();
-//                SpeechToText.sharedInstance().endTransmission();
             }
         }
 
         public void onError(String error) {
+            Log.d(TAG, "onError");
             Log.e(TAG, error);
             displayResult(error);
             mState = ConnectionState.IDLE;
+            SpeechToText.sharedInstance().stopRecording();
         }
 
         public void onClose(int code, String reason, boolean remote) {
@@ -407,13 +409,11 @@ public class MainActivity extends Activity {
                             displayResult(mRecognitionResults + strFormatted);
                         }
                     }
-//                break;
                 }
             } catch (JSONException e) {
                 // data error, and should be handled on SDK level
                 e.printStackTrace();
             }
-
         }
 
         public void onAmplitude(double amplitude, double volume) {
@@ -428,14 +428,13 @@ public class MainActivity extends Activity {
         public JSONObject jsonVoices = null;
         private Handler mHandler = null;
 
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             Log.d(TAG, "onCreateTTS");
             mView = inflater.inflate(R.layout.tab_tts, container, false);
             mContext = getActivity().getApplicationContext();
 
             setText();
-            if (initTTS() == false) {
+            if (!initTTS()) {
                 TextView viewPrompt = (TextView) mView.findViewById(R.id.prompt);
                 viewPrompt.setText("Error: no authentication credentials or token available, please enter your authentication information");
                 return mView;
@@ -477,15 +476,6 @@ public class MainActivity extends Activity {
 
             mHandler = new Handler();
             return mView;
-        }
-
-        public URI getHost(String url){
-            try {
-                return new URI(url);
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
-            }
-            return null;
         }
 
         private boolean initTTS() {
@@ -649,7 +639,6 @@ public class MainActivity extends Activity {
         }
     }
 
-
     public static class STTCommands extends AsyncTask<Void, Void, JSONObject> {
 
         protected JSONObject doInBackground(Void... none) {
@@ -752,4 +741,12 @@ public class MainActivity extends Activity {
 		//Call the sdk function
 		TextToSpeech.sharedInstance().synthesize(ttsText);
 	}
+
+    /**
+     * Got to customization view
+     * @param item
+     */
+    public void gotoTTSCustomization(MenuItem item) {
+        Log.e(TAG, "gotoTTSCustomization");
+    }
 }
