@@ -271,6 +271,10 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         if(ex != null)
             errorMessage = ex.getMessage();
 
+        if(this.isConnected){
+            this.close(1000, errorMessage);
+        }
+
         this.isConnected = false;
         this.isReadyForAudio = false;
         this.isReadyForClosure = false;
@@ -304,28 +308,20 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
             }
             // results message
             if (jObj.has("results")) {
-                Log.d(TAG, "onMessage: Results message: ");
-                // if has result
-//                this.sendResults(jObj);
                 if (delegate != null){
                     delegate.onMessage(message);
                 }
             }
             if (jObj.has("error")) {
                 String errorMessage = jObj.getString("error");
-                if (delegate != null){
-                    delegate.onError(errorMessage);
-                }
-                this.close(1000, errorMessage);
+                this.onError(new Exception(errorMessage));
             }
         }
         catch (JSONException e) {
             // data error
             Log.e(TAG, "onMessage: Error parsing JSON");
             e.printStackTrace();
-            if (delegate != null){
-                delegate.onError(e.getMessage());
-            }
+            this.onError(e);
         }
     }
 
@@ -348,10 +344,19 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
             obj.put("interim_results", this.sConfig.interimResults);
             obj.put("continuous", this.sConfig.continuous);
             obj.put("inactivity_timeout", this.sConfig.inactivityTimeout);
-            obj.put("max_alternatives", this.sConfig.maxAlternatives);
+
+            if(this.sConfig.maxAlternatives > 1)
+                obj.put("max_alternatives", this.sConfig.maxAlternatives);
 
             if(this.sConfig.keywordsThreshold >= 0 && this.sConfig.keywordsThreshold <= 1)
                 obj.put("keywords_threshold", this.sConfig.keywordsThreshold);
+
+            if(this.sConfig.wordAlternativesThreshold >= 0 && this.sConfig.wordAlternativesThreshold <= 1)
+                obj.put("word_alternatives_threshold", this.sConfig.wordAlternativesThreshold);
+
+            if(this.sConfig.keywords != null && this.sConfig.keywords.length() > 0){
+                obj.put("keywords", this.sConfig.keywords);
+            }
 
         } catch (JSONException e) {
             e.printStackTrace();

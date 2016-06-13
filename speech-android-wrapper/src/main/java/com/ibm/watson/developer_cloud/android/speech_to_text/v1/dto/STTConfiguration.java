@@ -57,13 +57,15 @@ public class STTConfiguration extends AuthConfiguration {
     // Default timeout duration for a connection
     public int connectionTimeout = 30000;
 
-    // Keyword spotting
+    // Keyword spotting: The keyword spotting feature lets you detect specified strings in the transcript generated for input audio by the service. The service can spot the same keyword multiple times and report each occurrence. By default, the service does no keyword spotting.
     public double keywordsThreshold = -1;
-    // Maximum alternatives
+    // Maximum alternatives: The max_alternatives parameter accepts an integer value that tells the service to return the n-best alternative hypotheses. By default, the service returns only a single transcription result, which is equivalent to setting the parameter to 1.
     public int maxAlternatives = 1;
+    // Specifies a minimum level of confidence that the service must have to report a hypothesis for a word from the input audio. Specify a probability value between 0 and 1 inclusive. A hypothesis must have at least the specified confidence to be returned as a word alternative. Omit the parameter or specify a value of null (the default) to return no word alternatives.
+    public double wordAlternativesThreshold = -1;
 
     // keyword list
-    public JSONArray keywords;
+    public JSONArray keywords = null;
 
     /**
      * Instantiate default configuration
