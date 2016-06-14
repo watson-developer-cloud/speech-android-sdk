@@ -58,7 +58,7 @@ public class SpeechToText {
     protected static final String TAG = "SpeechToText";
     private STTConfiguration sConfig;
     private AudioCaptureThread audioCaptureThread = null;
-    private FileCaptureThread fileCaptureThread = null;
+    private FileCaptureThread mFileCaptureThread = null;
     private IChunkUploader uploader = null;
     private ISpeechToTextDelegate delegate = null;
     private ITokenProvider tokenProvider = null;
@@ -118,11 +118,8 @@ public class SpeechToText {
 
         @Override
         public void end() {
-            Log.e(TAG, "STTIAudioConsumer.end()");
-            if(fileCaptureThread != null)
-                fileCaptureThread.end();
-
-//            mUploader.stop();
+            mUploader.stop();
+            isNewRecordingAllowed = true;
         }
     }
 
@@ -133,9 +130,8 @@ public class SpeechToText {
         this.uploader.prepare();
 
         STTIAudioConsumer audioConsumer = new STTIAudioConsumer(uploader);
-
-        audioCaptureThread = new AudioCaptureThread(STTConfiguration.SAMPLE_RATE, audioConsumer);
-        audioCaptureThread.start();
+        this.audioCaptureThread = new AudioCaptureThread(sConfig.audioSampleRate, audioConsumer);
+        new Thread(this.audioCaptureThread).start();
     }
 
     /**
@@ -146,8 +142,9 @@ public class SpeechToText {
      */
     private void startReadingFile(File file) {
         this.uploader.prepare();
+
         STTIAudioConsumer audioConsumer = new STTIAudioConsumer(uploader);
-        this.fileCaptureThread = new FileCaptureThread(audioConsumer, file);
+        this.mFileCaptureThread = new FileCaptureThread(audioConsumer, file);
     }
 
     /**
@@ -159,7 +156,7 @@ public class SpeechToText {
         Log.d(TAG, "recognizeWithFile:" + isNewRecordingAllowed);
         try {
             HashMap<String, String> header = new HashMap<String, String>();
-            header.put("Content-Type", sConfig.audioFormat);
+            header.put("Content-Type", sConfig.audioFormat + "; rate=" + sConfig.audioSampleRate);
 
             if (sConfig.isAuthNeeded) {
                 if (this.tokenProvider != null) {
@@ -177,7 +174,7 @@ public class SpeechToText {
             this.uploader = new WebSocketUploader(wsURL, header, sConfig);
             this.uploader.setDelegate(this.delegate);
             this.startReadingFile(file);
-            return this.fileCaptureThread;
+            return this.mFileCaptureThread;
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -192,7 +189,7 @@ public class SpeechToText {
         if(isNewRecordingAllowed) {
             try {
                 HashMap<String, String> header = new HashMap<String, String>();
-                header.put("Content-Type", sConfig.audioFormat);
+                header.put("Content-Type", sConfig.audioFormat + "; rate=" + sConfig.audioSampleRate);
 
                 if (sConfig.isAuthNeeded) {
                     if (this.tokenProvider != null) {
@@ -399,6 +396,11 @@ public class SpeechToText {
      */
     public String getModel(){
         return this.sConfig.languageModel;
+    }
+
+    public void setCodec(String audioFormat, int sampleRate){
+        this.sConfig.audioFormat = audioFormat;
+        this.sConfig.audioSampleRate = sampleRate;
     }
 }
 

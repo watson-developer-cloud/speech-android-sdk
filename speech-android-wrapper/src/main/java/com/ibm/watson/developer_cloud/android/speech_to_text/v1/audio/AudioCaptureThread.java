@@ -30,7 +30,7 @@ import java.nio.ByteOrder;
  * description: this thread captures audio from the phone's microphone, whenever the buffer
  *
  */
-public class AudioCaptureThread extends Thread {
+public class AudioCaptureThread implements Runnable {
 
     private static final String TAG = "AudioCaptureThread";
     private boolean mStop = false;
@@ -79,7 +79,6 @@ public class AudioCaptureThread extends Thread {
                 bufferBytes.order(ByteOrder.LITTLE_ENDIAN);
                 bufferBytes.asShortBuffer().put(buffer,0,r);
                 byte[] bytes = bufferBytes.array();
-                int length = bytes.length;
                 mIAudioConsumer.consume(bytes);
             }
         }

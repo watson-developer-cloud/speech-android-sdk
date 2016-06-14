@@ -35,7 +35,7 @@ public class RawEnc implements ISpeechEncoder {
      * @param uploader
      * @throws java.io.IOException
      */
-    public void initEncoderWithUploader(IChunkUploader uploader) throws IOException{
+    public void initEncoderWithUploader(IChunkUploader uploader){
         this.writer = new RawWriter(uploader);
     }
     /**

@@ -72,8 +72,8 @@ public class OpusWriter extends AudioFileWriter {
         pageCount          = 0;
         packetCount        = 0;
         granulepos         = 0;
-        this.sampleRate    = STTConfiguration.SAMPLE_RATE;
-        this.frameSize     = STTConfiguration.FRAME_SIZE;
+        this.sampleRate    = STTConfiguration.SAMPLE_RATE_OGGOPUS;
+        this.frameSize     = STTConfiguration.FRAME_SIZE_OGGOPUS;
     }
     @Override
     public void close() throws IOException {

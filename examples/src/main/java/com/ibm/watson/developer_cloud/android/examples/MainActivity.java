@@ -141,6 +141,7 @@ public class MainActivity extends Activity {
                         new AsyncTask<Void, Void, Void>(){
                             @Override
                             protected Void doInBackground(Void... none) {
+                                SpeechToText.sharedInstance().setCodec(STTConfiguration.AUDIO_FORMAT_OGGOPUS, STTConfiguration.SAMPLE_RATE_OGGOPUS);
                                 SpeechToText.sharedInstance().recognize();
 //                                File file = new File(getActivity().getExternalFilesDir(null), "sample.wav");
 //                                mFileCaptureThread = SpeechToText.sharedInstance().recognizeWithFile(file);
@@ -161,6 +162,47 @@ public class MainActivity extends Activity {
                 }
             });
 
+//            Button buttonRecord = (Button)mView.findViewById(R.id.buttonRecord);
+//            buttonRecord.setOnClickListener(new View.OnClickListener() {
+//
+//                @Override
+//                public void onClick(View arg0) {
+//
+//                    if (mState == ConnectionState.IDLE) {
+//                        mState = ConnectionState.CONNECTING;
+//                        Log.d(TAG, "onClickRecord: IDLE -> CONNECTING");
+//                        Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
+//                        spinner.setEnabled(false);
+//                        mRecognitionResults = "";
+//                        displayResult(mRecognitionResults);
+//                        ItemModel item = (ItemModel)spinner.getSelectedItem();
+//                        SpeechToText.sharedInstance().setModel(item.getModelName());
+//                        displayStatus("connecting to the STT service...");
+//                        // start recognition
+//                        new AsyncTask<Void, Void, Void>(){
+//                            @Override
+//                            protected Void doInBackground(Void... none) {
+////                                STTConfiguration sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_DEFAULT);
+//                                SpeechToText.sharedInstance().setCodec(STTConfiguration.AUDIO_FORMAT_DEFAULT, STTConfiguration.SAMPLE_RATE_DEFAULT);
+//                                File file = new File(getActivity().getExternalFilesDir(null), "sample.wav");
+//                                mFileCaptureThread = SpeechToText.sharedInstance().recognizeWithFile(file);
+//                                return null;
+//                            }
+//                        }.execute();
+//                        setButtonLabel(R.id.buttonRecord, "Connecting...");
+//                        setButtonState(true);
+//                    }
+//                    else if (mState == ConnectionState.CONNECTED) {
+//                        mState = ConnectionState.IDLE;
+//                        Log.d(TAG, "onClickRecord: CONNECTED -> IDLE");
+//                        Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
+//                        spinner.setEnabled(true);
+//                        SpeechToText.sharedInstance().stopRecognition();
+//                        setButtonState(false);
+//                    }
+//                }
+//            });
+
             return mView;
         }
 
@@ -175,8 +217,8 @@ public class MainActivity extends Activity {
         private boolean initSTT() {
             // DISCLAIMER: please enter your credentials or token factory in the lines below
 
-            STTConfiguration sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_OGGOPUS);
-//            STTConfiguration sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_DEFAULT);
+            STTConfiguration sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_OGGOPUS, STTConfiguration.SAMPLE_RATE_OGGOPUS);
+//            STTConfiguration sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_DEFAULT, STTConfiguration.SAMPLE_RATE_DEFAULT);
             sConfig.basicAuthUsername = getString(R.string.STTUsername);
             sConfig.basicAuthPassword = getString(R.string.STTPassword);
 
@@ -361,7 +403,7 @@ public class MainActivity extends Activity {
 
         public void onBegin(){
             if(mFileCaptureThread != null) {
-                mFileCaptureThread.start();
+                new Thread(mFileCaptureThread).start();
             }
         }
 
@@ -370,6 +412,7 @@ public class MainActivity extends Activity {
             Log.e(TAG, error);
             displayResult(error);
             mState = ConnectionState.IDLE;
+            setButtonState(false);
             SpeechToText.sharedInstance().stopRecording();
         }
 
@@ -377,6 +420,7 @@ public class MainActivity extends Activity {
             Log.d(TAG, "onClose, code: " + code + " reason: " + reason);
             displayStatus("connection closed");
             setButtonLabel(R.id.buttonRecord, "Record");
+            setButtonState(false);
             mState = ConnectionState.IDLE;
         }
 

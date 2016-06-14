@@ -46,12 +46,12 @@ public class OggOpusEnc extends OpusWriter implements ISpeechEncoder {
      * @param uploader
      * @throws IOException
      */
-    public void initEncoderWithUploader(IChunkUploader uploader) throws IOException{
+    public void initEncoderWithUploader(IChunkUploader uploader){
         writer = new OpusWriter(uploader);
 
         IntBuffer error = IntBuffer.allocate(4);
         this.opusEncoder = JNAOpus.INSTANCE.opus_encoder_create(
-                STTConfiguration.SAMPLE_RATE,
+                STTConfiguration.SAMPLE_RATE_OGGOPUS,
                 STTConfiguration.AUDIO_CHANNELS,
                 JNAOpus.OPUS_APPLICATION_VOIP,
                 error);
@@ -74,7 +74,7 @@ public class OggOpusEnc extends OpusWriter implements ISpeechEncoder {
         int uploadedAudioSize = 0;
         ByteArrayInputStream ios = new ByteArrayInputStream(rawAudio);
 
-        byte[] data = new byte[STTConfiguration.FRAME_SIZE*2];
+        byte[] data = new byte[STTConfiguration.FRAME_SIZE_OGGOPUS*2];
         int bufferSize, read;
 
         while((read = ios.read(data)) > 0){
@@ -91,7 +91,7 @@ public class OggOpusEnc extends OpusWriter implements ISpeechEncoder {
             shortBuffer.flip();
             ByteBuffer opusBuffer = ByteBuffer.allocate(bufferSize);
 
-            int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, STTConfiguration.FRAME_SIZE, opusBuffer, bufferSize);
+            int opus_encoded = JNAOpus.INSTANCE.opus_encode(this.opusEncoder, shortBuffer, STTConfiguration.FRAME_SIZE_OGGOPUS, opusBuffer, bufferSize);
 
             opusBuffer.position(opus_encoded);
             opusBuffer.flip();

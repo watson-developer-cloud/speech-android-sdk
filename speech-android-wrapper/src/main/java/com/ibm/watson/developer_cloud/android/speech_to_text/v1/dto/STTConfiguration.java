@@ -31,15 +31,17 @@ public class STTConfiguration extends AuthConfiguration {
     public static final String WATSONSDK_DEFAULT_STT_API_ENDPOINT = "https://stream.watsonplatform.net/speech-to-text/api";
     public static final String WATSONSDK_DEFAULT_STT_MODEL = "en-US_BroadbandModel";
     // PCM format
-    public static final String AUDIO_FORMAT_DEFAULT = "audio/l16;rate=16000";
+    public static final String AUDIO_FORMAT_DEFAULT = "audio/l16";
     // OggOpus format
     public static final String AUDIO_FORMAT_OGGOPUS = "audio/ogg;codecs=opus";
     // Audio channels
     public static final int AUDIO_CHANNELS = 1;
     // Frame size
-    public static final int FRAME_SIZE = 160;
+    public static final int FRAME_SIZE_OGGOPUS = 160;
     // Sample rate
-    public static final int SAMPLE_RATE = 16000;
+    public static final int SAMPLE_RATE_OGGOPUS = 16000;
+    // Sample rate
+    public static final int SAMPLE_RATE_DEFAULT = 48000;
     // Timeout
     public int inactivityTimeout = 600;
     // continuous
@@ -50,13 +52,14 @@ public class STTConfiguration extends AuthConfiguration {
     public String languageModel = WATSONSDK_DEFAULT_STT_MODEL;
     // Data format
     public String audioFormat = AUDIO_FORMAT_DEFAULT;
+    // Audio sample rate
+    public int audioSampleRate = -1;
     // Authentication flag
     public boolean isAuthNeeded = true;
     // SSL flag, this would be detected automatically
     public boolean isSSL = true;
     // Default timeout duration for a connection
     public int connectionTimeout = 30000;
-
     // Keyword spotting: The keyword spotting feature lets you detect specified strings in the transcript generated for input audio by the service. The service can spot the same keyword multiple times and report each occurrence. By default, the service does no keyword spotting.
     public double keywordsThreshold = -1;
     // Maximum alternatives: The max_alternatives parameter accepts an integer value that tells the service to return the n-best alternative hypotheses. By default, the service returns only a single transcription result, which is equivalent to setting the parameter to 1.
@@ -79,9 +82,10 @@ public class STTConfiguration extends AuthConfiguration {
      *
      * @param audioFormat
      */
-    public STTConfiguration(String audioFormat){
+    public STTConfiguration(String audioFormat, int audioSampleRate){
         this();
         this.audioFormat = audioFormat;
+        this.audioSampleRate = audioSampleRate;
     }
 
     /**
@@ -90,8 +94,8 @@ public class STTConfiguration extends AuthConfiguration {
      * @param audioFormat
      * @param isAuthNeeded
      */
-    public STTConfiguration(String audioFormat, boolean isAuthNeeded){
-        this(audioFormat);
+    public STTConfiguration(String audioFormat, int audioSampleRate, boolean isAuthNeeded){
+        this(audioFormat, audioSampleRate);
         this.isAuthNeeded = isAuthNeeded;
     }
 
@@ -115,5 +119,10 @@ public class STTConfiguration extends AuthConfiguration {
 
     public String getModelsURL(String model) {
         return this.getModelsURL() + "/" + model;
+    }
+
+    public void setAudioFormat(String audioFormat, int audioSampleRate) {
+        this.audioSampleRate = audioSampleRate;
+        this.audioFormat = audioFormat;
     }
 }

@@ -67,7 +67,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     /**
      * Create an uploader which supports streaming.
      *
-     * @param serverURL LMC server, delivery to back end server
+     * @param serverURL server URL
      * @throws URISyntaxException
      */
     public WebSocketUploader(String serverURL, Map<String, String> header, STTConfiguration config) throws URISyntaxException {
@@ -99,7 +99,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      * @throws KeyManagementException
      * @throws NoSuchAlgorithmException
      */
-    private void trustServer() throws KeyManagementException, NoSuchAlgorithmException, IOException {
+    private void trustServer() throws NoSuchAlgorithmException, KeyManagementException, IOException {
         // Create a trust manager that does not validate certificate chains
         TrustManager[] certs = new TrustManager[]{ new X509TrustManager() {
             public java.security.cert.X509Certificate[] getAcceptedIssuers() {
@@ -120,7 +120,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      *
      * @throws Exception
      */
-    private void initStreamAudioToServer() throws Exception {
+    private void initStreamAudioToServer() throws NoSuchAlgorithmException, KeyManagementException, IOException {
         Log.d(TAG, "Connecting...");
         //lifted up for initializing writer, using isRunning to control the flow
         this.encoder.initEncoderWithUploader(this);
@@ -179,19 +179,15 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         try {
             try {
                 initStreamAudioToServer();
-            } catch (IOException e1) {
-                Log.e(TAG, "IOException: " + e1.getMessage());
-                throw e1;
-            } catch (InterruptedException e1) {
-                Log.e(TAG, "InterruptedException:" + e1.getMessage());
-                throw e1;
-            } catch (Exception e1) {
-                Log.e(TAG, "Exception: " + e1.getMessage());
-                throw e1;
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            } catch (KeyManagementException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "Connection failed: " + (e == null ? "null exception" : e.getMessage()));
+            Log.e(TAG, "Connection failed: " + (e.getMessage()));
             isConnected = false;
             this.close();
         }
@@ -340,7 +336,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
         try {
             obj.put("action", "start");
-            obj.put("content-type", this.sConfig.audioFormat);
+            obj.put("content-type", this.sConfig.audioFormat + "; rate=" + this.sConfig.audioSampleRate);
             obj.put("interim_results", this.sConfig.interimResults);
             obj.put("continuous", this.sConfig.continuous);
             obj.put("inactivity_timeout", this.sConfig.inactivityTimeout);

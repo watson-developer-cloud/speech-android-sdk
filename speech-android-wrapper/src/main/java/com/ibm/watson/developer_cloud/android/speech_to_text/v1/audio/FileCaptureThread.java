@@ -16,6 +16,8 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
+import android.util.Log;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -28,7 +30,7 @@ import java.nio.ByteOrder;
  * description: this thread captures data from file stored on your device
  *
  */
-public class FileCaptureThread extends Thread {
+public class FileCaptureThread implements Runnable {
 
     private static final String TAG = "FileCaptureThread";
     private IAudioConsumer mIAudioConsumer = null;
@@ -48,41 +50,29 @@ public class FileCaptureThread extends Thread {
         try {
             in = new FileInputStream(this.mFile);
             int r;
-            try {
-                if ((r = in.read(buffer, 0, buffer.length)) != -1) {
-                    long v = 0;
-                    for (int i = 0; i < r; i++) {
-                        v += buffer[i] * buffer[i];
-                    }
-                    double amplitude = v / (double) r;
-                    double volume = 0;
-                    if (amplitude > 0)
-                        volume = 10 * Math.log10(amplitude);
-                    mIAudioConsumer.onAmplitude(amplitude, volume);
-
-                    // convert to an array of bytes and send it to the server
-                    ByteBuffer bufferBytes = ByteBuffer.allocate(r * 2);
-                    bufferBytes.order(ByteOrder.LITTLE_ENDIAN);
-                    bufferBytes.put(buffer, 0, r);
-                    byte[] bytes = bufferBytes.array();
-                    mIAudioConsumer.consume(bytes);
-
-                    mIAudioConsumer.end();
+            if ((r = in.read(buffer, 0, buffer.length)) != -1) {
+                long v = 0;
+                for (int i = 0; i < r; i++) {
+                    v += buffer[i] * buffer[i];
                 }
+                double amplitude = v / (double) r;
+                double volume = 0;
+                if (amplitude > 0)
+                    volume = 10 * Math.log10(amplitude);
+                mIAudioConsumer.onAmplitude(amplitude, volume);
 
-            } catch (IOException e) {
-                e.printStackTrace();
+                // convert to an array of bytes and send it to the server
+                ByteBuffer bufferBytes = ByteBuffer.allocate(r * 2);
+                bufferBytes.order(ByteOrder.LITTLE_ENDIAN);
+                bufferBytes.put(buffer, 0, r);
+                byte[] bytes = bufferBytes.array();
+                in.close();
+                mIAudioConsumer.consume(bytes);
+                mIAudioConsumer.end();
             }
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-    // this function is intended to be called from outside the thread in order to stop the thread
-    public void end() {
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
     }
 }

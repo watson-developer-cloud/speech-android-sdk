@@ -29,7 +29,7 @@ public interface ISpeechEncoder {
      * @param uploader
      * @throws IOException
      */
-    void initEncoderWithUploader(IChunkUploader uploader) throws IOException;
+    void initEncoderWithUploader(IChunkUploader uploader);
     /**
      * In compression mode, encode audio data (to SPX) before write to ouput stream.
      * In non-compression mode, write directly raw audio data to ouput stream.
