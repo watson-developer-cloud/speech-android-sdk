@@ -291,9 +291,17 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         try {
             obj.put("action", "start");
             obj.put("content-type", this.sConfig.audioFormat);
-            obj.put("interim_results", true);
+            obj.put("interim_results", this.sConfig.returnInterimResults);
             obj.put("continuous", true);
             obj.put("inactivity_timeout", this.sConfig.inactivityTimeout);
+
+            if (this.sConfig.maxAlternatives > 1) {
+                obj.put("max_alternatives", this.sConfig.maxAlternatives);
+            }
+
+            if (!(Float.isNaN(this.sConfig.wordAlternativesThreshold))) {
+                obj.put("word_alternatives_threshold", this.sConfig.wordAlternativesThreshold);
+            }
         } catch (JSONException e) {
             e.printStackTrace();
         }
