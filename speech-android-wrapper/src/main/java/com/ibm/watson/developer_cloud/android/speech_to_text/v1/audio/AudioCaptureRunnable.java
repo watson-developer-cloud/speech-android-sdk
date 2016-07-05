@@ -30,7 +30,7 @@ import java.nio.ByteOrder;
  * description: this thread captures audio from the phone's microphone, whenever the buffer
  *
  */
-public class AudioCaptureThread implements Runnable {
+public class AudioCaptureRunnable implements Runnable {
 
     private static final String TAG = "AudioCaptureThread";
     private boolean mStop = false;
@@ -40,7 +40,7 @@ public class AudioCaptureThread implements Runnable {
 
     // the thread receives high priority because it needs to do real time audio capture
     // THREAD_PRIORITY_URGENT_AUDIO = "Standard priority of the most important audio threads"
-    public AudioCaptureThread(int iSamplingRate, IAudioConsumer IAudioConsumer) {
+    public AudioCaptureRunnable(int iSamplingRate, IAudioConsumer IAudioConsumer) {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
         mSamplingRate = iSamplingRate;
         mIAudioConsumer = IAudioConsumer;

@@ -16,11 +16,8 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
-import android.util.Log;
-
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -30,13 +27,13 @@ import java.nio.ByteOrder;
  * description: this thread captures data from file stored on your device
  *
  */
-public class FileCaptureThread implements Runnable {
+public class FileCaptureRunnable implements Runnable {
 
     private static final String TAG = "FileCaptureThread";
     private IAudioConsumer mIAudioConsumer = null;
     private File mFile = null;
 
-    public FileCaptureThread(IAudioConsumer IAudioConsumer, File file) {
+    public FileCaptureRunnable(IAudioConsumer IAudioConsumer, File file) {
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
         mIAudioConsumer = IAudioConsumer;
         mFile = file;
