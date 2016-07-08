@@ -30,7 +30,7 @@ import java.nio.ShortBuffer;
 /**
  * Ogg Opus Encoder
  */
-public class OggOpusEnc extends OpusWriter implements ISpeechEncoder {
+public class OggOpusEnc implements ISpeechEncoder {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
     /** Data writer */
@@ -43,11 +43,10 @@ public class OggOpusEnc extends OpusWriter implements ISpeechEncoder {
     public OggOpusEnc() {}
     /**
      * For WebSocketClient
-     * @param uploader
-     * @throws IOException
+     * @param uploader IChunkUploader
      */
     public void initEncoderWithUploader(IChunkUploader uploader){
-        writer = new OpusWriter(uploader);
+        this.writer = new OpusWriter(uploader);
 
         IntBuffer error = IntBuffer.allocate(4);
         this.opusEncoder = JNAOpus.INSTANCE.opus_encoder_create(
@@ -61,13 +60,13 @@ public class OggOpusEnc extends OpusWriter implements ISpeechEncoder {
      */
     @Override
     public void onStart() {
-        writer.writeHeader("encoder=Lavc56.20.100 libopus");
+        writer.writeHeader("encoder=WatsonSpeechSDK");
     }
     /**
      * Encode raw audio data into Opus format then call OpusWriter to write the Ogg packet
      *
-     * @param rawAudio
-     * @return
+     * @param rawAudio raw audio data
+     * @return int
      * @throws IOException
      */
     public int encodeAndWrite(byte[] rawAudio) throws IOException {
@@ -108,6 +107,12 @@ public class OggOpusEnc extends OpusWriter implements ISpeechEncoder {
         ios.close();
         return uploadedAudioSize;
     }
+
+    @Override
+    public int write(byte[] b) {
+        return this.writer.write(b);
+    }
+
     /**
      * Close writer
      */
