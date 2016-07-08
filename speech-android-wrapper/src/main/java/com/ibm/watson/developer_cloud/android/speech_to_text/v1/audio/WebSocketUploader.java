@@ -14,7 +14,6 @@
  * limitations under the License.
  **/
 
-
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 
 import java.io.IOException;
@@ -25,7 +24,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -46,23 +44,36 @@ import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.STTConfigura
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDelegate;
 
 public class WebSocketUploader extends WebSocketClient implements IChunkUploader {
+    private class AudioBuffer {
+        public static final int WEBSOCKET_STREAM_DATA_MARKER = 1;
+        public static final int WEBSOCKET_STREAM_END_MARKER = 2;
+        byte[] buffer;
+        int marker;
+        public AudioBuffer(byte[] buffer, int isMarker){
+            this.marker = isMarker;
+            this.buffer = buffer;
+        }
+    }
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2016";
     private static final String TAG = WebSocketUploader.class.getSimpleName();
-
+    /** Encoder */
     private ISpeechEncoder encoder = null;
     /** STT delegate */
     private ISpeechToTextDelegate delegate = null;
     /** Recorder delegate */
     private STTConfiguration sConfig = null;
     /** Audio buffer */
-    private LinkedList<byte[]> audioBuffer = null;
+    private LinkedList<AudioBuffer> audioBuffer = null;
     /** If the listening state ready for Audio  */
     private boolean isReadyForAudio = false;
     /** If the listening state ready for connection closure */
     private boolean isReadyForClosure = false;
     /** Connection status */
     public boolean isConnected = false;
+
+    private boolean predicateWait = true;
+    private boolean predicateConnect = true;
 
     /**
      * Create an uploader which supports streaming.
@@ -91,7 +102,12 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         this.isReadyForAudio = false;
         this.isReadyForClosure = false;
 
-        this.audioBuffer = new LinkedList<>();
+        if(this.audioBuffer == null)
+            this.audioBuffer = new LinkedList<AudioBuffer>();
+        this.audioBuffer.clear();
+
+        this.predicateWait = true;
+        this.predicateConnect = true;
     }
     /**
      * Trust server
@@ -114,11 +130,13 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         SSLSocketFactory factory = sslContext.getSocketFactory();
         this.setSocket(factory.createSocket());
     }
+
     /**
-     * 1. Initialize WebSocket connection </br>
+     * 1. Initialize WebSocket connection
      * 2. Init an encoder and writer
-     *
-     * @throws Exception
+     * @throws NoSuchAlgorithmException
+     * @throws KeyManagementException
+     * @throws IOException
      */
     private void initStreamAudioToServer() throws NoSuchAlgorithmException, KeyManagementException, IOException {
         Log.d(TAG, "Connecting...");
@@ -133,31 +151,78 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
     @Override
     public int onHasData(byte[] buffer) {
+        return this.writeData(new AudioBuffer(buffer, AudioBuffer.WEBSOCKET_STREAM_DATA_MARKER));
+    }
+
+    /**
+     * Write data
+     * @param buffer AudioBuffer
+     * @return int
+     */
+    private synchronized int writeData(AudioBuffer buffer) {
         int uploadedAudioSize = 0;
         // NOW, WE HAVE STATUS OF UPLOAD PREPARING, UPLOAD PREPARING OK
         if (this.isConnected && this.isReadyForAudio) {
             try {
-                if(audioBuffer.size() > 0){
-                    Iterator<byte[]> iterator = audioBuffer.iterator();
-                    while (iterator.hasNext()) {
-                        uploadedAudioSize += encoder.encodeAndWrite(iterator.next());
+                if(audioBuffer.size() > 0) {
+                    while (audioBuffer.size() > 0) {
+                        AudioBuffer anAudioBuffer = audioBuffer.removeFirst();
+                        if (anAudioBuffer.marker == AudioBuffer.WEBSOCKET_STREAM_DATA_MARKER) {
+                            if (anAudioBuffer.buffer.length > 0)
+                                uploadedAudioSize += encoder.encodeAndWrite(anAudioBuffer.buffer);
+                        }
+                        else {
+                            uploadedAudioSize = encoder.write(anAudioBuffer.buffer);
+                            if (anAudioBuffer.marker == AudioBuffer.WEBSOCKET_STREAM_END_MARKER) {
+                                this.isReadyForClosure = true;
+                                Log.i(TAG, "Ending with buffer " + uploadedAudioSize + " bytes: " + new String(anAudioBuffer.buffer));
+                            }
+                        }
                     }
+                    Log.i(TAG, "Sending out buffered data " + uploadedAudioSize + " bytes, size=" + audioBuffer.size());
                     audioBuffer.clear();
                 }
-                uploadedAudioSize += encoder.encodeAndWrite(buffer);
+                else {
+                    this.predicateWait = false;
+                }
+
+                if(buffer.marker == AudioBuffer.WEBSOCKET_STREAM_DATA_MARKER){
+                    if(buffer.buffer.length > 0)
+                        uploadedAudioSize += encoder.encodeAndWrite(buffer.buffer);
+                }
+                else {
+                    uploadedAudioSize += encoder.write(buffer.buffer);
+
+                    if(buffer.marker == AudioBuffer.WEBSOCKET_STREAM_END_MARKER) {
+                        this.isReadyForClosure = true;
+                        Log.i(TAG, "Ending with data " + uploadedAudioSize + " bytes: " + new String(buffer.buffer));
+                    }
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         else {
-            if(this.isConnected){
-                Log.w(TAG, "Buffering data and wait for 1st response");
+            if(this.isConnected) {
+                if(this.predicateWait) {
+                    this.predicateWait = false;
+                    this.predicateConnect = true;
+                    Log.d(TAG, "Buffering data and wait for 1st response");
+                }
             }
             else{
-                Log.w(TAG, "Buffering data and establishing connection");
+                if(this.predicateConnect) {
+                    this.predicateConnect = false;
+                    Log.w(TAG, "Buffering data and establishing connection");
+                }
             }
             // buffer data
-            audioBuffer.add(buffer);
+            if(this.isReadyForClosure) {
+                //
+            }
+            else {
+                audioBuffer.addFirst(buffer);
+            }
         }
         return uploadedAudioSize;
     }
@@ -179,11 +244,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         try {
             try {
                 initStreamAudioToServer();
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            } catch (KeyManagementException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
+            } catch (NoSuchAlgorithmException | KeyManagementException | IOException e) {
                 e.printStackTrace();
             }
         } catch (Exception e) {
@@ -196,7 +257,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     /**
      * Write string into socket
      *
-     * @param message
+     * @param message String
      */
     public void upload(String message){
         try{
@@ -225,14 +286,16 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      * Stop by sending out zero byte of data
      */
     public void stop(){
-        byte[] stopData = new byte[0];
-        if(this.isConnected && isReadyForAudio){
-            this.upload(stopData);
-            this.isReadyForAudio = false;
+        Log.w(TAG, "Sending closure data...");
+        JSONObject obj = new JSONObject();
+        try {
+            obj.put("action", "stop");
+            this.writeData(new AudioBuffer(obj.toString().getBytes(), AudioBuffer.WEBSOCKET_STREAM_END_MARKER));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            this.writeData(new AudioBuffer(new byte[0], AudioBuffer.WEBSOCKET_STREAM_END_MARKER));
         }
-        else{
-            this.audioBuffer.add(stopData);
-        }
+
     }
 
     @Override
@@ -267,9 +330,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         if(ex != null)
             errorMessage = ex.getMessage();
 
-        if(this.isConnected){
-            this.close(1000, errorMessage);
-        }
+        this.close(1000, errorMessage);
 
         this.isConnected = false;
         this.isReadyForAudio = false;
@@ -282,24 +343,27 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
     @Override
     public void onMessage(String message) {
+        Log.e(TAG, message);
         try {
             JSONObject jObj = new JSONObject(message);
             // state message
             if(jObj.has("state")) {
                 // monitor state to determine connection closure condition
                 String state = jObj.getString("state");
-                Log.d(TAG, "onMessage: State: " + state);
-                if(state.equals("listening") && this.isConnected && this.isReadyForClosure) {
-                    this.close(1000, "Closure data has been sent");
-                }
-                else if(state.equals("listening")){
-                    this.isReadyForAudio = true;
-                    this.isReadyForClosure = true;
-
-                    if(this.delegate != null){
-                        this.delegate.onBegin();
+                Log.d(TAG, "onMessage: State: " + state + ", isReadyForClosure=" + this.isReadyForClosure + ", isReadyForAudio="+this.isReadyForAudio + "");
+                if(state.equals("listening")) {
+                    if(this.isReadyForClosure && (this.isReadyForAudio || !this.sConfig.continuous)) {
+                        Log.i(TAG, "Disconnecting...");
+                        this.isReadyForAudio = false;
+                        this.close(1000, "Closure data has been sent");
                     }
-                    Log.i(TAG, "Start sending audio data");
+                    else {
+                        this.isReadyForAudio = true;
+                        if(this.delegate != null){
+                            this.delegate.onBegin();
+                        }
+                        Log.i(TAG, "Start sending audio data");
+                    }
                 }
             }
             // results message
