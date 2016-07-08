@@ -76,6 +76,9 @@ public abstract class AudioFileWriter{
      */
     public abstract void writeHeader(String comment) throws IOException;
 
+
+    public abstract int write(byte[] data);
+
     /**
      * Writes a packet of audio.
      * @param data audio data
