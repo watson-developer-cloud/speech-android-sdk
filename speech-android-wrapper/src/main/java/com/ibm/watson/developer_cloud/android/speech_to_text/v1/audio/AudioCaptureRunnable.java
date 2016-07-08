@@ -88,11 +88,16 @@ public class AudioCaptureRunnable implements Runnable {
         // release resources
         finally {
             if (recorder != null) {
-                recorder.stop();
-                recorder.release();
+                if(recorder.getState() == AudioRecord.STATE_INITIALIZED) {
+                    recorder.stop();
+                    recorder.release();
+                }
+                else if(recorder.getState() == AudioRecord.STATE_UNINITIALIZED) {
+                    // TODO: Send message of failures. e.g. permission denied
+                }
             }
             mStopped = true;
-            Log.d(TAG, "recording stopped!");
+            Log.d(TAG, "Recording stopped!");
         }
     }
 
