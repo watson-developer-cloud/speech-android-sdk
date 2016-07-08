@@ -38,6 +38,14 @@ public interface ISpeechEncoder {
      * @throws IOException Signals that an I/O exception has occurred.
      */
     int encodeAndWrite(byte[] b) throws IOException ;
+
+    /**
+     * Write data into socket without compression
+     * @param b byte[]
+     * @return int
+     */
+    int write(byte[] b);
+
     /**
      * Get compression audio time in compression mode.
      * @return the time for compression audio.
