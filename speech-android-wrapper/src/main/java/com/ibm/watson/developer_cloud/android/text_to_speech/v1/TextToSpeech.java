@@ -16,7 +16,6 @@
 
 package com.ibm.watson.developer_cloud.android.text_to_speech.v1;
 
-import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -43,7 +42,6 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -63,7 +61,6 @@ public class TextToSpeech {
     private int sampleRate;
     private AudioTrack audioTrack;
 
-    private ITokenProvider tokenProvider = null;
     private ITextToSpeechDelegate delegate = null;
     private TTSConfiguration tConfig = null;
 
@@ -89,16 +86,16 @@ public class TextToSpeech {
 
     /**
      * Init the shared instance with configurations
-     * @param config
+     * @param config TTSConfiguration
      */
     public void initWithConfig(TTSConfiguration config){
         TextToSpeech.sharedInstance();
-        _instance.tConfig = config;
+        this.tConfig = config;
     }
 
     /**
      * Send request of TTS
-     * @param ttsString
+     * @param ttsString String
      */
     public void synthesize(String ttsString) {
         this.synthesize(ttsString, null);
@@ -106,7 +103,7 @@ public class TextToSpeech {
 
     /**
      * Send request of TTS
-     * @param ttsString
+     * @param ttsString String
      */
     public void synthesize(String ttsString, String customizationId) {
         Log.d(TAG, "Synthesize["+this.tConfig.codec+"]: " + this.tConfig.getSynthesizeURL());
@@ -139,29 +136,40 @@ public class TextToSpeech {
         }
     }
 
-    private static void buildAuthenticationHeader(TTSConfiguration config, HttpGet httpGet, ITokenProvider tokenProvider) {
-        if (config.isAuthNeeded) {
+    private void buildAuthenticationHeader(HttpGet httpGet) {
+        if (_instance.tConfig.isAuthNeeded) {
             // use token based authentication if possible, otherwise Basic Authentication will be used
-            if (tokenProvider != null) {
+            if (tConfig.hasTokenProvider()) {
                 Log.d(TAG, "using token based authentication");
-                httpGet.setHeader("X-Watson-Authorization-Token", tokenProvider.getToken());
+                httpGet.setHeader("X-Watson-Authorization-Token", _instance.tConfig.requestToken());
             }
             else {
                 Log.d(TAG, "using basic authentication");
-                httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(config.basicAuthUsername, config.basicAuthPassword), "UTF-8", false));
+                httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(_instance.tConfig.basicAuthUsername, _instance.tConfig.basicAuthPassword), "UTF-8", false));
             }
+        }
+
+        if(_instance.tConfig.xWatsonLearningOptOut) {
+            httpGet.setHeader("X-Watson-Learning-Opt-Out", "true");
         }
     }
 
-    public JSONObject getVoices() {
+    public JSONObject getCustomizedVoiceModels() {
+        return this.performGetForJSONObject(this.tConfig.getCustomizedVoicesServiceURL());
+    }
 
+    public JSONObject getVoices() {
+        return this.performGetForJSONObject(this.tConfig.getVoicesServiceURL());
+    }
+
+    private JSONObject performGetForJSONObject(String url) {
         JSONObject object = null;
 
         try {
             HttpClient httpClient = new DefaultHttpClient();
-            HttpGet httpGet = new HttpGet(this.tConfig.getVoicesServiceURL());
+            HttpGet httpGet = new HttpGet(url);
 
-            buildAuthenticationHeader(this.tConfig, httpGet, this.tokenProvider);
+            buildAuthenticationHeader(httpGet);
 
             httpGet.setHeader("accept", "application/json");
             HttpResponse executed = httpClient.execute(httpGet);
@@ -184,8 +192,8 @@ public class TextToSpeech {
 
     /**
      * Set credentials
-     * @param username
-     * @param password
+     * @param username String
+     * @param password String
      */
     public void setCredentials(String username, String password) {
         this.tConfig.basicAuthUsername = username;
@@ -194,8 +202,9 @@ public class TextToSpeech {
 
     /**
      * Set token provider (for token based authentication)
+     * @see TTSConfiguration class
      */
-    public void setTokenProvider(ITokenProvider tokenProvider) { this.tokenProvider = tokenProvider; }
+    public void setTokenProvider(ITokenProvider tokenProvider) { this.tConfig.setTokenProvider(tokenProvider); }
 
     /**
      * Set TTS voice
@@ -214,33 +223,32 @@ public class TextToSpeech {
 
     /**
      * Post text data to the server and get returned audio data
-     * @param content
+     * @param content String
      * @return {@link HttpResponse}
      * @throws Exception
      */
-    public static HttpResponse createPost(String content, TTSConfiguration config, ITokenProvider tokenProvider) throws Exception {
+    private HttpResponse createPost(String content) throws Exception {
         //HTTP GET Client
         HttpClient httpClient = new DefaultHttpClient();
         //Add params
         List<BasicNameValuePair> params = new LinkedList<BasicNameValuePair>();
         params.add(new BasicNameValuePair("text", content));
-        params.add(new BasicNameValuePair("voice", config.voice));
-        params.add(new BasicNameValuePair("accept", config.codec));
-        if(config.customizationId != null){
-            params.add(new BasicNameValuePair("customization_id", config.customizationId));
+        params.add(new BasicNameValuePair("voice", tConfig.voice));
+        params.add(new BasicNameValuePair("accept", tConfig.codec));
+        if(tConfig.customizationId != null){
+            params.add(new BasicNameValuePair("customization_id", tConfig.customizationId));
         }
-        String requestUrl = config.getSynthesizeURL() + "?"+ URLEncodedUtils.format(params, "utf-8");
+        String requestUrl = tConfig.getSynthesizeURL() + "?"+ URLEncodedUtils.format(params, "utf-8");
         Log.e(TAG, requestUrl);
         HttpGet httpGet = new HttpGet(requestUrl);
         // use token based authentication if possible, otherwise Basic Authentication will be used
-        buildAuthenticationHeader(config, httpGet, tokenProvider);
-        HttpResponse executed = httpClient.execute(httpGet);
+        buildAuthenticationHeader(httpGet);
 
-        return executed;
+        return httpClient.execute(httpGet);
     }
     /**
      * Get storage path
-     * @return
+     * @return String
      */
     private String getBaseDir() {
         String baseDir;
@@ -253,6 +261,11 @@ public class TextToSpeech {
         return baseDir;
     }
 
+    /**
+     * Analyze opus data
+     * @param is InputStream
+     * @return byte[]
+     */
     private byte[] analyzeOpusData(InputStream is) {
         String inFilePath = getBaseDir()+"watson.opus";
         String outFilePath = getBaseDir()+"watson.pcm";
@@ -282,8 +295,6 @@ public class TextToSpeech {
                 throw new IOException("Data reading failed");
             }
             return data;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -292,8 +303,8 @@ public class TextToSpeech {
 
     /**
      * Analyze sample rate and return the PCM data
-     * @param i
-     * @return
+     * @param i InputStream
+     * @return byte[]
      */
     public byte[] analyzeWavData(InputStream i){
         try {
@@ -319,6 +330,11 @@ public class TextToSpeech {
         return new byte[0];
     }
 
+    /**
+     * Strip header and save Wav data
+     * @param i InputStream
+     * @return byte[]
+     */
     public byte[] stripHeaderAndSaveWav(InputStream i) {
         byte[] d = new byte[0];
         try {
@@ -332,11 +348,20 @@ public class TextToSpeech {
         return saveWav(d);
     }
 
+    /**
+     * Save wave data
+     * @param d byte[]
+     * @return byte[]
+     */
     public byte[] saveWav(byte[] d){
         PcmWaveWriter wR = new PcmWaveWriter(sampleRate, 1);
         return wR.saveWav(d, sampleRate, 1, 16);
     }
 
+    /**
+     * Save wav file
+     * @param d byte[]
+     */
     void saveWavFile(byte[] d) {
         String fileName = getBaseDir() + "a.wav";
         try {
@@ -389,8 +414,7 @@ public class TextToSpeech {
                     AudioFormat.ENCODING_PCM_16BIT,
                     bufferSize,
                     AudioTrack.MODE_STREAM);
-            if (audioTrack != null)
-                audioTrack.play();
+            audioTrack.play();
         }
 
         if(this.delegate != null)
@@ -399,7 +423,7 @@ public class TextToSpeech {
 
     /**
      * Set delegate for callbacks
-     * @param val
+     * @param val ITextToSpeechDelegate
      */
     public void setDelegate(ITextToSpeechDelegate val){
         this.delegate = val;
@@ -415,19 +439,21 @@ public class TextToSpeech {
 
             HttpResponse post;
             try {
-                post = createPost(content, tConfig, tokenProvider);
+                post = createPost(content);
                 int statusCode = post.getStatusLine().getStatusCode();
                 if(statusCode == 200) {
                     InputStream is = post.getEntity().getContent();
 
                     byte[] data = null;
-                    if (tConfig.codec == TTSConfiguration.CODEC_WAV) {
+                    if (tConfig.codec.equals(TTSConfiguration.CODEC_WAV)) {
                         data = analyzeWavData(is);
-                    } else if (tConfig.codec == TTSConfiguration.CODEC_OPUS) {
+                    } else if (tConfig.codec.equals(TTSConfiguration.CODEC_OPUS)) {
                         data = analyzeOpusData(is);
                     }
-                    initPlayer();
-                    audioTrack.write(data, 0, data.length);
+                    if(data != null) {
+                        initPlayer();
+                        audioTrack.write(data, 0, data.length);
+                    }
                     is.close();
                 }
                 else{
