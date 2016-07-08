@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.ibm.watson.developer_cloud.android.examples.TTSCustomizationActivity">
+
+    <TextView
+        android:id="@+id/ttsCustomizationTitle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:background="#e0e0e0"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:text="@string/ttsTitle"/>
+
+    <TextView
+        android:id="@+id/ttsCustomizationDesc"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="24dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:background="#e0e0e0"
+        android:layout_below="@+id/ttsCustomizationTitle"
+        android:layout_alignParentLeft="true"
+        android:text="@string/sttInstructions"/>
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/nameField"
+        android:layout_below="@+id/ttsCustomizationDesc"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="false"
+        android:padding="10dp"
+        android:width="200dp"
+        android:enabled="true"
+        android:hint="Name"
+        android:layout_toLeftOf="@+id/languageButton"
+        android:layout_toStartOf="@+id/languageButton"
+        android:layout_margin="5dp"/>
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/descField"
+        android:padding="10dp"
+        android:width="200dp"
+        android:enabled="true"
+        android:hint="Description"
+        android:layout_below="@+id/nameField"
+        android:layout_alignLeft="@+id/nameField"
+        android:layout_alignStart="@+id/nameField"
+        android:layout_toLeftOf="@+id/createButton"
+        android:layout_toStartOf="@+id/createButton"/>
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Language"
+        android:width="100dp"
+        android:id="@+id/languageButton"
+        android:layout_alignBottom="@+id/nameField"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:textAlignment="center"/>
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Create"
+        android:width="100dp"
+        android:id="@+id/createButton"
+        android:layout_alignBottom="@+id/descField"
+        android:layout_toRightOf="@+id/nameField"
+        android:layout_alignRight="@+id/languageButton"
+        android:layout_alignEnd="@+id/languageButton"/>
+
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/listView"
+        android:layout_below="@+id/createButton"
+        android:layout_alignLeft="@+id/ttsCustomizationDesc"
+        android:layout_alignStart="@+id/ttsCustomizationDesc"
+        android:choiceMode="singleChoice"
+        android:headerDividersEnabled="false"
+        android:dividerHeight="1dp"/>
+
+</RelativeLayout>

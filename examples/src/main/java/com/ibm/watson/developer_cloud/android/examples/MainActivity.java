@@ -16,15 +16,13 @@
 
 package com.ibm.watson.developer_cloud.android.examples;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Vector;
 
 import android.app.FragmentTransaction;
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.text.SpannableString;
@@ -52,7 +50,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 // IBM Watson SDK
-import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.FileCaptureThread;
+import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.FileCaptureRunnable;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.STTConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDelegate;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.SpeechToText;
@@ -74,8 +72,9 @@ import org.json.JSONObject;
 public class MainActivity extends Activity {
 
 	private static final String TAG = "MainActivity";
+    private static final int SHOW_CUSTOMIZATION_ACTIVITY = 1;
 
-	TextView textTTS;
+    TextView textTTS;
 
     ActionBar.Tab tabSTT, tabTTS;
     FragmentTabSTT fragmentTabSTT = new FragmentTabSTT();
@@ -95,7 +94,7 @@ public class MainActivity extends Activity {
         public Context mContext = null;
         public JSONObject jsonModels = null;
         private Handler mHandler = null;
-        private FileCaptureThread mFileCaptureThread = null;
+        private FileCaptureRunnable mFileCaptureRunnable = null;
 
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
@@ -105,7 +104,7 @@ public class MainActivity extends Activity {
             mHandler = new Handler();
 
             setText();
-            if (initSTT() == false) {
+            if (!initSTT()) {
                 displayResult("Error: no authentication credentials/token available, please enter your authentication information");
                 return mView;
             }
@@ -141,7 +140,6 @@ public class MainActivity extends Activity {
                         new AsyncTask<Void, Void, Void>(){
                             @Override
                             protected Void doInBackground(Void... none) {
-                                SpeechToText.sharedInstance().setCodec(STTConfiguration.AUDIO_FORMAT_OGGOPUS, STTConfiguration.SAMPLE_RATE_OGGOPUS);
                                 SpeechToText.sharedInstance().recognize();
 //                                File file = new File(getActivity().getExternalFilesDir(null), "sample.wav");
 //                                mFileCaptureThread = SpeechToText.sharedInstance().recognizeWithFile(file);
@@ -227,7 +225,8 @@ public class MainActivity extends Activity {
             String tokenFactoryURL = getString(R.string.defaultTokenFactory);
             // token factory is the preferred authentication method (service credentials are not distributed in the client app)
             if (tokenFactoryURL.equals(getString(R.string.defaultTokenFactory)) == false) {
-                SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(tokenFactoryURL));
+                // SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(tokenFactoryURL));
+                sConfig.setTokenProvider(new MyTokenProvider(tokenFactoryURL));
             }
 
             SpeechToText.sharedInstance().setDelegate(this);
@@ -253,7 +252,7 @@ public class MainActivity extends Activity {
             TextView viewInstructions = (TextView)mView.findViewById(R.id.instructions);
             String strInstructions = getString(R.string.sttInstructions);
             SpannableString spannable2 = new SpannableString(strInstructions);
-            spannable2.setSpan(new AbsoluteSizeSpan(20), 0, strInstructions.length(), 0);
+            spannable2.setSpan(new AbsoluteSizeSpan(30), 0, strInstructions.length(), 0);
             spannable2.setSpan(new CustomTypefaceSpan("", notosans), 0, strInstructions.length(), 0);
             viewInstructions.setText(spannable2);
             viewInstructions.setTextColor(0xFF121212);
@@ -402,9 +401,9 @@ public class MainActivity extends Activity {
         }
 
         public void onBegin(){
-            if(mFileCaptureThread != null) {
-                new Thread(mFileCaptureThread).start();
-            }
+//            if(mFileCaptureRunnable != null) {
+//                new Thread(mFileCaptureRunnable).start();
+//            }
         }
 
         public void onError(String error) {
@@ -535,7 +534,8 @@ public class MainActivity extends Activity {
             String tokenFactoryURL = getString(R.string.defaultTokenFactory);
             // token factory is the preferred authentication method (service credentials are not distributed in the client app)
             if (tokenFactoryURL.equals(getString(R.string.defaultTokenFactory)) == false) {
-                TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(tokenFactoryURL));
+//                TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(tokenFactoryURL));
+                tConfig.setTokenProvider(new MyTokenProvider(tokenFactoryURL));
             }
 
             TextToSpeech.sharedInstance().setDelegate(this);
@@ -558,7 +558,7 @@ public class MainActivity extends Activity {
             TextView viewInstructions = (TextView)mView.findViewById(R.id.instructions);
             String strInstructions = getString(R.string.ttsInstructions);
             SpannableString spannable2 = new SpannableString(strInstructions);
-            spannable2.setSpan(new AbsoluteSizeSpan(20), 0, strInstructions.length(), 0);
+            spannable2.setSpan(new AbsoluteSizeSpan(30), 0, strInstructions.length(), 0);
             spannable2.setSpan(new CustomTypefaceSpan("", notosans), 0, strInstructions.length(), 0);
             viewInstructions.setText(spannable2);
             viewInstructions.setTextColor(0xFF121212);
@@ -786,11 +786,31 @@ public class MainActivity extends Activity {
 		TextToSpeech.sharedInstance().synthesize(ttsText);
 	}
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch(requestCode){
+            case SHOW_CUSTOMIZATION_ACTIVITY:
+                if(resultCode == RESULT_OK){
+                    // OK
+                }
+                else if(resultCode == RESULT_FIRST_USER){
+                    // defined success/error
+                }
+                else{
+                    // user cancelled
+                }
+                break;
+        }
+    }
     /**
      * Got to customization view
      * @param item
      */
     public void gotoTTSCustomization(MenuItem item) {
         Log.e(TAG, "gotoTTSCustomization");
+        Intent intent = new Intent().setClass(MainActivity.this, TTSCustomizationActivity.class);
+        startActivityForResult(intent, SHOW_CUSTOMIZATION_ACTIVITY);
+        overridePendingTransition(R.anim.slide_from_right, R.anim.slide_out_to_left);
     }
 }

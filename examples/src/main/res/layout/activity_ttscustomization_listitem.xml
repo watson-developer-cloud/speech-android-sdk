@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:orientation="horizontal"
+              android:clickable="true"
+              android:weightSum="1"
+              android:divider="@drawable/abc_list_divider_mtrl_alpha"
+              android:backgroundTintMode="src_over"
+              android:backgroundTint="@color/highlighted_text_material_dark">
+
+
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_weight="1"
+        android:layout_margin="5dp">
+            <TextView
+                android:id="@+id/titleTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:text="title"
+                android:singleLine="true"
+                android:clickable="false"
+                android:textStyle="bold"
+                android:textColor="@android:color/secondary_text_light"
+                />
+
+            <TextView
+                android:id="@+id/descriptionTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:text="description"
+                android:singleLine="true"
+                android:clickable="false"
+                android:textColor="@android:color/secondary_text_light"
+                >
+            </TextView>
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="25dp"
+        android:layout_height="fill_parent"
+        android:layout_marginRight="5dp"
+        android:src="@android:drawable/ic_media_play"
+        android:layout_gravity="right"
+        android:contentDescription="Details"
+        >
+    </ImageView>
+
+</LinearLayout>
