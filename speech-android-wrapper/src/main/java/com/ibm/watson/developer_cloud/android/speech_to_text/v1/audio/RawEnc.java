@@ -32,8 +32,7 @@ public class RawEnc implements ISpeechEncoder {
     public RawEnc() {}
     /**
      * For WebSocketClient
-     * @param uploader
-     * @throws java.io.IOException
+     * @param uploader IChunkUploader
      */
     public void initEncoderWithUploader(IChunkUploader uploader){
         this.writer = new RawWriter(uploader);
@@ -51,6 +50,12 @@ public class RawEnc implements ISpeechEncoder {
         writer.writePacket(b, 0, b.length);
         return b.length;
     }
+
+    @Override
+    public int write(byte[] b) {
+        return this.writer.write(b);
+    }
+
     /* (non-Javadoc)
      * @see com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.SpeechEncoder#close()
      */

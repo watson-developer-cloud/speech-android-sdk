@@ -53,7 +53,13 @@ public class RawWriter extends AudioFileWriter{
     public void writeHeader(String comment) throws IOException {}
 
     @Override
-    public void writePacket(byte[] data, int offset, int len) throws IOException {
+    public int write(byte[] data) {
         this.uploader.upload(data);
+        return data.length;
+    }
+
+    @Override
+    public void writePacket(byte[] data, int offset, int len) throws IOException {
+        this.write(data);
     }
 }

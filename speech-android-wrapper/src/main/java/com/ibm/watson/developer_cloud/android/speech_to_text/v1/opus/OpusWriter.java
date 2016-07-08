@@ -59,7 +59,7 @@ public class OpusWriter extends AudioFileWriter {
 
     /**
      * Setting up the OggOpus Writer
-     * @param uploader
+     * @param uploader IChunkUploader
      */
     public OpusWriter(IChunkUploader uploader){
         this.uploader = uploader;
@@ -112,6 +112,17 @@ public class OpusWriter extends AudioFileWriter {
         this.write(data);
     }
 
+
+    /**
+     * Write data into Socket
+     * @param data byte[]
+     */
+    @Override
+    public int write(byte[] data){
+        this.uploader.upload(data);
+        return data.length;
+    }
+
     /**
      * Write data packet
      * @param data audio data
@@ -158,13 +169,6 @@ public class OpusWriter extends AudioFileWriter {
         packetCount     = 0;
     }
 
-    /**
-     * Write data into Socket
-     * @param data
-     */
-    private void write(byte[] data){
-        this.uploader.upload(data);
-    }
 
     /**
      * Write data into Socket
@@ -176,6 +180,6 @@ public class OpusWriter extends AudioFileWriter {
         byte[] tmp = new byte[count];
         System.arraycopy(data, offset, tmp, 0, count);
 
-        this.uploader.upload(tmp);
+        this.write(tmp);
     }
 }
