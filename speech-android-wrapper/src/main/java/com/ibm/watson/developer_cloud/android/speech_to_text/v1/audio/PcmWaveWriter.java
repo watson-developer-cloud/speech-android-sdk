@@ -158,6 +158,17 @@ public class PcmWaveWriter extends AudioFileWriter {
         writeInt(raf, 0);
     }
 
+    @Override
+    public int write(byte[] data) {
+        try {
+            raf.write(data);
+            return data.length;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     /**
      * Saves PCM data to WAV file
      * @param pcmdata
@@ -168,14 +179,12 @@ public class PcmWaveWriter extends AudioFileWriter {
      * : no. of channels
      * @param format
      * : PCM format (16 bit)
-     * @throws IOException
      */
     public byte[] saveWav(byte[] pcmdata, int srate, int channel, int format) {
 
         byte[] header = new byte[44];
-        byte[] data = pcmdata;
 
-        long totalDataLen = data.length + 36;
+        long totalDataLen = pcmdata.length + 36;
         long bitrate = srate * channel * format;
 
         header[0] = 'R';
@@ -218,15 +227,15 @@ public class PcmWaveWriter extends AudioFileWriter {
         header[37] = 'a';
         header[38] = 't';
         header[39] = 'a';
-        header[40] = (byte) (data.length & 0xff);
-        header[41] = (byte) ((data.length >> 8) & 0xff);
-        header[42] = (byte) ((data.length >> 16) & 0xff);
-        header[43] = (byte) ((data.length >> 24) & 0xff);
+        header[40] = (byte) (pcmdata.length & 0xff);
+        header[41] = (byte) ((pcmdata.length >> 8) & 0xff);
+        header[42] = (byte) ((pcmdata.length >> 16) & 0xff);
+        header[43] = (byte) ((pcmdata.length >> 24) & 0xff);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
         try {
             outputStream.write(header);
-            outputStream.write(data);
+            outputStream.write(pcmdata);
 
         } catch (IOException e) {
             Log.e(TAG, "Error writing data to wav buffer");
@@ -245,14 +254,12 @@ public class PcmWaveWriter extends AudioFileWriter {
      * : no. of channels
      * @param format
      * : PCM format (16 bit)
-     * @throws IOException
      */
     public void saveWavFile(byte[] pcmdata, int srate, int channel, int format) {
 
         byte[] header = new byte[44];
-        byte[] data = pcmdata;
 
-        long totalDataLen = data.length + 36;
+        long totalDataLen = pcmdata.length + 36;
         long bitrate = srate * channel * format;
 
         header[0] = 'R';
@@ -295,14 +302,14 @@ public class PcmWaveWriter extends AudioFileWriter {
         header[37] = 'a';
         header[38] = 't';
         header[39] = 'a';
-        header[40] = (byte) (data.length & 0xff);
-        header[41] = (byte) ((data.length >> 8) & 0xff);
-        header[42] = (byte) ((data.length >> 16) & 0xff);
-        header[43] = (byte) ((data.length >> 24) & 0xff);
+        header[40] = (byte) (pcmdata.length & 0xff);
+        header[41] = (byte) ((pcmdata.length >> 8) & 0xff);
+        header[42] = (byte) ((pcmdata.length >> 16) & 0xff);
+        header[43] = (byte) ((pcmdata.length >> 24) & 0xff);
 
         try {
             raf.write(header, 0, 44);
-            raf.write(data);
+            raf.write(pcmdata);
             raf.close();
         } catch (IOException e) {
             Log.e(TAG, "Error writing data to wav file");
