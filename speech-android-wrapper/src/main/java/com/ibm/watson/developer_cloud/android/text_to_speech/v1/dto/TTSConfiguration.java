@@ -50,17 +50,25 @@ public class TTSConfiguration extends AuthConfiguration {
         this.voice = WATSONSDK_DEFAULT_TTS_VOICE;
         this.appContext = null;
 
-        this.apiURL = WATSONSDK_DEFAULT_TTS_API_ENDPOINT;
-        try {
-            this.apiEndpoint = new URI(this.apiURL);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
+        this.setAPIURL(WATSONSDK_DEFAULT_TTS_API_ENDPOINT);
     }
 
     public TTSConfiguration(String customizationId) {
         this();
         this.customizationId = customizationId;
+    }
+
+    /**
+     * Change API URL as well as the apiEndpoint
+     * @param val
+     */
+    public void setAPIURL(String val){
+        this.apiURL = val;
+        try {
+            this.apiEndpoint = new URI(this.apiURL);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 
     public String getSynthesizeURL(){
@@ -69,5 +77,9 @@ public class TTSConfiguration extends AuthConfiguration {
 
     public String getVoicesServiceURL() {
         return this.apiURL + "/v1/voices";
+    }
+
+    public String getCustomizedVoicesServiceURL() {
+        return this.apiURL + "/v1/customizations";
     }
 }

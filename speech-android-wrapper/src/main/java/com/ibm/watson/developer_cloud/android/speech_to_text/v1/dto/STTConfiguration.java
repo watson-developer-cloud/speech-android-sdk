@@ -14,7 +14,6 @@
  * limitations under the License.
  **/
 
-
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto;
 
 import com.ibm.watson.developer_cloud.android.speech_common.v1.AuthConfiguration;
@@ -42,8 +41,8 @@ public class STTConfiguration extends AuthConfiguration {
     public static final int SAMPLE_RATE_OGGOPUS = 16000;
     // Sample rate
     public static final int SAMPLE_RATE_DEFAULT = 48000;
-    // Timeout
-    public int inactivityTimeout = 600;
+    // Timeout in seconds
+    public int inactivityTimeout = 30;
     // continuous
     public boolean continuous = false;
     // interim_results
@@ -53,7 +52,7 @@ public class STTConfiguration extends AuthConfiguration {
     // Data format
     public String audioFormat = AUDIO_FORMAT_DEFAULT;
     // Audio sample rate
-    public int audioSampleRate = -1;
+    public int audioSampleRate = SAMPLE_RATE_DEFAULT;
     // Authentication flag
     public boolean isAuthNeeded = true;
     // SSL flag, this would be detected automatically
@@ -66,9 +65,9 @@ public class STTConfiguration extends AuthConfiguration {
     public int maxAlternatives = 1;
     // Specifies a minimum level of confidence that the service must have to report a hypothesis for a word from the input audio. Specify a probability value between 0 and 1 inclusive. A hypothesis must have at least the specified confidence to be returned as a word alternative. Omit the parameter or specify a value of null (the default) to return no word alternatives.
     public double wordAlternativesThreshold = -1;
-
     // keyword list
     public JSONArray keywords = null;
+
 
     /**
      * Instantiate default configuration
@@ -80,7 +79,8 @@ public class STTConfiguration extends AuthConfiguration {
     /**
      * Constructing configuration by parameters
      *
-     * @param audioFormat
+     * @param audioFormat String
+     * @param audioSampleRate int
      */
     public STTConfiguration(String audioFormat, int audioSampleRate){
         this();
@@ -91,8 +91,9 @@ public class STTConfiguration extends AuthConfiguration {
     /**
      * Constructing configuration by parameters
      *
-     * @param audioFormat
-     * @param isAuthNeeded
+     * @param audioFormat String
+     * @param audioSampleRate int
+     * @param isAuthNeeded boolean
      */
     public STTConfiguration(String audioFormat, int audioSampleRate, boolean isAuthNeeded){
         this(audioFormat, audioSampleRate);
@@ -101,7 +102,7 @@ public class STTConfiguration extends AuthConfiguration {
 
     /**
      * Change API URL as well as the apiEndpoint
-     * @param val
+     * @param val String
      */
     public void setAPIURL(String val){
         this.apiURL = val;
@@ -112,15 +113,28 @@ public class STTConfiguration extends AuthConfiguration {
         }
     }
 
-
+    /**
+     * Get model list service URL
+     * @return String
+     */
     public String getModelsURL() {
         return this.apiURL + "/v1/models";
     }
 
+    /**
+     * Get model info service URL
+     * @param model String
+     * @return String
+     */
     public String getModelsURL(String model) {
         return this.getModelsURL() + "/" + model;
     }
 
+    /**
+     * Set audio format and sample rate
+     * @param audioFormat String
+     * @param audioSampleRate int
+     */
     public void setAudioFormat(String audioFormat, int audioSampleRate) {
         this.audioSampleRate = audioSampleRate;
         this.audioFormat = audioFormat;
