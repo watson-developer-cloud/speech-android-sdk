@@ -44,12 +44,12 @@ import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.STTConfigura
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDelegate;
 
 public class WebSocketUploader extends WebSocketClient implements IChunkUploader {
-    private class AudioBuffer {
-        public static final int WEBSOCKET_STREAM_DATA_MARKER = 1;
-        public static final int WEBSOCKET_STREAM_END_MARKER = 2;
+    private class WebSocketAudio {
+        public static final int STREAM_MARKER_DATA = 1;
+        public static final int STREAM_MARKER_END = 2;
         byte[] buffer;
         int marker;
-        public AudioBuffer(byte[] buffer, int isMarker){
+        public WebSocketAudio(byte[] buffer, int isMarker){
             this.marker = isMarker;
             this.buffer = buffer;
         }
@@ -64,7 +64,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     /** Recorder delegate */
     private STTConfiguration sConfig = null;
     /** Audio buffer */
-    private LinkedList<AudioBuffer> audioBuffer = null;
+    private LinkedList<WebSocketAudio> audioBuffer = null;
     /** If the listening state ready for Audio  */
     private boolean isReadyForAudio = false;
     /** If the listening state ready for connection closure */
@@ -103,7 +103,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         this.isReadyForClosure = false;
 
         if(this.audioBuffer == null)
-            this.audioBuffer = new LinkedList<AudioBuffer>();
+            this.audioBuffer = new LinkedList<WebSocketAudio>();
         this.audioBuffer.clear();
 
         this.predicateWait = true;
@@ -151,7 +151,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
     @Override
     public int onHasData(byte[] buffer) {
-        return this.writeData(new AudioBuffer(buffer, AudioBuffer.WEBSOCKET_STREAM_DATA_MARKER));
+        return this.writeData(new WebSocketAudio(buffer, WebSocketAudio.STREAM_MARKER_DATA));
     }
 
     /**
@@ -159,21 +159,21 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      * @param buffer AudioBuffer
      * @return int
      */
-    private synchronized int writeData(AudioBuffer buffer) {
+    private synchronized int writeData(WebSocketAudio buffer) {
         int uploadedAudioSize = 0;
         // NOW, WE HAVE STATUS OF UPLOAD PREPARING, UPLOAD PREPARING OK
         if (this.isConnected && this.isReadyForAudio) {
             try {
                 if(audioBuffer.size() > 0) {
-                    while (audioBuffer.size() > 0) {
-                        AudioBuffer anAudioBuffer = audioBuffer.removeFirst();
-                        if (anAudioBuffer.marker == AudioBuffer.WEBSOCKET_STREAM_DATA_MARKER) {
+                    for(int i = 0 ; i < audioBuffer.size(); i++){
+                        WebSocketAudio anAudioBuffer = audioBuffer.get(i);
+                        if (anAudioBuffer.marker == WebSocketAudio.STREAM_MARKER_DATA) {
                             if (anAudioBuffer.buffer.length > 0)
                                 uploadedAudioSize += encoder.encodeAndWrite(anAudioBuffer.buffer);
                         }
                         else {
                             uploadedAudioSize = encoder.write(anAudioBuffer.buffer);
-                            if (anAudioBuffer.marker == AudioBuffer.WEBSOCKET_STREAM_END_MARKER) {
+                            if (anAudioBuffer.marker == WebSocketAudio.STREAM_MARKER_END) {
                                 this.isReadyForClosure = true;
                                 Log.i(TAG, "Ending with buffer " + uploadedAudioSize + " bytes: " + new String(anAudioBuffer.buffer));
                             }
@@ -186,14 +186,14 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
                     this.predicateWait = false;
                 }
 
-                if(buffer.marker == AudioBuffer.WEBSOCKET_STREAM_DATA_MARKER){
+                if(buffer.marker == WebSocketAudio.STREAM_MARKER_DATA){
                     if(buffer.buffer.length > 0)
                         uploadedAudioSize += encoder.encodeAndWrite(buffer.buffer);
                 }
                 else {
                     uploadedAudioSize += encoder.write(buffer.buffer);
 
-                    if(buffer.marker == AudioBuffer.WEBSOCKET_STREAM_END_MARKER) {
+                    if(buffer.marker == WebSocketAudio.STREAM_MARKER_END) {
                         this.isReadyForClosure = true;
                         Log.i(TAG, "Ending with data " + uploadedAudioSize + " bytes: " + new String(buffer.buffer));
                     }
@@ -221,7 +221,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
                 //
             }
             else {
-                audioBuffer.addFirst(buffer);
+                audioBuffer.add(buffer);
             }
         }
         return uploadedAudioSize;
@@ -290,10 +290,10 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         JSONObject obj = new JSONObject();
         try {
             obj.put("action", "stop");
-            this.writeData(new AudioBuffer(obj.toString().getBytes(), AudioBuffer.WEBSOCKET_STREAM_END_MARKER));
+            this.writeData(new WebSocketAudio(obj.toString().getBytes(), WebSocketAudio.STREAM_MARKER_END));
         } catch (JSONException e) {
             e.printStackTrace();
-            this.writeData(new AudioBuffer(new byte[0], AudioBuffer.WEBSOCKET_STREAM_END_MARKER));
+            this.writeData(new WebSocketAudio(new byte[0], WebSocketAudio.STREAM_MARKER_END));
         }
 
     }
