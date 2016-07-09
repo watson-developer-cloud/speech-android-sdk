@@ -95,6 +95,7 @@ public class MainActivity extends Activity {
         public JSONObject jsonModels = null;
         private Handler mHandler = null;
         private FileCaptureRunnable mFileCaptureRunnable = null;
+        private STTConfiguration sConfig = null;
 
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
@@ -149,12 +150,12 @@ public class MainActivity extends Activity {
                         setButtonLabel(R.id.buttonRecord, "Connecting...");
                         setButtonState(true);
                     }
-                    else if (mState == ConnectionState.CONNECTED) {
+                    else if (mState == ConnectionState.CONNECTED || mState == ConnectionState.CONNECTING) {
                         mState = ConnectionState.IDLE;
                         Log.d(TAG, "onClickRecord: CONNECTED -> IDLE");
                         Spinner spinner = (Spinner)mView.findViewById(R.id.spinnerModels);
                         spinner.setEnabled(true);
-                        SpeechToText.sharedInstance().stopRecognition();
+                        SpeechToText.sharedInstance().endTransmission();
                         setButtonState(false);
                     }
                 }
@@ -215,7 +216,7 @@ public class MainActivity extends Activity {
         private boolean initSTT() {
             // DISCLAIMER: please enter your credentials or token factory in the lines below
 
-            STTConfiguration sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_OGGOPUS, STTConfiguration.SAMPLE_RATE_OGGOPUS);
+            sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_OGGOPUS, STTConfiguration.SAMPLE_RATE_OGGOPUS);
 //            STTConfiguration sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_DEFAULT, STTConfiguration.SAMPLE_RATE_DEFAULT);
             sConfig.basicAuthUsername = getString(R.string.STTUsername);
             sConfig.basicAuthPassword = getString(R.string.STTPassword);
@@ -421,6 +422,7 @@ public class MainActivity extends Activity {
             setButtonLabel(R.id.buttonRecord, "Record");
             setButtonState(false);
             mState = ConnectionState.IDLE;
+            SpeechToText.sharedInstance().stopRecording();
         }
 
         public void onMessage(String message) {
@@ -446,7 +448,9 @@ public class MainActivity extends Activity {
                             mRecognitionResults += strFormatted.substring(0, strFormatted.length() - 1) + stopMarker;
 
                             displayResult(mRecognitionResults);
-                            SpeechToText.sharedInstance().endRecognition();
+                            // Must explicitly & manually indicate the end of transmission
+                            if(!sConfig.continuous)
+                                SpeechToText.sharedInstance().endTransmission();
                         }
                         else {
                             displayResult(mRecognitionResults + strFormatted);
