@@ -523,6 +523,7 @@ public class MainActivity extends Activity {
                 // no authentication method available
                 return false;
             }
+            TextToSpeech.sharedInstance().setLearningOptOut(false); // Change to true to opt-out
 
             TextToSpeech.sharedInstance().setVoice(getString(R.string.voiceDefault));
 

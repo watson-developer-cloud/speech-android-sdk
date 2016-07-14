@@ -49,6 +49,7 @@ public class TextToSpeech {
     private URI hostURL;
     private TokenProvider tokenProvider = null;
     private String voice;
+    private boolean learningOptOut = false;
 
     /**Speech Recognition Shared Instance
      *
@@ -78,8 +79,15 @@ public class TextToSpeech {
      */
     public void synthesize(String ttsString) {
         Log.d(TAG, "synthesize called: " + this.hostURL.toString() + "/v1/synthesize");
-        String[] Arguments = { this.hostURL.toString()+"/v1/synthesize", this.username, this.password,
-                this.voice, ttsString, this.tokenProvider == null ? null : this.tokenProvider.getToken()};
+        String[] Arguments = {
+                this.hostURL.toString()+"/v1/synthesize",
+                this.username,
+                this.password,
+                this.voice,
+                ttsString,
+                this.tokenProvider == null ? null : this.tokenProvider.getToken(),
+                this.learningOptOut ? "true" : null
+        };
         try {
             ttsUtility = new TTSUtility();
             ttsUtility.setCodec(TTSUtility.CODEC_WAV);
@@ -159,4 +167,10 @@ public class TextToSpeech {
     public void setVoice(String voice) {
         this.voice = voice;
     }
+
+    /**
+     * Set X-Watson-Learning-OptOut
+     * @param optOut
+     */
+    public void setLearningOptOut(boolean optOut) { this.learningOptOut = optOut; }
 }
