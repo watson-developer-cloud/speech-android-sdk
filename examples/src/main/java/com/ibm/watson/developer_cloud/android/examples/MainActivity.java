@@ -80,7 +80,7 @@ public class MainActivity extends Activity {
     FragmentTabSTT fragmentTabSTT = new FragmentTabSTT();
     FragmentTabTTS fragmentTabTTS = new FragmentTabTTS();
 
-    public static class FragmentTabSTT extends Fragment implements ISpeechToTextDelegate {
+    public static class FragmentTabSTT extends Fragment {
 
         // session recognition results
         private static String mRecognitionResults = "";
@@ -161,6 +161,8 @@ public class MainActivity extends Activity {
                 }
             });
 
+            // for voice file
+
 //            Button buttonRecord = (Button)mView.findViewById(R.id.buttonRecord);
 //            buttonRecord.setOnClickListener(new View.OnClickListener() {
 //
@@ -221,16 +223,14 @@ public class MainActivity extends Activity {
             sConfig.basicAuthUsername = getString(R.string.STTUsername);
             sConfig.basicAuthPassword = getString(R.string.STTPassword);
 
-            SpeechToText.sharedInstance().initWithConfig(sConfig);
+            SpeechToText.sharedInstance().initWithConfig(sConfig, new SpeechToTextDelegate());
 
             String tokenFactoryURL = getString(R.string.defaultTokenFactory);
             // token factory is the preferred authentication method (service credentials are not distributed in the client app)
-            if (tokenFactoryURL.equals(getString(R.string.defaultTokenFactory)) == false) {
+            if (!tokenFactoryURL.equals(getString(R.string.defaultTokenFactory))) {
                 // SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(tokenFactoryURL));
                 sConfig.setTokenProvider(new MyTokenProvider(tokenFactoryURL));
             }
-
-            SpeechToText.sharedInstance().setDelegate(this);
 
             return true;
         }
@@ -393,82 +393,88 @@ public class MainActivity extends Activity {
         }
 
         // delegages ----------------------------------------------
+        private class SpeechToTextDelegate implements ISpeechToTextDelegate {
+            public void onOpen() {
+                Log.d(TAG, "onOpen");
+                displayStatus("successfully connected to the STT service");
+                setButtonLabel(R.id.buttonRecord, "Stop recording");
+                mState = ConnectionState.CONNECTED;
+            }
 
-        public void onOpen() {
-            Log.d(TAG, "onOpen");
-            displayStatus("successfully connected to the STT service");
-            setButtonLabel(R.id.buttonRecord, "Stop recording");
-            mState = ConnectionState.CONNECTED;
-        }
-
-        public void onBegin(){
+            public void onBegin(){
 //            if(mFileCaptureRunnable != null) {
 //                new Thread(mFileCaptureRunnable).start();
 //            }
-        }
+            }
 
-        public void onError(String error) {
-            Log.d(TAG, "onError");
-            Log.e(TAG, error);
-            displayResult(error);
-            mState = ConnectionState.IDLE;
-            setButtonState(false);
-            SpeechToText.sharedInstance().stopRecording();
-        }
+            public void onError(String error) {
+                Log.d(TAG, "onError");
+                Log.e(TAG, error);
+                displayResult(error);
+                mState = ConnectionState.IDLE;
+                setButtonState(false);
+                SpeechToText.sharedInstance().stopRecording();
+            }
 
-        public void onClose(int code, String reason, boolean remote) {
-            Log.d(TAG, "onClose, code: " + code + " reason: " + reason);
-            displayStatus("connection closed");
-            setButtonLabel(R.id.buttonRecord, "Record");
-            setButtonState(false);
-            mState = ConnectionState.IDLE;
-            SpeechToText.sharedInstance().stopRecording();
-        }
+            public void onClose(int code, String reason, boolean remote) {
+                Log.d(TAG, "onClose, code: " + code + " reason: " + reason);
+                displayStatus("connection closed");
+                setButtonLabel(R.id.buttonRecord, "Record");
+                setButtonState(false);
+                mState = ConnectionState.IDLE;
+                SpeechToText.sharedInstance().stopRecording();
+            }
 
-        public void onMessage(String message) {
-            try {
-                JSONObject resultObject = null;
-                resultObject = new JSONObject(message);
-                JSONArray resultList = resultObject.getJSONArray("results");
-                for (int i = 0; i < resultList.length(); i++) {
-                    JSONObject obj = resultList.getJSONObject(i);
-                    JSONArray alternativeList = obj.getJSONArray("alternatives");
-                    if(alternativeList.length() > 0) {
-                        String str = alternativeList.getJSONObject(0).getString("transcript");
-                        // remove whitespaces if the language requires it
-                        String model = this.getModelSelected();
-                        if (model.startsWith("ja-JP") || model.startsWith("zh-CN")) {
-                            str = str.replaceAll("\\s+", "");
-                        }
-                        String strFormatted = Character.toUpperCase(str.charAt(0)) + str.substring(1);
-                        boolean isFinal = obj.getString("final").equals("true");
+            public void onMessage(String message) {
+                try {
+                    JSONObject resultObject = null;
+                    resultObject = new JSONObject(message);
+                    JSONArray resultList = resultObject.getJSONArray("results");
+                    for (int i = 0; i < resultList.length(); i++) {
+                        JSONObject obj = resultList.getJSONObject(i);
+                        JSONArray alternativeList = obj.getJSONArray("alternatives");
+                        if(alternativeList.length() > 0) {
+                            String str = alternativeList.getJSONObject(0).getString("transcript");
+                            // remove whitespaces if the language requires it
+                            String model = getModelSelected();
+                            if (model.startsWith("ja-JP") || model.startsWith("zh-CN")) {
+                                str = str.replaceAll("\\s+", "");
+                            }
+                            String strFormatted = Character.toUpperCase(str.charAt(0)) + str.substring(1);
+                            boolean isFinal = obj.getString("final").equals("true");
 
-                        if (isFinal) {
-                            String stopMarker = (model.startsWith("ja-JP") || model.startsWith("zh-CN")) ? "。" : ". ";
-                            mRecognitionResults += strFormatted.substring(0, strFormatted.length() - 1) + stopMarker;
+                            if (isFinal) {
+                                String stopMarker = (model.startsWith("ja-JP") || model.startsWith("zh-CN")) ? "。" : ". ";
+                                mRecognitionResults += strFormatted.substring(0, strFormatted.length() - 1) + stopMarker;
 
-                            displayResult(mRecognitionResults);
-                            // Must explicitly & manually indicate the end of transmission
-                            if(!sConfig.continuous)
-                                SpeechToText.sharedInstance().endTransmission();
-                        }
-                        else {
-                            displayResult(mRecognitionResults + strFormatted);
+                                displayResult(mRecognitionResults);
+                                // Must explicitly & manually indicate the end of transmission
+                                if(!sConfig.continuous)
+                                    SpeechToText.sharedInstance().endTransmission();
+                            }
+                            else {
+                                displayResult(mRecognitionResults + strFormatted);
+                            }
                         }
                     }
+                } catch (JSONException e) {
+                    // data error, and should be handled on SDK level
+                    e.printStackTrace();
                 }
-            } catch (JSONException e) {
-                // data error, and should be handled on SDK level
-                e.printStackTrace();
             }
-        }
 
-        public void onAmplitude(double amplitude, double volume) {
-            //Logger.e(TAG, "amplitude=" + amplitude + ", volume=" + volume);
+            public void onAmplitude(double amplitude, double volume) {
+                //Logger.e(TAG, "amplitude=" + amplitude + ", volume=" + volume);
+            }
+
+            @Override
+            public void onData(byte[] data) {
+                Log.e(TAG, "Sending " + data.length + " bytes...");
+            }
         }
     }
 
-    public static class FragmentTabTTS extends Fragment implements ITextToSpeechDelegate {
+    public static class FragmentTabTTS extends Fragment {
 
         public View mView = null;
         public Context mContext = null;
@@ -533,7 +539,7 @@ public class MainActivity extends Activity {
             tConfig.basicAuthPassword = getString(R.string.TTSPassword);
             tConfig.codec = TTSConfiguration.CODEC_OPUS;
             tConfig.appContext = this.getActivity().getApplicationContext();
-            TextToSpeech.sharedInstance().initWithConfig(tConfig);
+            TextToSpeech.sharedInstance().initWithConfig(tConfig, new TextToSpeechDelegate());
 
             String tokenFactoryURL = getString(R.string.defaultTokenFactory);
             // token factory is the preferred authentication method (service credentials are not distributed in the client app)
@@ -542,7 +548,6 @@ public class MainActivity extends Activity {
                 tConfig.setTokenProvider(new MyTokenProvider(tokenFactoryURL));
             }
 
-            TextToSpeech.sharedInstance().setDelegate(this);
             return true;
         }
 
@@ -566,26 +571,6 @@ public class MainActivity extends Activity {
             spannable2.setSpan(new CustomTypefaceSpan("", notosans), 0, strInstructions.length(), 0);
             viewInstructions.setText(spannable2);
             viewInstructions.setTextColor(0xFF121212);
-        }
-
-        @Override
-        public void onTTSStart() {
-            Log.d(TAG, "### onTTSStart ###");
-        }
-
-        @Override
-        public void onTTSWillPlay() {
-            Log.d(TAG, "### onTTSWillPlay ###");
-        }
-
-        @Override
-        public void onTTSStopped() {
-            Log.d(TAG, "### onTTSStopped ###");
-        }
-
-        @Override
-        public void onTTSError(int statusCode) {
-            Log.d(TAG, "### onTTSError: "+statusCode+" ###");
         }
 
         public class ItemVoice {
@@ -663,6 +648,28 @@ public class MainActivity extends Activity {
                 viewPrompt.setText(getString(R.string.ttsGermanPrompt));
             } else if (strVoice.startsWith("ja-JP")) {
                 viewPrompt.setText(getString(R.string.ttsJapanesePrompt));
+            }
+        }
+
+        private class TextToSpeechDelegate implements ITextToSpeechDelegate {
+            @Override
+            public void onTTSStart() {
+                Log.d(TAG, "### onTTSStart ###");
+            }
+
+            @Override
+            public void onTTSWillPlay() {
+                Log.d(TAG, "### onTTSWillPlay ###");
+            }
+
+            @Override
+            public void onTTSStopped() {
+                Log.d(TAG, "### onTTSStopped ###");
+            }
+
+            @Override
+            public void onTTSError(int statusCode) {
+                Log.d(TAG, "### onTTSError: "+statusCode+" ###");
             }
         }
     }

@@ -89,10 +89,11 @@ public class SpeechToText {
      * Init the shared instance with configurations
      * @param config STTConfiguration
      */
-    public void initWithConfig(STTConfiguration config){
+    public void initWithConfig(STTConfiguration config, ISpeechToTextDelegate delegate){
         SpeechToText.sharedInstance();
         _instance.sConfig = config;
         _instance.isNewRecordingAllowed = true;
+        _instance.delegate = delegate;
     }
 
     /**
@@ -106,14 +107,12 @@ public class SpeechToText {
         }
 
         public void consume(byte [] data) {
-            mUploader.onHasData(data);
+            mUploader.writeData(data);
         }
 
         @Override
         public void onAmplitude(double amplitude, double volume) {
-            if(delegate != null){
-                delegate.onAmplitude(amplitude, volume);
-            }
+            delegate.onAmplitude(amplitude, volume);
         }
 
         @Override
@@ -217,10 +216,8 @@ public class SpeechToText {
             }
             this.isNewRecordingAllowed = false;
         }
-        else{
-            // A voice query is already in progress
-            if(this.delegate != null)
-                this.delegate.onError("A voice query is already in progress");
+        else {
+            this.delegate.onError("A voice query is already in progress");
         }
     }
 
@@ -246,10 +243,7 @@ public class SpeechToText {
      * Send out end of stream data
      */
     public void endTransmission() {
-//        if(!this.sConfig.continuous){
-//            return;
-//        }
-        if(this.uploader != null) {
+        if(this.uploader != null) { // && this.sConfig.continuous
             this.uploader.stop();
         }
     }
@@ -387,6 +381,13 @@ public class SpeechToText {
         this.sConfig.basicAuthPassword = password;
     }
 
+    /**
+     * Set token
+     * @param token String
+     */
+    public void setToken(String token) {
+        this.sConfig.token = token;
+    }
     /**
      * Set token provider (for token based authentication)
      * @see STTConfiguration class

@@ -94,9 +94,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
             this.encoder = new OggOpusEnc();
         }
 
-        if(serverURL.toLowerCase().startsWith("wss") || serverURL.toLowerCase().startsWith("https"))
-            this.sConfig.isSSL = true;
-        else this.sConfig.isSSL = false;
+        this.sConfig.isSSL = serverURL.toLowerCase().startsWith("wss") || serverURL.toLowerCase().startsWith("https");
 
         this.isConnected = false;
         this.isReadyForAudio = false;
@@ -150,7 +148,8 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     }
 
     @Override
-    public int onHasData(byte[] buffer) {
+    public int writeData(byte[] buffer) {
+        this.delegate.onData(buffer);
         return this.writeData(new WebSocketAudio(buffer, WebSocketAudio.STREAM_MARKER_DATA));
     }
 
@@ -323,9 +322,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         this.isReadyForClosure = false;
 
         Log.d(TAG, "### Code: " + code + " reason: " + reason + " remote: " + remote);
-        if (delegate != null){
-            delegate.onClose(code, reason, remote);
-        }
+        this.delegate.onClose(code, reason, remote);
     }
 
     @Override
@@ -341,9 +338,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         this.isReadyForAudio = false;
         this.isReadyForClosure = false;
 
-        if (delegate != null){
-            delegate.onError(errorMessage);
-        }
+        this.delegate.onError(errorMessage);
     }
 
     @Override
@@ -364,19 +359,16 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
                     }
                     else {
                         this.isReadyForAudio = true;
-                        if(this.delegate != null){
-                            this.delegate.onBegin();
-                        }
+                        this.delegate.onBegin();
                         Log.i(TAG, "Start sending audio data");
                     }
                 }
             }
             // results message
             if (jObj.has("results")) {
-                if (delegate != null){
-                    delegate.onMessage(message);
-                }
+                this.delegate.onMessage(message);
             }
+
             if (jObj.has("error")) {
                 String errorMessage = jObj.getString("error");
                 this.onError(new Exception(errorMessage));
@@ -394,9 +386,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     public void onOpen(ServerHandshake arg0) {
         Log.d(TAG, "WS connection opened successfully");
         this.isConnected = true;
-        if (delegate != null){
-            delegate.onOpen();
-        }
+        this.delegate.onOpen();
         this.sendSpeechHeader();
     }
 
@@ -436,7 +426,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     /**
      * Set delegate
      *
-     * @param delegate
+     * @param delegate ISpeechToTextDelegate
      */
     public void setDelegate(ISpeechToTextDelegate delegate) {
         this.delegate = delegate;

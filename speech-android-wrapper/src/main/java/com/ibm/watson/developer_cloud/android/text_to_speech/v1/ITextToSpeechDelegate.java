@@ -25,3 +25,4 @@ public interface ITextToSpeechDelegate {
      */
     public void onTTSError(int statusCode);
 }
+

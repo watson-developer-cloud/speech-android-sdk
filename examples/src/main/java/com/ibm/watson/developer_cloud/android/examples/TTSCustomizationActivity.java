@@ -62,7 +62,7 @@ public class TTSCustomizationActivity extends Activity {
         tConfig.basicAuthPassword = getString(R.string.TTSPassword);
         tConfig.codec = TTSConfiguration.CODEC_OPUS;
         tConfig.appContext = this.getApplicationContext();
-        TextToSpeech.sharedInstance().initWithConfig(tConfig);
+        TextToSpeech.sharedInstance().initWithConfig(tConfig, null);
 
         Button langButton = (Button)findViewById(R.id.languageButton);
         langButton.setText(TTS_CUSTOM_VOICE_LANGUAGE_EN_US);

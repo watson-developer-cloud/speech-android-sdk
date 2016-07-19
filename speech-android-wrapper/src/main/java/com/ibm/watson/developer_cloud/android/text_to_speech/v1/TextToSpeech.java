@@ -88,9 +88,10 @@ public class TextToSpeech {
      * Init the shared instance with configurations
      * @param config TTSConfiguration
      */
-    public void initWithConfig(TTSConfiguration config){
+    public void initWithConfig(TTSConfiguration config, ITextToSpeechDelegate delegate){
         TextToSpeech.sharedInstance();
-        this.tConfig = config;
+        _instance.tConfig = config;
+        _instance.delegate = delegate;
     }
 
     /**
@@ -119,8 +120,7 @@ public class TextToSpeech {
 
         this.tConfig.customizationId = customizationId;
 
-        if(this.delegate != null)
-            this.delegate.onTTSStart();
+        this.delegate.onTTSStart();
 
         TTSThread thread = new TTSThread();
         thread.setName("TTSThread");
@@ -200,6 +200,13 @@ public class TextToSpeech {
         this.tConfig.basicAuthPassword = password;
     }
 
+    /**
+     * Set token
+     * @param token String
+     */
+    public void setToken(String token) {
+        this.tConfig.token = token;
+    }
     /**
      * Set token provider (for token based authentication)
      * @see TTSConfiguration class
@@ -417,8 +424,7 @@ public class TextToSpeech {
             audioTrack.play();
         }
 
-        if(this.delegate != null)
-            this.delegate.onTTSWillPlay();
+        this.delegate.onTTSWillPlay();
     }
 
     /**
@@ -457,23 +463,17 @@ public class TextToSpeech {
                     is.close();
                 }
                 else{
-                    if(delegate != null){
-                        delegate.onTTSError(statusCode);
-                    }
+                    delegate.onTTSError(statusCode);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                if(delegate != null){
-                    delegate.onTTSError(0);
-                }
+                delegate.onTTSError(0);
             } finally {
                 Log.i(TAG, "Stopping audioTrack...");
                 if (audioTrack != null && audioTrack.getState() != AudioTrack.STATE_UNINITIALIZED) {
                     audioTrack.release();
                 }
-                if(delegate != null) {
-                    delegate.onTTSStopped();
-                }
+                delegate.onTTSStopped();
             }
         }
     }

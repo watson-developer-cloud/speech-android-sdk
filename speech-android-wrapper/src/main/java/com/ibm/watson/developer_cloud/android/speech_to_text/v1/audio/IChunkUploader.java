@@ -29,7 +29,7 @@ public interface IChunkUploader {
      *
      * @param buffer the buffer
      */
-    int onHasData(byte[] buffer);
+    int writeData(byte[] buffer);
     /**
      * Checks if uploader has been prepared.
      *

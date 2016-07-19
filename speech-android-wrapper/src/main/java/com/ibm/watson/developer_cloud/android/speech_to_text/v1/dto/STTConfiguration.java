@@ -68,7 +68,6 @@ public class STTConfiguration extends AuthConfiguration {
     // keyword list
     public JSONArray keywords = null;
 
-
     /**
      * Instantiate default configuration
      */

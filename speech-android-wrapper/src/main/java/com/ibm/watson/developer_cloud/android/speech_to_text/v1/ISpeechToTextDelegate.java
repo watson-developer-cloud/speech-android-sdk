@@ -47,4 +47,11 @@ public interface ISpeechToTextDelegate {
      * Receive the data of amplitude and volume
      */
     void onAmplitude(double amplitude, double volume);
+
+    /**
+     * Recevie the recorded data
+     *
+     * @param data byte[]
+     */
+    void onData(byte[] data);
 }
