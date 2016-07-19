@@ -21,9 +21,8 @@ Table of Contents
     	* [Instantiate the SpeechToText instance](#instantiate-the-speechtotext-instance)
     	* [List supported models](#get-a-list-of-models-supported-by-the-service)
     	* [Get model details](#get-details-of-a-particular-model)
-    	* [Start Audio Transcription](#start-audio-transcription)
-    	* [End Audio Transcription](#end-audio-transcription)
-    	* [Speech power levels](#receive-speech-power-levels-during-the-recognize)
+    	* [Start audio transcription](#start-audio-transcription)
+    	* [End audio transcription](#end-audio-transcription)
 
 	* [Text To Speech](#text-to-speech)
     	* [Instantiate the TextToSpeech instance](#instantiate-the-texttospeech-instance)
@@ -70,171 +69,200 @@ To get started, you can also take a look at a [quick start guide](https://github
 Speech To Text
 ===============
 
-Implement the ISpeechDelegate and SpeechRecorderDelegate in the MainActivity
---------------------------------------------------------------------------
+Implement the ISpeechToTextDelegate in the MainActivity
+-------------------------------------------------
 
-These delegates implement the callbacks when a response from the server is received or when the recorder is sending back the audio data. SpeechRecorderDelegate is optional.
+These delegates implement the callbacks when a response from the server is received or when the recorder is sending back the audio data.
 
-```
-   public class MainActivity extends Activity implements ISpeechDelegate{}
-```
-
-Or with SpeechRecorderDelegate
-
-```
-   public class MainActivity extends Activity implements ISpeechDelegate, SpeechRecorderDelegate{}
+```java
+   public class MainActivity extends Activity implements ISpeechToTextDelegate{}
 ```
 
 Instantiate the SpeechToText instance
 -------------------------------------
 
-```
-   SpeechToText.sharedInstance().initWithContext(new URI("wss://stream.watsonplatform.net/speech-to-text/api"), this.getApplicationContext(), new SpeechConfiguration());
-```
-
 **Enabling audio compression**
 
 By default audio sent to the server is uncompressed PCM encoded data, compressed audio using the Opus codec can be enabled.
-```
-   SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS));
-```
-Or this way:
-```
-    // Configuration
-    SpeechConfiguration sConfig = new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS);
-    // STT
-    SpeechToText.sharedInstance().initWithContext(this.getHost(STT_URL), this.getApplicationContext(), sConfig);
-```
 
-**Set the Credentials and the delegate**
+```java
+   STTConfiguration sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_OGGOPUS, STTConfiguration.SAMPLE_RATE_OGGOPUS);
 
-```
-   SpeechToText.sharedInstance().setCredentials(this.USERNAME,this.PASSWORD);
-   SpeechToText.sharedInstance().setDelegate(this);
+   sConfig.basicAuthUsername = "<your-username>";
+   sConfig.basicAuthPassword = "<your-password>";
 ```
 
 **Alternatively pass a token factory object to be used by the SDK to retrieve authentication tokens to authenticate against the STT service**
 
-```
+```java
    SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(this.strSTTTokenFactoryURL));
-   SpeechToText.sharedInstance().setDelegate(this);
+```
+
+Then instantiate SpeechToText instance, the ISpeechToTextDelegate is required now:
+
+```java
+   SpeechToText.sharedInstance().initWithConfig(sConfig, this);
 ```
 
 Get a list of models supported by the service
-------------------------------
+---------------------------------------------
 
-```   
-   JSONObject models = getModels();
+```java
+   SpeechToText.sharedInstance().getModels();
 ```
 
 Get details of a particular model
-------------------------------
+---------------------------------
 
-```
-   JSONObject model = getModelInfo("en-US_BroadbandModel");
+```java
+   SpeechToText.sharedInstance().getModelInfo("en-US_BroadbandModel");
 ```
 
 Pick the model to be used
-------------------------
+-------------------------
 
-```
+```java
    SpeechToText.sharedInstance().setModel("en-US_BroadbandModel");
 ```
 
 Start Audio Transcription
-------------------------------
+-------------------------
 
-```
+```java
    SpeechToText.sharedInstance().recognize();
 ```
 
-If you implemented SpeechRecorderDelegate, and needs to process the audio data which is recorded, you can use set the delegate.
-```
-   SpeechToText.sharedInstance().recognize();
-   SpeechToText.sharedInstance().setRecorderDelegate(this);
-```
-
-**Delegate methods to receive messages from the sdk**
+**Delegate methods to receive messages from the SDK**
 
 ```
+    @Override
     public void onOpen() {
         // the  connection to the STT service is successfully opened 
     }
-
+    
+    @Override
     public void onError(String error) {
-    	// error interacting with the STT service
+        // error interacting with the STT service
     }
 
+    @Override
     public void onClose(int code, String reason, boolean remote) {
         // the connection with the STT service was just closed
     }
 
+    @Override
     public void onMessage(String message) {
         // a message comes from the STT service with recognition results 
-    }	
-```
+    }
 
-End Audio Transcription
-------------------------------
+    @Override
+    public void onBegin() {
+        // only called after listening state is returned
+    }
 
-```
-   SpeechRecognition.sharedInstance().stopRecording();
-```
-
-Receive speech power levels during the recognize
-------------------------------
-The amplitude is calculated from the audio data buffer, and the volume (in dB) is calculated based on it.
-
-```
     @Override
     public void onAmplitude(double amplitude, double volume) {
-        // your code here
+        // Receive the data of amplitude and volume, the amplitude is calculated from the audio data buffer, and the volume (in dB) is calculated based on it
     }
+```
+
+End audio transmission
+----------------------
+
+```java
+   SpeechToText.sharedInstance().endTransmission();
+```
+
+End audio recording
+-------------------
+
+```java
+   SpeechToText.sharedInstance().stopRecording();
 ```
 
 
 Text To Speech
 ==============
 
+Implement the ITextToSpeechDelegate in the MainActivity
+-----------------------------------------------------
+
+These delegates implement the callbacks when a response from the server is received, now the ITextToSpeechDelegate is required
+
+```java
+   public class MainActivity extends Activity implements ITextToSpeechDelegate{}
+```
+
 Instantiate the TextToSpeech instance
-------------------------------
+-------------------------------------
 
-```
-   TextToSpeech.sharedInstance().initWithURI(this.getHost(TTS_URL));
-```
+```java
+   TTSConfiguration tConfig = new TTSConfiguration();
+   tConfig.basicAuthUsername = "<your-username>";
+   tConfig.basicAuthPassword = "<your-password>";
+   tConfig.appContext = this.getActivity().getApplicationContext();
 
-**Set the Credentials**
-
-```
-   TextToSpeech.sharedInstance().setCredentials(this.USERNAME,this.PASSWORD);
+   TextToSpeech.sharedInstance().initWithConfig(tConfig, this);
 ```
 
 **Alternatively pass a token factory object to be used by the SDK to retrieve authentication tokens to authenticate against the TTS service**
 
 ```
-   TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(this.strTTSTokenFactoryURL));
+   tConfig.setTokenProvider.setTokenProvider(new MyTokenProvider(this.strTTSTokenFactoryURL));
 ```
 
+
 Get a list of voices supported by the service
-------------------------------
+---------------------------------------------
 
 ```
    TextToSpeech.sharedInstance().getVoices();
 ```
 
-Pick the voice to be used 
----------------------------------------------------
+Pick the voice to be used
+-------------------------
 
 ```
    TextToSpeech.sharedInstance().setVoice("en-US_MichaelVoice");
 ```
 
 Generate and play audio
-------------------------------
+-----------------------
+
+```java
+   TextToSpeech.sharedInstance().synthesize("Hello World!");
+```
+
+or use customization ID
+
+```java
+   TextToSpeech.sharedInstance().synthesize("Hello World!", "<your-customization-id>");
+```
+
+**Delegate methods to receive messages from the SDK**
 
 ```
-  TextToSpeech.sharedInstance().synthesize(ttsText);
+    @Override
+    public void onTTSStart() {
+        // Start sending request to service
+    }
+
+    @Override
+    public void onTTSWillPlay() {
+        // The audio data is fully downloaded and ready for play
+    }
+
+    @Override
+    public void onTTSStopped() {
+        // Player is stopped 
+    }
+
+    @Override
+    public void onTTSError(int statusCode) {
+        // Error occurs
+    }
 ```
+
 
 Common issues
 -------------
