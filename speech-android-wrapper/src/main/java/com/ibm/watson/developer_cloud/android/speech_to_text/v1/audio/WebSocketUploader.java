@@ -396,21 +396,48 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         try {
             obj.put("action", "start");
             obj.put("content-type", this.sConfig.audioFormat + "; rate=" + this.sConfig.audioSampleRate);
-            obj.put("interim_results", this.sConfig.interimResults);
-            obj.put("continuous", this.sConfig.continuous);
-            obj.put("inactivity_timeout", this.sConfig.inactivityTimeout);
 
-            if(this.sConfig.maxAlternatives > 1)
+            if(this.sConfig.interimResults) {
+                obj.put("interim_results", true);
+            }
+            if(this.sConfig.inactivityTimeout != STTConfiguration.INACTIVITY_TIMEOUT) {
+                obj.put("inactivity_timeout", this.sConfig.inactivityTimeout);
+            }
+
+            if(sConfig.continuous) {
+                obj.put("continuous", true);
+            }
+
+            if(this.sConfig.maxAlternatives > 1) {
                 obj.put("max_alternatives", this.sConfig.maxAlternatives);
+            }
 
-            if(this.sConfig.keywordsThreshold >= 0 && this.sConfig.keywordsThreshold <= 1)
+            if(this.sConfig.keywordsThreshold >= 0 && this.sConfig.keywordsThreshold <= 1) {
                 obj.put("keywords_threshold", this.sConfig.keywordsThreshold);
+            }
 
-            if(this.sConfig.wordAlternativesThreshold >= 0 && this.sConfig.wordAlternativesThreshold <= 1)
+            if(this.sConfig.wordAlternativesThreshold >= 0 && this.sConfig.wordAlternativesThreshold <= 1) {
                 obj.put("word_alternatives_threshold", this.sConfig.wordAlternativesThreshold);
+            }
 
             if(this.sConfig.keywords != null && this.sConfig.keywords.length() > 0){
                 obj.put("keywords", this.sConfig.keywords);
+            }
+
+            if(this.sConfig.smartFormatting) {
+                obj.put("smart_formatting", true);
+            }
+
+            if(this.sConfig.timestamps) {
+                obj.put("timestamps", true);
+            }
+
+            if(!this.sConfig.profanityFilter) {
+                obj.put("profanity_filter", false);
+            }
+
+            if(!this.sConfig.wordConfidence) {
+                obj.put("word_confidence", true);
             }
 
         } catch (JSONException e) {

@@ -41,8 +41,11 @@ public class STTConfiguration extends AuthConfiguration {
     public static final int SAMPLE_RATE_OGGOPUS = 16000;
     // Sample rate
     public static final int SAMPLE_RATE_DEFAULT = 48000;
+    // Timeout in seconds by default
+    public static final int INACTIVITY_TIMEOUT = 30;
+
     // Timeout in seconds
-    public int inactivityTimeout = 30;
+    public int inactivityTimeout = INACTIVITY_TIMEOUT;
     // continuous
     public boolean continuous = false;
     // interim_results
@@ -67,6 +70,14 @@ public class STTConfiguration extends AuthConfiguration {
     public double wordAlternativesThreshold = -1;
     // keyword list
     public JSONArray keywords = null;
+    // smart formatting
+    public boolean smartFormatting = false;
+    // timestamps
+    public boolean timestamps = false;
+    // profanity filter
+    public boolean profanityFilter = true;
+    // word confidence
+    public boolean wordConfidence = false;
 
     /**
      * Instantiate default configuration
