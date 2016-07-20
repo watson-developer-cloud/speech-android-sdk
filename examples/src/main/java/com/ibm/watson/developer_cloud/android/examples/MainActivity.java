@@ -97,8 +97,7 @@ public class MainActivity extends Activity {
         private FileCaptureRunnable mFileCaptureRunnable = null;
         private STTConfiguration sConfig = null;
 
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
             mView = inflater.inflate(R.layout.tab_stt, container, false);
             mContext = getActivity().getApplicationContext();
@@ -136,6 +135,7 @@ public class MainActivity extends Activity {
                         displayResult(mRecognitionResults);
                         ItemModel item = (ItemModel)spinner.getSelectedItem();
                         SpeechToText.sharedInstance().setModel(item.getModelName());
+
                         displayStatus("connecting to the STT service...");
                         // start recognition
                         new AsyncTask<Void, Void, Void>(){
@@ -781,8 +781,12 @@ public class MainActivity extends Activity {
 	 * @param view
 	 */
 	public void playTTS(View view) throws JSONException {
+        String voice = fragmentTabTTS.getSelectedVoice();
+        if(voice == null) {
+            return;
+        }
 
-        TextToSpeech.sharedInstance().setVoice(fragmentTabTTS.getSelectedVoice());
+        TextToSpeech.sharedInstance().setVoice(voice);
         Log.d(TAG, fragmentTabTTS.getSelectedVoice());
 
 		//Get text from text box
@@ -793,7 +797,7 @@ public class MainActivity extends Activity {
 		imm.hideSoftInputFromWindow(textTTS.getWindowToken(),
 				InputMethodManager.HIDE_NOT_ALWAYS);
 
-		//Call the sdk function
+		// Call the sdk function
 		TextToSpeech.sharedInstance().synthesize(ttsText);
 	}
 

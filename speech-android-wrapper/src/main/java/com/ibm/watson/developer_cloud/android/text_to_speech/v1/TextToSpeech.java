@@ -288,7 +288,7 @@ public class TextToSpeech {
             byte[] opus = IOUtils.toByteArray(is);
             inRaf.write(opus);
 
-            sampleRate = OggOpus.decode(inFilePath, outFilePath, sampleRate); // zero means to detect the sample rate by decoder
+            this.sampleRate = OggOpus.decode(inFilePath, outFilePath, sampleRate); // zero means to detect the sample rate by decoder
 
             RandomAccessFile outRaf = new RandomAccessFile(outFile, "r");
 
