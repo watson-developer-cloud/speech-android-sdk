@@ -156,6 +156,11 @@ public class SpeechToText {
                 }
             }
 
+            if (sConfig.learningOptOut) {
+                header.put("X-Watson-Learning-OptOut", "true");
+                Log.d(TAG, "ws setting X-Watson-Learning-OptOut");
+            }
+
             String wsURL = getHostURL().toString() + "/v1/recognize" + (this.model != null ? ("?model=" + this.model) : "");
 
             uploader = new WebSocketUploader(wsURL, header, sConfig);
