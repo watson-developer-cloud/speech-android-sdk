@@ -61,6 +61,7 @@ public class TTSUtility extends Application {
 	private String username;
 	private String password;
     private String token;
+    private boolean learningOptOut;
     private String voice;
 	private String content;
 	private String codec;
@@ -145,6 +146,7 @@ public class TTSUtility extends Application {
         this.voice = arguments[i++];
 		this.content = arguments[i++];
         this.token = arguments[i++];
+        this.learningOptOut = Boolean.valueOf(arguments[i++]);
 	}
 
     /**
@@ -156,7 +158,7 @@ public class TTSUtility extends Application {
 	 * @return {@link HttpResponse}
 	 * @throws Exception
 	 */
-	public static HttpResponse createPost(String server, String username, String password, String token, String content, String voice, String codec) throws Exception {
+	public static HttpResponse createPost(String server, String username, String password, String token, boolean learningOptOut, String content, String voice, String codec) throws Exception {
         String url = server;
 
         //HTTP GET Client
@@ -175,8 +177,12 @@ public class TTSUtility extends Application {
             Log.d(TAG, "using basic authentication");
             httpGet.setHeader(BasicScheme.authenticate(new UsernamePasswordCredentials(username, password), "UTF-8", false));
         }
-        HttpResponse executed = httpClient.execute(httpGet);
 
+        if (learningOptOut) {
+            Log.d(TAG, "setting X-Watson-Learning-OptOut");
+            httpGet.setHeader("X-Watson-Learning-Opt-Out", "true");
+        }
+        HttpResponse executed = httpClient.execute(httpGet);
 		return executed;
 	}
 
@@ -207,7 +213,7 @@ public class TTSUtility extends Application {
 			
 			HttpResponse post;
 			try {
-				post = createPost(server, username, password, token, content, voice, codec);
+				post = createPost(server, username, password, token, learningOptOut, content, voice, codec);
 		        InputStream is = post.getEntity().getContent();
 
 				byte[] data = null;

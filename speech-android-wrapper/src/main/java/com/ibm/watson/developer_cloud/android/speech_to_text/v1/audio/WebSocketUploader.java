@@ -292,7 +292,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
             obj.put("action", "start");
             obj.put("content-type", this.sConfig.audioFormat);
             obj.put("interim_results", this.sConfig.returnInterimResults);
-            obj.put("continuous", true);
+            obj.put("continuous", this.sConfig.continuous);
             obj.put("inactivity_timeout", this.sConfig.inactivityTimeout);
 
             if (this.sConfig.maxAlternatives > 1) {

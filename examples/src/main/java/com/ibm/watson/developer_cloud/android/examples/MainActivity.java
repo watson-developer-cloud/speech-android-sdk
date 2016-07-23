@@ -184,6 +184,7 @@ public class MainActivity extends Activity {
 
             SpeechConfiguration sConfig = new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_OGGOPUS);
             //SpeechConfiguration sConfig = new SpeechConfiguration(SpeechConfiguration.AUDIO_FORMAT_DEFAULT);
+            sConfig.learningOptOut = false; // Change to true to opt-out
 
             SpeechToText.sharedInstance().initWithContext(this.getHost(serviceURL), getActivity().getApplicationContext(), sConfig);
 
@@ -523,6 +524,7 @@ public class MainActivity extends Activity {
                 // no authentication method available
                 return false;
             }
+            TextToSpeech.sharedInstance().setLearningOptOut(false); // Change to true to opt-out
 
             TextToSpeech.sharedInstance().setVoice(getString(R.string.voiceDefault));
 

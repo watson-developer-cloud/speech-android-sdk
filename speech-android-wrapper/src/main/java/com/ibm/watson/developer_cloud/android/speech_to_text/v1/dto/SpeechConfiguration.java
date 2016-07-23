@@ -48,6 +48,10 @@ public class SpeechConfiguration {
     public int maxAlternatives = 1;
     // Reports hypotheses for acoustically similar alternatives for words of the input audio
     public float wordAlternativesThreshold = Float.NaN;
+    // Indicates whether multiple final results that represent consecutive phrases separated by long pauses are returned
+    public boolean continuous = true;
+    // Indicates whether to opt out of data collection for requests sent over the connection
+    public boolean learningOptOut = false;
 
     /**
      * Instantiate default configuration
