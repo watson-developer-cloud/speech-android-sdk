@@ -186,7 +186,7 @@ public abstract class AudioFileWriter{
     public static void writeOpusComment(byte[] buf, int offset, String comment) {
         // Magic Signature
         writeString(buf, offset, "OpusTags");
-        String vendorString = "IBM";
+        String vendorString = "Watson Speech SDK";
         writeInt(buf, offset + 8, vendorString.length());  // Vendor String Length
         writeString(buf, offset + 12, vendorString);       // Vendor String
         writeInt(buf, offset + 20, 1);                     // User Comment List Length
