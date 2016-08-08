@@ -7,14 +7,81 @@
     tools:context="com.ibm.watson.developer_cloud.android.examples.TTSCustomizationDetailsActivity">
 
     <TextView
+        android:id="@+id/ttsCustomizationDetailsTitle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:background="#e0e0e0"
+        android:text="@string/ttsTitle"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"/>
+
+    <TextView
+        android:id="@+id/ttsCustomizationDetailsDesc"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="24dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:background="#e0e0e0"
+        android:text="@string/sttInstructions"
+        android:layout_below="@+id/ttsCustomizationDetailsTitle"
+        android:layout_alignParentLeft="true"/>
+
+    <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Large Text"
-        android:id="@+id/customizationIdTextView"
-        android:layout_centerVertical="true"
-        android:layout_alignParentLeft="true"
+        android:id="@+id/wordTxt"
         android:layout_alignParentStart="true"
+        android:padding="10dp"
+        android:width="200dp"
+        android:enabled="true"
+        android:hint="Word"
+        android:layout_below="@+id/ttsCustomizationDetailsDesc"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="5dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
+        android:layout_toLeftOf="@+id/addWord"
+        android:layout_toStartOf="@+id/addWord"/>
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/wordTranslation"
+        android:padding="10dp"
+        android:width="200dp"
+        android:enabled="true"
+        android:hint="Translation"
+        android:layout_below="@+id/wordTxt"
+        android:layout_alignParentLeft="true"
+        android:layout_toLeftOf="@+id/addWord"
+        android:layout_toStartOf="@+id/addWord"
+        android:longClickable="true"/>
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add word"
+        android:width="100dp"
+        android:id="@+id/addWord"
+        android:layout_alignBottom="@+id/wordTranslation"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"/>
+        android:layout_alignParentEnd="true"
+        android:layout_alignTop="@+id/wordTxt"/>
+
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/wordListView"
+        android:choiceMode="singleChoice"
+        android:headerDividersEnabled="false"
+        android:dividerHeight="1dp"
+        android:layout_below="@+id/addWord"
+        android:layout_alignParentLeft="true"/>
 </RelativeLayout>

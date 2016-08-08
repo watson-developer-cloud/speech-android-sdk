@@ -8,18 +8,27 @@ import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.style.AbsoluteSizeSpan;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.ibm.watson.developer_cloud.android.text_to_speech.v1.ITextToSpeechDelegate;
 import com.ibm.watson.developer_cloud.android.text_to_speech.v1.TextToSpeech;
 import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSConfiguration;
-import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSVoiceCustomizationDetails;
+import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSCustomVoiceUpdate;
+import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSCustomWord;
+import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSVoiceCustomization;
+import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSCustomization;
 import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSVoiceCustomizations;
 
 import org.json.JSONArray;
@@ -27,6 +36,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 
 public class TTSCustomizationActivity extends Activity {
@@ -36,6 +46,11 @@ public class TTSCustomizationActivity extends Activity {
     private static final int SHOW_CUSTOMIZATION_DETAILS_ACTIVITY = 3;
 
     private ListView voicesListView = null;
+    private MyVoicesAdapter adapter = null;
+
+    private static final int ITEM_CANCEL = 1;
+    private static final int ITEM_DELETE = 2;
+    private int selectedItemIndex = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,35 +60,145 @@ public class TTSCustomizationActivity extends Activity {
         View.OnClickListener listener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                InputMethodManager imm =  (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-                if(imm != null) {
-                    imm.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(), 0);
-                }
+                dismissKeyboard();
             }
         };
 
-        this.setText(listener);
+        this.setText();
         this.setupUI(listener);
     }
 
-    private void setupUI(View.OnClickListener listener) {
-        TTSConfiguration tConfig = new TTSConfiguration();
-        tConfig.basicAuthUsername = getString(R.string.TTSUsername);
-        tConfig.basicAuthPassword = getString(R.string.TTSPassword);
-        tConfig.codec = TTSConfiguration.CODEC_OPUS;
-        tConfig.appContext = this.getApplicationContext();
-        TextToSpeech.sharedInstance().initWithConfig(tConfig, null);
+    private void dismissKeyboard(){
+        InputMethodManager imm =  (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        if(imm != null) {
+            imm.hideSoftInputFromWindow(getWindow().getDecorView().getWindowToken(), 0);
+        }
+    }
 
-        Button langButton = (Button)findViewById(R.id.languageButton);
+    private void setupUI(View.OnClickListener listener) {
+        TTSConfiguration tConfig = SpeechHelper.makeTTSConfigWithContext(this.getApplicationContext());
+        TextToSpeech.sharedInstance().initWithConfig(tConfig, new ITextToSpeechDelegate() {
+            @Override
+            public void onTTSStart() {
+
+            }
+
+            @Override
+            public void onTTSWillPlay() {
+
+            }
+
+            @Override
+            public void onTTSStopped() {
+
+            }
+
+            @Override
+            public void onTTSError(int statusCode) {
+
+            }
+        });
+
+        final Button langButton = (Button)findViewById(R.id.languageButton);
         langButton.setText(TTS_CUSTOM_VOICE_LANGUAGE_EN_US);
         langButton.setOnClickListener(listener);
+
+        final EditText nameText = (EditText)findViewById(R.id.nameField);
+        final EditText descText = (EditText)findViewById(R.id.descField);
+
+        Button createButton = (Button)findViewById(R.id.createButton);
+        createButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dismissKeyboard();
+                TTSVoiceCustomization customVoice = new TTSVoiceCustomization();
+                customVoice.name = nameText.getText().toString();
+                customVoice.description = descText.getText().toString();
+                customVoice.language = langButton.getText().toString();
+
+                JSONObject result = TextToSpeech.sharedInstance().createVoiceModelWithCustomVoice(customVoice);
+                if(result == null) {
+                    Toast.makeText(getApplicationContext(), "Create " + customVoice.name + " failed.", Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    try {
+                        String customizationId = result.getString("customization_id");
+                        TTSCustomVoiceUpdate ttsCustomVoiceUpdate = new TTSCustomVoiceUpdate();
+
+                        ttsCustomVoiceUpdate.name = customVoice.name;
+                        ttsCustomVoiceUpdate.description = customVoice.description;
+                        ttsCustomVoiceUpdate.words = new ArrayList<>();
+                        ttsCustomVoiceUpdate.words.add(new TTSCustomWord("UT", "Utilization"));
+                        ttsCustomVoiceUpdate.words.add(new TTSCustomWord("MIHUI", "Me Who A"));
+                        ttsCustomVoiceUpdate.words.add(new TTSCustomWord("LOL", "Laughing out loud"));
+                        ttsCustomVoiceUpdate.words.add(new TTSCustomWord("IEEE", "I triple E"));
+
+                        boolean isUpdated = TextToSpeech.sharedInstance().updateVoiceModelWithCustomVoice(customizationId ,ttsCustomVoiceUpdate);
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    adapter.customizations = produceVoiceCustomizations();
+                    adapter.notifyDataSetChanged();
+                    Toast.makeText(getApplicationContext(), "Created " + customVoice.name + " successfully.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         TTSVoiceCustomizations customizations = this.produceVoiceCustomizations();
 
         this.voicesListView = (ListView)findViewById(R.id.listView);
 
-        MyVoicesAdapter adapter = new MyVoicesAdapter(customizations, tConfig.appContext, listener);
-        this.voicesListView.setAdapter(adapter);
+        this.adapter = new MyVoicesAdapter(customizations, tConfig.appContext, listener);
+        this.voicesListView.setAdapter(this.adapter);
+
+        this.voicesListView.setLongClickable(true);
+        this.voicesListView.setOnItemLongClickListener(new ListView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                selectedItemIndex = position;
+                voicesListView.showContextMenu();
+                return true;
+            }
+        });
+        this.voicesListView.setOnCreateContextMenuListener(new View.OnCreateContextMenuListener() {
+            @Override
+            public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+                menu.setHeaderTitle("Please select Delete or Cancel");
+                menu.add(0, ITEM_DELETE, 0, "Delete");
+                menu.add(0, ITEM_CANCEL, 1, "Cancel");
+            }
+        });
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        switch (item.getItemId()) {
+            case ITEM_CANCEL:
+                break;
+            case ITEM_DELETE:
+                this.onDeletingItem();
+                break;
+        }
+        return false;
+    }
+
+    private void onDeletingItem() {
+        dismissKeyboard();
+
+        TTSCustomization details = adapter.customizations.customizations.get(this.selectedItemIndex);
+        boolean isDeleted = TextToSpeech.sharedInstance().deleteVoiceModel(details.customization_id);
+
+        if(isDeleted) {
+            adapter.customizations.customizations.remove(this.selectedItemIndex);
+            adapter.notifyDataSetChanged();
+            Toast.makeText(getApplicationContext(), "Deleted " + details.name + " successfully.", Toast.LENGTH_SHORT).show();
+        }
+        else {
+            Toast.makeText(getApplicationContext(), "Delete " + details.name + " failed.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private TTSVoiceCustomizations produceVoiceCustomizations() {
@@ -83,7 +208,7 @@ public class TTSCustomizationActivity extends Activity {
             JSONArray voiceList = voices.getJSONArray("customizations");
             for(int i = 0; i < voiceList.length(); i++) {
 
-                TTSVoiceCustomizationDetails details = new TTSVoiceCustomizationDetails();
+                TTSCustomization details = new TTSCustomization();
                 details.name = voiceList.getJSONObject(i).getString("name");
                 details.description = voiceList.getJSONObject(i).getString("description");
                 details.customization_id = voiceList.getJSONObject(i).getString("customization_id");
@@ -100,7 +225,7 @@ public class TTSCustomizationActivity extends Activity {
         return obj;
     }
 
-    protected void setText(View.OnClickListener listener) {
+    protected void setText() {
         Typeface roboto = Typeface.createFromAsset(getApplicationContext().getAssets(), "font/Roboto-Bold.ttf");
         Typeface notosans = Typeface.createFromAsset(getApplicationContext().getAssets(), "font/NotoSans-Regular.ttf");
 
@@ -152,7 +277,7 @@ public class TTSCustomizationActivity extends Activity {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             convertView = mInflater.inflate(R.layout.activity_ttscustomization_listitem, null);
-            final TTSVoiceCustomizationDetails voiceModel = this.customizations.customizations.get(position);
+            final TTSCustomization voiceModel = this.customizations.customizations.get(position);
             TextView titleTextView = (TextView) convertView.findViewById(R.id.titleTextView);
             TextView descriptionTextView = (TextView) convertView.findViewById(R.id.descriptionTextView);
 

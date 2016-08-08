@@ -45,15 +45,18 @@
             </TextView>
     </LinearLayout>
 
-    <ImageView
-        android:id="@+id/icon"
-        android:layout_width="25dp"
-        android:layout_height="fill_parent"
-        android:layout_marginRight="5dp"
-        android:src="@android:drawable/ic_media_play"
-        android:layout_gravity="right"
-        android:contentDescription="Details"
-        >
-    </ImageView>
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Old"
+        android:id="@+id/oldTTS"/>
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="New"
+        android:id="@+id/newTTS"/>
 
 </LinearLayout>

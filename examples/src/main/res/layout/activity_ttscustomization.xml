@@ -95,6 +95,7 @@
         android:layout_alignStart="@+id/ttsCustomizationDesc"
         android:choiceMode="singleChoice"
         android:headerDividersEnabled="false"
-        android:dividerHeight="1dp"/>
+        android:dividerHeight="1dp"
+        android:longClickable="true"/>
 
 </RelativeLayout>

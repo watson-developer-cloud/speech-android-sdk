@@ -216,22 +216,8 @@ public class MainActivity extends Activity {
 
         // initialize the connection to the Watson STT service
         private boolean initSTT() {
-            // DISCLAIMER: please enter your credentials or token factory in the lines below
-
-            sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_OGGOPUS, STTConfiguration.SAMPLE_RATE_OGGOPUS);
-//            STTConfiguration sConfig = new STTConfiguration(STTConfiguration.AUDIO_FORMAT_DEFAULT, STTConfiguration.SAMPLE_RATE_DEFAULT);
-            sConfig.basicAuthUsername = getString(R.string.STTUsername);
-            sConfig.basicAuthPassword = getString(R.string.STTPassword);
-
-            SpeechToText.sharedInstance().initWithConfig(sConfig, new SpeechToTextDelegate());
-
-            String tokenFactoryURL = getString(R.string.defaultTokenFactory);
-            // token factory is the preferred authentication method (service credentials are not distributed in the client app)
-            if (!tokenFactoryURL.equals(getString(R.string.defaultTokenFactory))) {
-                // SpeechToText.sharedInstance().setTokenProvider(new MyTokenProvider(tokenFactoryURL));
-                sConfig.setTokenProvider(new MyTokenProvider(tokenFactoryURL));
-            }
-
+            this.sConfig = SpeechHelper.makeSTTConfigWithContext(this.getActivity().getApplicationContext());
+            SpeechToText.sharedInstance().initWithConfig(this.sConfig, new SpeechToTextDelegate());
             return true;
         }
 
@@ -407,7 +393,7 @@ public class MainActivity extends Activity {
 //            }
             }
 
-            public void onError(String error) {
+            public void onError(int code, String error) {
                 Log.d(TAG, "onError");
                 Log.e(TAG, error);
                 displayResult(error);
@@ -480,6 +466,7 @@ public class MainActivity extends Activity {
         public Context mContext = null;
         public JSONObject jsonVoices = null;
         private Handler mHandler = null;
+        private TTSConfiguration tConfig = null;
 
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             Log.d(TAG, "onCreateTTS");
@@ -532,21 +519,9 @@ public class MainActivity extends Activity {
         }
 
         private boolean initTTS() {
-            // DISCLAIMER: please enter your credentials or token factory in the lines below
+            this.tConfig = SpeechHelper.makeTTSConfigWithContext(this.getActivity().getApplicationContext());
 
-            TTSConfiguration tConfig = new TTSConfiguration();
-            tConfig.basicAuthUsername = getString(R.string.TTSUsername);
-            tConfig.basicAuthPassword = getString(R.string.TTSPassword);
-            tConfig.codec = TTSConfiguration.CODEC_OPUS;
-            tConfig.appContext = this.getActivity().getApplicationContext();
-            TextToSpeech.sharedInstance().initWithConfig(tConfig, new TextToSpeechDelegate());
-
-            String tokenFactoryURL = getString(R.string.defaultTokenFactory);
-            // token factory is the preferred authentication method (service credentials are not distributed in the client app)
-            if (tokenFactoryURL.equals(getString(R.string.defaultTokenFactory)) == false) {
-//                TextToSpeech.sharedInstance().setTokenProvider(new MyTokenProvider(tokenFactoryURL));
-                tConfig.setTokenProvider(new MyTokenProvider(tokenFactoryURL));
-            }
+            TextToSpeech.sharedInstance().initWithConfig(this.tConfig, new TextToSpeechDelegate());
 
             return true;
         }
