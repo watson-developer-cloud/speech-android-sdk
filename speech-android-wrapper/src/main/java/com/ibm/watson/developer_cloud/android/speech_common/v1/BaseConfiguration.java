@@ -7,9 +7,16 @@ import java.net.URI;
 /**
  * Created by mihui on 6/5/16.
  */
-public class AuthConfiguration {
-    private static final String TAG = AuthConfiguration.class.getSimpleName();
-
+public class BaseConfiguration {
+    private static final String TAG = BaseConfiguration.class.getSimpleName();
+    //
+    public static final int WATSON_DATAFORMAT_ERROR_CODE = 700;
+    public static final int WATSON_WEBSOCKETS_ERROR_CODE = 701;
+    public static final int WATSON_SPEECHAPIS_ERROR_CODE = 702;
+    public static final int WATSON_PERMISSION_ERROR_CODE = 800;
+    //
+    public static final int WATSON_WEBSOCKETS_CLOSE_CODE = 1000;
+    //
     public String basicAuthUsername;
     public String basicAuthPassword;
     public URI apiEndpoint;
