@@ -23,7 +23,7 @@ import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDel
  */
 public interface IChunkUploader {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
-    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
+    public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2016";
     /**
      * On has data.
      *
@@ -37,10 +37,10 @@ public interface IChunkUploader {
      */
     boolean isUploadPrepared();
     /**
-     * Upload data
-     * @param data
+     * Write data into Socket
+     * @param data byte[]
      */
-    void upload(byte[] data);
+    void sendData(byte[] data);
     /**
      * Stop uploading
      */

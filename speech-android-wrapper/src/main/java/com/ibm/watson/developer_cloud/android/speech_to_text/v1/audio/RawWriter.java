@@ -19,7 +19,6 @@ package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 import java.io.File;
 import java.io.IOException;
 
-
 /**
  * @author Viney
  *
@@ -27,7 +26,7 @@ import java.io.IOException;
 public class RawWriter extends AudioFileWriter{
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
-    private IChunkUploader uploader;
+    private IChunkUploader uploader = null;
 
     /**
      * Construct with WebSocketClient
@@ -54,7 +53,7 @@ public class RawWriter extends AudioFileWriter{
 
     @Override
     public int write(byte[] data) {
-        this.uploader.upload(data);
+        this.uploader.sendData(data);
         return data.length;
     }
 

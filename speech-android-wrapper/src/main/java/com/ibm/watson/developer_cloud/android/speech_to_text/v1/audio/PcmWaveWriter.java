@@ -316,7 +316,7 @@ public class PcmWaveWriter extends AudioFileWriter {
             e.printStackTrace();
         }
 
-        Log.e(TAG, "wrote Wav File");
+        Log.e(TAG, "Wrote wav file");
     }
 
     /**
