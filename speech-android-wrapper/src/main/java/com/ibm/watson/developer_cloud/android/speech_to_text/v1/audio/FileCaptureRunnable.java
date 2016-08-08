@@ -28,8 +28,6 @@ import java.nio.ByteOrder;
  *
  */
 public class FileCaptureRunnable implements Runnable {
-
-    private static final String TAG = "FileCaptureThread";
     private IAudioConsumer mIAudioConsumer = null;
     private File mFile = null;
 
@@ -43,7 +41,7 @@ public class FileCaptureRunnable implements Runnable {
     public void run() {
         int length = (int) this.mFile.length();
         byte[] buffer = new byte[length];
-        FileInputStream in = null;
+        FileInputStream in;
         try {
             in = new FileInputStream(this.mFile);
             int r;
@@ -69,6 +67,7 @@ public class FileCaptureRunnable implements Runnable {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            this.mIAudioConsumer.onError(0, e.getMessage());
         }
 
     }

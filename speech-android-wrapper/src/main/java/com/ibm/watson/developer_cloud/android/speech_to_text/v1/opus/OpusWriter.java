@@ -119,7 +119,7 @@ public class OpusWriter extends AudioFileWriter {
      */
     @Override
     public int write(byte[] data){
-        this.uploader.upload(data);
+        this.uploader.sendData(data);
         return data.length;
     }
 

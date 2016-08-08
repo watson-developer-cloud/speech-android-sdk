@@ -16,6 +16,7 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1;
 
+import com.ibm.watson.developer_cloud.android.speech_common.v1.BaseConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.AudioCaptureRunnable;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.FileCaptureRunnable;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.IAudioConsumer;
@@ -113,6 +114,11 @@ public class SpeechToText {
         @Override
         public void onAmplitude(double amplitude, double volume) {
             delegate.onAmplitude(amplitude, volume);
+        }
+
+        @Override
+        public void onError(int code, String errorMessage) {
+            delegate.onError(BaseConfiguration.WATSON_PERMISSION_ERROR_CODE, errorMessage);
         }
 
         @Override
@@ -216,9 +222,9 @@ public class SpeechToText {
             }
             this.isNewRecordingAllowed = false;
         }
-        else {
-            this.delegate.onError("A voice query is already in progress");
-        }
+//        else {
+//            this.delegate.onError("A voice query is already in progress");
+//        }
     }
 
     /**

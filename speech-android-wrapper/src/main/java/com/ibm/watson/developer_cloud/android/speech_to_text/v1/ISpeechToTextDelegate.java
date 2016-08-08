@@ -26,7 +26,7 @@ public interface ISpeechToTextDelegate {
     /**
      * called if there is an error using the STT service
      */
-    void onError(String error);
+    void onError(int code, String errorMessage);
 
     /**
      * only called after listening state is returned

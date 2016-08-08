@@ -22,8 +22,29 @@ package com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio;
 public interface IAudioConsumer {
     // Use PROPRIETARY notice if class contains a main() method, otherwise use COPYRIGHT notice.
     public static final String COPYRIGHT_NOTICE = "(c) Copyright IBM Corp. 2015";
-    // function that consumes the audio data
-    void consume(byte [] data);
+
+    /**
+     * function that consumes the audio data
+     * @param data byte[]
+     */
+    void consume(byte[] data);
+
+    /**
+     * Send back the amplitude and volume data
+     *
+     * @param amplitude
+     * @param volume
+     */
     void onAmplitude(double amplitude, double volume);
+
+    /**
+     * When error occurs
+     * @param code int
+     * @param errorMessage String
+     */
+    void onError(int code, String errorMessage);
+    /**
+     * Data consuming end
+     */
     void end();
 }

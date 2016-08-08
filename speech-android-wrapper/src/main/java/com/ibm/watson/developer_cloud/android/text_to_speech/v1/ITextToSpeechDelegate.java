@@ -21,7 +21,8 @@ public interface ITextToSpeechDelegate {
 
     /**
      * This mehtod will be called when there is an error of requesting TTS
-     * @param statusCode
+     *
+     * @param statusCode int
      */
     public void onTTSError(int statusCode);
 }

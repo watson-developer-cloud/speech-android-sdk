@@ -78,9 +78,6 @@ public class AudioCaptureRunnable implements Runnable {
                     byte[] bytes = ByteBuffer.allocate(byteCount).order(ByteOrder.LITTLE_ENDIAN).put(buffer, 0, byteCount).array();
                     mIAudioConsumer.consume(bytes);
                 }
-                else {
-                    Log.e(TAG, "--------------> 0 short count~");
-                }
             }
         }
         catch(Throwable x) {
@@ -88,13 +85,17 @@ public class AudioCaptureRunnable implements Runnable {
         }
         // release resources
         finally {
-            if (recorder != null) {
+            if (recorder == null) {
+                // Thrown when a method is invoked with an argument which it can not reasonably deal with.
+                this.mIAudioConsumer.onError(AudioRecord.STATE_UNINITIALIZED, "Audio recorder argument error.");
+            }
+            else {
                 if(recorder.getState() == AudioRecord.STATE_INITIALIZED) {
                     recorder.stop();
                     recorder.release();
                 }
                 else if(recorder.getState() == AudioRecord.STATE_UNINITIALIZED) {
-                    // TODO: Send message of failures. e.g. permission denied
+                    this.mIAudioConsumer.onError(AudioRecord.STATE_UNINITIALIZED, "Audio recorder is not initialized.");
                 }
             }
             mStopped = true;

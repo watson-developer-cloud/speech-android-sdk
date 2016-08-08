@@ -16,7 +16,7 @@
 
 package com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto;
 
-import com.ibm.watson.developer_cloud.android.speech_common.v1.AuthConfiguration;
+import com.ibm.watson.developer_cloud.android.speech_common.v1.BaseConfiguration;
 
 import org.json.JSONArray;
 
@@ -26,7 +26,7 @@ import java.net.URISyntaxException;
 /**
  * Created by mihui on 9/2/15.
  */
-public class STTConfiguration extends AuthConfiguration {
+public class STTConfiguration extends BaseConfiguration {
     public static final String WATSONSDK_DEFAULT_STT_API_ENDPOINT = "https://stream.watsonplatform.net/speech-to-text/api";
     public static final String WATSONSDK_DEFAULT_STT_MODEL = "en-US_BroadbandModel";
     // PCM format

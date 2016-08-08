@@ -18,7 +18,7 @@ package com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto;
 
 import android.content.Context;
 
-import com.ibm.watson.developer_cloud.android.speech_common.v1.AuthConfiguration;
+import com.ibm.watson.developer_cloud.android.speech_common.v1.BaseConfiguration;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,7 +26,7 @@ import java.net.URISyntaxException;
 /**
  * Created by mihui on 6/5/16.
  */
-public class TTSConfiguration extends AuthConfiguration {
+public class TTSConfiguration extends BaseConfiguration {
     public static final String WATSONSDK_DEFAULT_TTS_API_ENDPOINT = "https://stream.watsonplatform.net/text-to-speech/api";
     public static final String WATSONSDK_DEFAULT_TTS_VOICE = "en-US_MichaelVoice";
 
@@ -36,6 +36,8 @@ public class TTSConfiguration extends AuthConfiguration {
     public static final String CODEC_OPUS = "audio/opus";
     public static final int CODEC_OPUS_SAMPLE_RATE = 48000;
 
+    public static final int WATSONSDK_DEFAULT_TTS_TIMEOUT = 15000;
+
     public String voice;
     public String customizationId = null;
     public String codec;
@@ -44,6 +46,8 @@ public class TTSConfiguration extends AuthConfiguration {
 
     // Authentication flag
     public boolean isAuthNeeded = true;
+
+    public int requestTimeout = WATSONSDK_DEFAULT_TTS_TIMEOUT;
 
     public TTSConfiguration() {
         this.codec = CODEC_WAV;
@@ -81,5 +85,13 @@ public class TTSConfiguration extends AuthConfiguration {
 
     public String getCustomizedVoicesServiceURL() {
         return this.apiURL + "/v1/customizations";
+    }
+
+    public String getCustomizedVoicesServiceURL(String customizationId) {
+        return this.apiURL + "/v1/customizations/"+customizationId;
+    }
+
+    public String getCustomizedWordServiceURL(String customizationId) {
+        return this.apiURL + "/v1/customizations/"+customizationId+"/words";
     }
 }

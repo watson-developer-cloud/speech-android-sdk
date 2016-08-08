@@ -40,6 +40,7 @@ import org.json.JSONObject;
 
 import android.util.Log;
 
+import com.ibm.watson.developer_cloud.android.speech_common.v1.BaseConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.dto.STTConfiguration;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.ISpeechToTextDelegate;
 
@@ -147,6 +148,21 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         this.connect();
     }
 
+    /**
+     * Handle errors
+     * @param code int
+     * @param errorMessage String
+     */
+    private void onError(int code, String errorMessage){
+        this.close(BaseConfiguration.WATSON_WEBSOCKETS_CLOSE_CODE, errorMessage);
+
+        this.isConnected = false;
+        this.isReadyForAudio = false;
+        this.isReadyForClosure = false;
+
+        this.delegate.onError(code, errorMessage);
+    }
+
     @Override
     public int writeData(byte[] buffer) {
         this.delegate.onData(buffer);
@@ -243,14 +259,10 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         this.isConnected = false;
         this.isReadyForAudio = false;
         this.isReadyForClosure = false;
-
         try {
-            try {
-                initStreamAudioToServer();
-            } catch (NoSuchAlgorithmException | KeyManagementException | IOException e) {
-                e.printStackTrace();
-            }
-        } catch (Exception e) {
+            initStreamAudioToServer();
+        } catch (NoSuchAlgorithmException | KeyManagementException | IOException e) {
+            e.printStackTrace();
             Log.e(TAG, "Connection failed: " + (e.getMessage()));
             isConnected = false;
             this.close();
@@ -262,7 +274,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
      *
      * @param message String
      */
-    public void upload(String message){
+    public void sendString(String message){
         try{
             this.send(message);
         }
@@ -274,9 +286,9 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     /**
      * Write data into socket
      *
-     * @param data
+     * @param data byte[]
      */
-    public void upload(byte[] data){
+    public void sendData(byte[] data){
         try{
             this.send(data);
         }
@@ -329,16 +341,9 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
     public void onError(Exception ex) {
         Log.e(TAG, "WebSocket error");
         String errorMessage = "";
-        if(ex != null)
-            errorMessage = ex.getMessage();
+        if(ex != null) errorMessage = ex.getMessage();
 
-        this.close(1000, errorMessage);
-
-        this.isConnected = false;
-        this.isReadyForAudio = false;
-        this.isReadyForClosure = false;
-
-        this.delegate.onError(errorMessage);
+        this.onError(BaseConfiguration.WATSON_WEBSOCKETS_ERROR_CODE, errorMessage);
     }
 
     @Override
@@ -355,7 +360,7 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
                     if(this.isReadyForClosure && (this.isReadyForAudio || !this.sConfig.continuous)) {
                         Log.i(TAG, "Disconnecting...");
                         this.isReadyForAudio = false;
-                        this.close(1000, "Closure data has been sent");
+                        this.close(BaseConfiguration.WATSON_WEBSOCKETS_CLOSE_CODE, "Closure data has been sent");
                     }
                     else {
                         this.isReadyForAudio = true;
@@ -371,14 +376,16 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
             if (jObj.has("error")) {
                 String errorMessage = jObj.getString("error");
-                this.onError(new Exception(errorMessage));
+                this.onError(BaseConfiguration.WATSON_SPEECHAPIS_ERROR_CODE, errorMessage);
             }
         }
-        catch (JSONException e) {
+        catch (JSONException ex) {
             // data error
+            String errorMessage = "";
             Log.e(TAG, "onMessage: Error parsing JSON");
-            e.printStackTrace();
-            this.onError(e);
+            ex.printStackTrace();
+            errorMessage = ex.getMessage();
+            this.onError(BaseConfiguration.WATSON_DATAFORMAT_ERROR_CODE, errorMessage);
         }
     }
 
@@ -390,6 +397,9 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
         this.sendSpeechHeader();
     }
 
+    /**
+     * Send start message
+     */
     private void sendSpeechHeader() {
         JSONObject obj = new JSONObject();
 
@@ -442,9 +452,10 @@ public class WebSocketUploader extends WebSocketClient implements IChunkUploader
 
         } catch (JSONException e) {
             e.printStackTrace();
+            this.onError(BaseConfiguration.WATSON_DATAFORMAT_ERROR_CODE, e.getMessage());
         }
         String startHeader = obj.toString();
-        this.upload(startHeader);
+        this.sendString(startHeader);
 
         this.encoder.onStart();
         Log.d(TAG, "Sending header message: " + startHeader);
