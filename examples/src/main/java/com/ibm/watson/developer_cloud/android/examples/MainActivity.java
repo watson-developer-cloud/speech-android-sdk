@@ -455,7 +455,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onData(byte[] data) {
-                Log.e(TAG, "Sending " + data.length + " bytes...");
+//                Log.e(TAG, "Sending " + data.length + " bytes...");
             }
         }
     }
