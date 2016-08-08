@@ -13,6 +13,4 @@ public class TTSCustomization {
     public String created;
     public String last_modified;
     public String description;
-
-    public ArrayList<TTSWord> words;
 }

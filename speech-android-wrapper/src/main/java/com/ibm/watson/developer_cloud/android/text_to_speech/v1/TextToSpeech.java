@@ -26,17 +26,28 @@ import com.ibm.watson.developer_cloud.android.speech_common.v1.ITokenProvider;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.audio.PcmWaveWriter;
 import com.ibm.watson.developer_cloud.android.speech_to_text.v1.opus.OggOpus;
 import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSConfiguration;
+import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSCustomVoiceUpdate;
+import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSVoiceCustomization;
+import com.ibm.watson.developer_cloud.android.text_to_speech.v1.dto.TTSCustomWord;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.CoreConnectionPNames;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -47,6 +58,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -136,7 +149,7 @@ public class TextToSpeech {
         }
     }
 
-    private void buildAuthenticationHeader(HttpGet httpGet) {
+    private void buildAuthenticationHeader(HttpRequestBase httpGet) {
         if (_instance.tConfig.isAuthNeeded) {
             // use token based authentication if possible, otherwise Basic Authentication will be used
             if (tConfig.hasTokenProvider()) {
@@ -158,8 +171,189 @@ public class TextToSpeech {
         return this.performGetForJSONObject(this.tConfig.getCustomizedVoicesServiceURL());
     }
 
+    public JSONObject getCustomizedWordList(String customizationId) {
+        return this.performGetForJSONObject(this.tConfig.getCustomizedWordServiceURL(customizationId));
+    }
+
     public JSONObject getVoices() {
         return this.performGetForJSONObject(this.tConfig.getVoicesServiceURL());
+    }
+
+    public JSONObject createVoiceModelWithCustomVoice(TTSVoiceCustomization customVoice) {
+        JSONObject parameters = new JSONObject();
+        HttpEntity entity;
+        try {
+            parameters.put("name", customVoice.name);
+            parameters.put("description", customVoice.description);
+            parameters.put("language", customVoice.language);
+            entity = new StringEntity(parameters.toString());
+            return this.performPostForJSONObject(this.tConfig.getCustomizedVoicesServiceURL(), entity);
+        } catch (JSONException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public boolean updateVoiceModelWithCustomVoice(String customizationId, TTSCustomVoiceUpdate ttsCustomVoiceUpdate){
+        String urlString;
+
+        JSONObject parameters = new JSONObject();
+        HttpEntity entity;
+        try {
+            urlString = this.tConfig.getCustomizedWordServiceURL(customizationId);
+
+            JSONArray words = new JSONArray();
+
+            for (TTSCustomWord word : ttsCustomVoiceUpdate.words) {
+                JSONObject obj = new JSONObject();
+                obj.put("word", word.word);
+                obj.put("translation", word.translation);
+                words.put(obj);
+            }
+
+            parameters.put("name", ttsCustomVoiceUpdate.name);
+            parameters.put("description", ttsCustomVoiceUpdate.description);
+            parameters.put("words", words);
+            entity = new StringEntity(parameters.toString());
+
+            return this.performPost(urlString, entity);
+
+        } catch (JSONException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean addWord(String customizationId, TTSCustomWord ttsCustomWord){
+        String urlString;
+
+        JSONObject parameters = new JSONObject();
+        HttpEntity entity;
+
+        try {
+            urlString = this.tConfig.getCustomizedWordServiceURL(customizationId) + "/" + URLEncoder.encode(ttsCustomWord.word, "UTF-8");
+            parameters.put("translation", ttsCustomWord.translation);
+            entity = new StringEntity(parameters.toString());
+            return this.performPut(urlString, entity);
+
+        } catch (JSONException | UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public boolean deleteWord(String customizationId, TTSCustomWord ttsCustomWord){
+        try {
+            String urlString = this.tConfig.getCustomizedWordServiceURL(customizationId) + "/" + URLEncoder.encode(ttsCustomWord.word, "UTF-8");
+            return this.performDelete(urlString);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public boolean deleteVoiceModel(String customizationId){
+        return this.performDelete(this.tConfig.getCustomizedVoicesServiceURL(customizationId));
+    }
+
+    private JSONObject performPostForJSONObject(String url, HttpEntity entity) {
+        JSONObject object = null;
+
+        try {
+            HttpClient httpClient = new DefaultHttpClient();
+            HttpPost httpPost = new HttpPost(url);
+
+            buildAuthenticationHeader(httpPost);
+
+            httpPost.setHeader("Content-Type", "application/json");
+            httpPost.setEntity(entity);
+            HttpResponse executed = httpClient.execute(httpPost);
+            InputStream is = executed.getEntity().getContent();
+
+            // get the JSON object containing the models from the InputStream
+            BufferedReader streamReader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            StringBuilder responseStrBuilder = new StringBuilder();
+            String inputStr;
+            while ((inputStr = streamReader.readLine()) != null)
+                responseStrBuilder.append(inputStr);
+            object = new JSONObject(responseStrBuilder.toString());
+            Log.d(TAG, object.toString());
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+        }
+
+        return object;
+    }
+
+    private Boolean performPost(String url, HttpEntity entity) {
+        try {
+            HttpClient httpClient = new DefaultHttpClient();
+            HttpPost httpPost = new HttpPost(url);
+
+            buildAuthenticationHeader(httpPost);
+
+            httpPost.setHeader("Content-Type", "application/json");
+            httpPost.setEntity(entity);
+
+            HttpResponse executed = httpClient.execute(httpPost);
+
+            int statusCode = executed.getStatusLine().getStatusCode();
+            if(statusCode == 200 || statusCode == 201 || statusCode == 204) {
+                return true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    private Boolean performPut(String url, HttpEntity entity) {
+        try {
+            HttpClient httpClient = new DefaultHttpClient();
+            HttpPut httpPut = new HttpPut(url);
+
+            buildAuthenticationHeader(httpPut);
+
+            httpPut.setHeader("Content-Type", "application/json");
+            httpPut.setEntity(entity);
+
+            HttpResponse executed = httpClient.execute(httpPut);
+
+            int statusCode = executed.getStatusLine().getStatusCode();
+            if(statusCode == 200 || statusCode == 201 || statusCode == 204) {
+                return true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    private Boolean performDelete(String url) {
+        try {
+            HttpClient httpClient = new DefaultHttpClient();
+            HttpDelete httpDelete = new HttpDelete(url);
+
+            buildAuthenticationHeader(httpDelete);
+
+            httpDelete.setHeader("Content-Type", "application/json");
+
+            HttpResponse executed = httpClient.execute(httpDelete);
+
+            int statusCode = executed.getStatusLine().getStatusCode();
+            if(statusCode == 200 || statusCode == 201 || statusCode == 204) {
+                return true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     private JSONObject performGetForJSONObject(String url) {
@@ -171,7 +365,7 @@ public class TextToSpeech {
 
             buildAuthenticationHeader(httpGet);
 
-            httpGet.setHeader("accept", "application/json");
+            httpGet.setHeader("Content-Type", "application/json");
             HttpResponse executed = httpClient.execute(httpGet);
             InputStream is = executed.getEntity().getContent();
 
@@ -237,6 +431,14 @@ public class TextToSpeech {
     private HttpResponse createPost(String content) throws Exception {
         //HTTP GET Client
         HttpClient httpClient = new DefaultHttpClient();
+
+        if(tConfig.requestTimeout > 0) {
+            // request timeout
+            httpClient.getParams().setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, tConfig.requestTimeout);
+            // same as request timeout, so the whole process wouldn't be more than 30s
+            httpClient.getParams().setParameter(CoreConnectionPNames.SO_TIMEOUT, tConfig.requestTimeout);
+        }
+
         //Add params
         List<BasicNameValuePair> params = new LinkedList<BasicNameValuePair>();
         params.add(new BasicNameValuePair("text", content));
@@ -253,6 +455,7 @@ public class TextToSpeech {
 
         return httpClient.execute(httpGet);
     }
+
     /**
      * Get storage path
      * @return String
@@ -261,8 +464,10 @@ public class TextToSpeech {
         String baseDir;
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             baseDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
-        } else {
+        }
+        else {
             baseDir = "/data/data/" + this.tConfig.appContext.getPackageName() + "/";
+            // this.tConfig.appContext.getFilesDir() + "/";
         }
 
         return baseDir;

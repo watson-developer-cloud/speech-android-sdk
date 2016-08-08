@@ -6,8 +6,8 @@ import java.util.ArrayList;
  * Created by mihui on 6/29/16.
  */
 public class TTSVoiceCustomizations {
-    public ArrayList<TTSVoiceCustomizationDetails> customizations;
+    public ArrayList<TTSCustomization> customizations;
     public TTSVoiceCustomizations(){
-        customizations = new ArrayList<TTSVoiceCustomizationDetails>();
+        customizations = new ArrayList<>();
     }
 }
