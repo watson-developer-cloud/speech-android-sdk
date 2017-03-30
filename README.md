@@ -25,7 +25,7 @@ Table of Contents
     	* [End Audio Transcription](#end-audio-transcription)
     	* [Speech power levels](#receive-speech-power-levels-during-the-recognize)
 
-	* [Text To Speech](#text-to-speech)
+    * [Text To Speech](#text-to-speech)
     	* [Instantiate the TextToSpeech instance](#instantiate-the-texttospeech-instance)
     	* [List supported voices](#get-a-list-of-voices-supported-by-the-service)
     	* [Generate and play audio](#generate-and-play-audio)
@@ -60,7 +60,7 @@ Getting credentials
 --------------------
 
 1. Create an account on [Bluemix](https://console.ng.bluemix.net) if you have not already.
-2. Follow instructions at http://www.ibm.com/smarterplanet/us/en/ibmwatson/developercloud/doc/getting_started/gs-credentials.shtml to get service credentials.
+2. Follow instructions at [Service credentials for Watson services](https://www.ibm.com/watson/developercloud/doc/common/getting-started-credentials.html) to get service credentials.
 
 A Quick Start Guide
 --------------------
@@ -123,7 +123,7 @@ Or this way:
 Get a list of models supported by the service
 ------------------------------
 
-```   
+```
    JSONObject models = getModels();
 ```
 
@@ -158,7 +158,7 @@ If you implemented SpeechRecorderDelegate, and needs to process the audio data w
 
 ```
     public void onOpen() {
-        // the  connection to the STT service is successfully opened 
+        // the  connection to the STT service is successfully opened
     }
 
     public void onError(String error) {
@@ -170,8 +170,8 @@ If you implemented SpeechRecorderDelegate, and needs to process the audio data w
     }
 
     public void onMessage(String message) {
-        // a message comes from the STT service with recognition results 
-    }	
+        // a message comes from the STT service with recognition results
+    }
 ```
 
 End Audio Transcription
@@ -222,7 +222,7 @@ Get a list of voices supported by the service
    TextToSpeech.sharedInstance().voices();
 ```
 
-Pick the voice to be used 
+Pick the voice to be used
 ---------------------------------------------------
 
 ```
